@@ -50,8 +50,21 @@ func encode(v reflect.Value, t *Type) ([]byte, error) {
 }
 
 func encodeSliceAndArray(v reflect.Value, t *Type) ([]byte, error) {
-	var ret, tail []byte
+	if v.Kind() != reflect.Array && v.Kind() != reflect.Slice {
+		return nil, encodeErr(v, t.kind.String())
+	}
 
+	if v.Kind() == reflect.Array && t.kind != KindArray {
+		return nil, fmt.Errorf("expected array")
+	} else if v.Kind() == reflect.Slice && t.kind != KindSlice {
+		return nil, fmt.Errorf("expected slice")
+	}
+
+	if t.kind == KindArray && t.size != v.Len() {
+		return nil, fmt.Errorf("array len incompatible")
+	}
+
+	var ret, tail []byte
 	if t.isVariableInput() {
 		ret = append(ret, packNum(v.Len())...)
 	}
@@ -79,6 +92,21 @@ func encodeSliceAndArray(v reflect.Value, t *Type) ([]byte, error) {
 }
 
 func encodeTuple(v reflect.Value, t *Type) ([]byte, error) {
+
+	// precheck types and lengths
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		if v.Len() != len(t.tuple) {
+			return nil, fmt.Errorf("expected the same length")
+		}
+	case reflect.Map, reflect.Struct:
+		if v.Len() < len(t.tuple) {
+			return nil, fmt.Errorf("expected at least the same length")
+		}
+	default:
+		return nil, encodeErr(v, "tuple")
+	}
+
 	offset := 0
 	for _, elem := range t.tuple {
 		offset += getTypeSize(elem.Elem)
