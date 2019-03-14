@@ -149,7 +149,6 @@ var randomTypes = []string{
 	"string",
 	"bytes",
 	"fixedBytes",
-	// "function",
 }
 
 func randomNumberBits() int {
@@ -198,7 +197,9 @@ PICK:
 		size := randomInt(1, 5)
 		elems := make([]*Argument, size)
 		for i := 0; i < size; i++ {
-			elems[i] = pickRandomType(d + 1)
+			elem := pickRandomType(d + 1)
+			elem.Name = fmt.Sprintf("arg%d", i)
+			elems[i] = elem
 		}
 		return &Argument{Type: "tuple", Components: elems}
 
@@ -273,9 +274,9 @@ func generateRandomType(t *Type) interface{} {
 		return val.Interface()
 
 	case KindTuple:
-		vals := []interface{}{}
+		vals := map[string]interface{}{}
 		for _, i := range t.tuple {
-			vals = append(vals, generateRandomType(i.Elem))
+			vals[i.Name] = generateRandomType(i.Elem)
 		}
 		return vals
 

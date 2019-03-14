@@ -181,9 +181,9 @@ func TestEncoding(t *testing.T) {
 					{Name: "b", Type: "int64"},
 				},
 			},
-			[]interface{}{
-				"hello World",
-				int64(266),
+			map[string]interface{}{
+				"a": "hello World",
+				"b": int64(266),
 			},
 		},
 		{
@@ -195,17 +195,18 @@ func TestEncoding(t *testing.T) {
 					{Name: "b", Type: "int32"},
 				},
 			},
-			[2][]interface{}{
-				[]interface{}{
-					int32(1),
-					int32(2),
+			[2]map[string]interface{}{
+				map[string]interface{}{
+					"a": int32(1),
+					"b": int32(2),
 				},
-				[]interface{}{
-					int32(3),
-					int32(4),
+				map[string]interface{}{
+					"a": int32(3),
+					"b": int32(4),
 				},
 			},
 		},
+
 		{
 			// tuple array with dynamic content
 			&Argument{
@@ -214,12 +215,12 @@ func TestEncoding(t *testing.T) {
 					{Name: "a", Type: "int32[]"},
 				},
 			},
-			[2][]interface{}{
-				[]interface{}{
-					[]int32{1, 2, 3},
+			[2]map[string]interface{}{
+				map[string]interface{}{
+					"a": []int32{1, 2, 3},
 				},
-				[]interface{}{
-					[]int32{4, 5, 6},
+				map[string]interface{}{
+					"a": []int32{4, 5, 6},
 				},
 			},
 		},
@@ -232,14 +233,14 @@ func TestEncoding(t *testing.T) {
 					{Name: "b", Type: "int32[]"},
 				},
 			},
-			[][]interface{}{
-				[]interface{}{
-					int32(1),
-					[]int32{2, 3},
+			[]map[string]interface{}{
+				map[string]interface{}{
+					"a": int32(1),
+					"b": []int32{2, 3},
 				},
-				[]interface{}{
-					int32(4),
-					[]int32{5, 6},
+				map[string]interface{}{
+					"a": int32(4),
+					"b": []int32{5, 6},
 				},
 			},
 		},
@@ -259,44 +260,45 @@ func TestEncoding(t *testing.T) {
 					{Name: "b", Type: "int32[]"},
 				},
 			},
-			[]interface{}{
-				[]interface{}{
-					int32(5),
-					[]int32{3, 4},
+			map[string]interface{}{
+				"a": map[string]interface{}{
+					"c": int32(5),
+					"d": []int32{3, 4},
 				},
-				[]int32{1, 2},
+				"b": []int32{1, 2},
 			},
 		},
 		{
 			&Argument{
 				Type: "tuple",
 				Components: []*Argument{
-					{Type: "uint8[2]"},
+					{Name: "a", Type: "uint8[2]"},
 					{
+						Name: "b",
 						Type: "tuple[2]", // tuple should consider how many bytes it used for the computation and shift the data
 						Components: []*Argument{
-							{Type: "uint8"},
-							{Type: "uint32"},
+							{Name: "e", Type: "uint8"},
+							{Name: "f", Type: "uint32"},
 						},
 					},
-					{Type: "uint16"},
-					{Type: "uint64[2][1]"},
+					{Name: "c", Type: "uint16"},
+					{Name: "d", Type: "uint64[2][1]"},
 				},
 			},
-			[]interface{}{
-				[2]uint8{uint8(1), uint8(2)},
-				[2][]interface{}{
-					[]interface{}{
-						uint8(10),
-						uint32(11),
+			map[string]interface{}{
+				"a": [2]uint8{uint8(1), uint8(2)},
+				"b": [2]map[string]interface{}{
+					map[string]interface{}{
+						"e": uint8(10),
+						"f": uint32(11),
 					},
-					[]interface{}{
-						uint8(20),
-						uint32(21),
+					map[string]interface{}{
+						"e": uint8(20),
+						"f": uint32(21),
 					},
 				},
-				uint16(3),
-				[1][2]uint64{{uint64(4), uint64(5)}},
+				"c": uint16(3),
+				"d": [1][2]uint64{{uint64(4), uint64(5)}},
 			},
 		},
 		{
@@ -307,29 +309,29 @@ func TestEncoding(t *testing.T) {
 					{Name: "b", Type: "uint16"},
 				},
 			},
-			[][1][]interface{}{
-				[1][]interface{}{
-					[]interface{}{
-						uint16(1),
-						uint16(2),
+			[][1]map[string]interface{}{
+				[1]map[string]interface{}{
+					map[string]interface{}{
+						"a": uint16(1),
+						"b": uint16(2),
 					},
 				},
-				[1][]interface{}{
-					[]interface{}{
-						uint16(3),
-						uint16(4),
+				[1]map[string]interface{}{
+					map[string]interface{}{
+						"a": uint16(3),
+						"b": uint16(4),
 					},
 				},
-				[1][]interface{}{
-					[]interface{}{
-						uint16(5),
-						uint16(6),
+				[1]map[string]interface{}{
+					map[string]interface{}{
+						"a": uint16(5),
+						"b": uint16(6),
 					},
 				},
-				[1][]interface{}{
-					[]interface{}{
-						uint16(7),
-						uint16(8),
+				[1]map[string]interface{}{
+					map[string]interface{}{
+						"a": uint16(7),
+						"b": uint16(8),
 					},
 				},
 			},
@@ -346,17 +348,17 @@ func TestEncoding(t *testing.T) {
 					{Name: "c", Type: "uint64"},
 				},
 			},
-			[]interface{}{
-				[][]uint64{
+			map[string]interface{}{
+				"a": [][]uint64{
 					[]uint64{3, 4},
 				},
-				[1][]interface{}{
-					[]interface{}{
-						uint8(1),
-						uint32(2),
+				"b": [1]map[string]interface{}{
+					map[string]interface{}{
+						"a": uint8(1),
+						"b": uint32(2),
 					},
 				},
-				uint64(10),
+				"c": uint64(10),
 			},
 		},
 	}
@@ -417,12 +419,13 @@ func testEncodeDecode(tt *Type, input interface{}) error {
 
 func generateRandomArgs(n int) *Type {
 	inputs := []*TupleElem{}
-	for j := 0; j < randomInt(1, 10); j++ {
+	for i := 0; i < randomInt(1, 10); i++ {
 		ttt, err := NewType(randomType())
 		if err != nil {
 			panic(err)
 		}
 		inputs = append(inputs, &TupleElem{
+			Name: fmt.Sprintf("arg%d", i),
 			Elem: ttt,
 		})
 	}
@@ -438,7 +441,7 @@ func TestRandomEncoding(t *testing.T) {
 	nStr := os.Getenv("RANDOM_TESTS")
 	n, err := strconv.Atoi(nStr)
 	if err != nil {
-		n = 1000
+		n = 100
 	}
 
 	for i := 0; i < int(n); i++ {
@@ -456,10 +459,6 @@ func TestRandomEncoding(t *testing.T) {
 }
 
 func testTypeWithContract(t *Type) error {
-	if os.Getenv("TEST_CLIENT") != "true" {
-		return nil
-	}
-
 	g := &generateContractImpl{}
 	contract := g.run(t)
 
@@ -473,6 +472,9 @@ func testTypeWithContract(t *Type) error {
 
 	abi, receipt, err := compileAndDeployContract(contract, etherbase, client)
 	if err != nil {
+		if strings.Contains(err.Error(), "Stack too deep") {
+			return nil
+		}
 		return err
 	}
 
@@ -481,8 +483,10 @@ func testTypeWithContract(t *Type) error {
 		return fmt.Errorf("method set not found")
 	}
 
-	val := generateRandomType(t)
-	data, err := Encode(val, method.Inputs.Type())
+	tt := method.Inputs.Type()
+	val := generateRandomType(tt)
+
+	data, err := Encode(val, tt)
 	if err != nil {
 		return err
 	}

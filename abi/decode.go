@@ -137,7 +137,7 @@ func readFixedBytes(t *Type, word []byte) (interface{}, error) {
 }
 
 func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
-	res := make([]interface{}, 0, len(t.tuple))
+	res := make(map[string]interface{})
 
 	orig := data
 	origLen := len(orig)
@@ -161,7 +161,11 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 		} else {
 			data = data[32:]
 		}
-		res = append(res, val)
+		if _, ok := res[arg.Name]; !ok {
+			res[arg.Name] = val
+		} else {
+			return nil, nil, fmt.Errorf("tuple with repeated values")
+		}
 	}
 	return res, data, nil
 }

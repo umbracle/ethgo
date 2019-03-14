@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -92,19 +93,27 @@ func encodeSliceAndArray(v reflect.Value, t *Type) ([]byte, error) {
 }
 
 func encodeTuple(v reflect.Value, t *Type) ([]byte, error) {
+	var err error
+	isList := true
 
-	// precheck types and lengths
 	switch v.Kind() {
 	case reflect.Slice, reflect.Array:
-		if v.Len() != len(t.tuple) {
-			return nil, fmt.Errorf("expected the same length")
+	case reflect.Map:
+		isList = false
+
+	case reflect.Struct:
+		isList = false
+		v, err = mapFromStruct(v)
+		if err != nil {
+			return nil, err
 		}
-	case reflect.Map, reflect.Struct:
-		if v.Len() < len(t.tuple) {
-			return nil, fmt.Errorf("expected at least the same length")
-		}
+
 	default:
 		return nil, encodeErr(v, "tuple")
+	}
+
+	if v.Len() < len(t.tuple) {
+		return nil, fmt.Errorf("expected at least the same length")
 	}
 
 	offset := 0
@@ -113,8 +122,19 @@ func encodeTuple(v reflect.Value, t *Type) ([]byte, error) {
 	}
 
 	var ret, tail []byte
+	var aux reflect.Value
+
 	for i, elem := range t.tuple {
-		val, err := encode(v.Index(i), elem.Elem)
+		if isList {
+			aux = v.Index(i)
+		} else {
+			aux = v.MapIndex(reflect.ValueOf(elem.Name))
+		}
+		if aux.Kind() == reflect.Invalid {
+			return nil, fmt.Errorf("cannot get key %s", elem.Name)
+		}
+
+		val, err := encode(aux, elem.Elem)
 		if err != nil {
 			return nil, err
 		}
@@ -209,4 +229,31 @@ func encodeBool(v reflect.Value) ([]byte, error) {
 
 func encodeErr(v reflect.Value, t string) error {
 	return fmt.Errorf("failed to encode %s as %s", v.Kind().String(), t)
+}
+
+func mapFromStruct(v reflect.Value) (reflect.Value, error) {
+	res := map[string]interface{}{}
+	typ := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		f := typ.Field(i)
+		if f.PkgPath != "" {
+			continue
+		}
+
+		tagValue := f.Tag.Get("abi")
+		if tagValue == "-" {
+			continue
+		}
+
+		name := f.Name
+		if tagValue != "" {
+			name = tagValue
+		}
+
+		name = strings.ToLower(name)
+		if _, ok := res[name]; !ok {
+			res[name] = v.Field(i)
+		}
+	}
+	return reflect.ValueOf(res), nil
 }
