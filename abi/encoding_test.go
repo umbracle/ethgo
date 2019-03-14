@@ -2,7 +2,6 @@ package abi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -20,7 +19,7 @@ import (
 
 func TestEncoding(t *testing.T) {
 	cases := []struct {
-		Type  interface{}
+		Type  string
 		Input interface{}
 	}{
 		{
@@ -109,78 +108,75 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			`[{"type": "bytes[]"}]`,
-			[]interface{}{
-				[][]byte{{0xf0, 0xf0, 0xf0}, {0xf0, 0xf0, 0xf0}},
+			"tuple(a bytes[])",
+			map[string]interface{}{
+				"a": [][]byte{{0xf0, 0xf0, 0xf0}, {0xf0, 0xf0, 0xf0}},
 			},
 		},
 		{
-			`[{"type": "uint32[2][][]"}]`,
-			[]interface{}{
-				[][][2]uint32{{{uint32(1), uint32(200)}, {uint32(1), uint32(1000)}}, {{uint32(1), uint32(200)}, {uint32(1), uint32(1000)}}},
+			"tuple(a uint32[2][][])",
+			// `[{"type": "uint32[2][][]"}]`,
+			map[string]interface{}{
+				"a": [][][2]uint32{{{uint32(1), uint32(200)}, {uint32(1), uint32(1000)}}, {{uint32(1), uint32(200)}, {uint32(1), uint32(1000)}}},
 			},
 		},
 		{
-			`[{"type": "uint64[2]"}]`,
-			[]interface{}{
-				[2]uint64{1, 2},
+			"tuple(a uint64[2])",
+			map[string]interface{}{
+				"a": [2]uint64{1, 2},
 			},
 		},
 		{
-			`[{"type": "uint32[2][3][4]"}]`,
-			[]interface{}{
-				[4][3][2]uint32{{{1, 2}, {3, 4}, {5, 6}}, {{7, 8}, {9, 10}, {11, 12}}, {{13, 14}, {15, 16}, {17, 18}}, {{19, 20}, {21, 22}, {23, 24}}},
+			"tuple(a uint32[2][3][4])",
+			map[string]interface{}{
+				"a": [4][3][2]uint32{{{1, 2}, {3, 4}, {5, 6}}, {{7, 8}, {9, 10}, {11, 12}}, {{13, 14}, {15, 16}, {17, 18}}, {{19, 20}, {21, 22}, {23, 24}}},
 			},
 		},
 		{
-			`[{"name": "Int", "type": "int32[]"}]`,
-			[]interface{}{
-				[]int32{1, 2},
+			"tuple(a int32[])",
+			map[string]interface{}{
+				"a": []int32{1, 2},
 			},
 		},
 		{
-			`[{"name":"int1","type":"int32"},{"name":"int2","type":"int32"}]`,
-			[]interface{}{
-				int32(1),
-				int32(2),
+			"tuple(a int32, b int32)",
+			map[string]interface{}{
+				"a": int32(1),
+				"b": int32(2),
 			},
 		},
 		{
-			`[{"name":"int1","type":"string"},{"name":"int2","type":"int32"}]`,
-			[]interface{}{
-				"Hello Worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-				int32(2),
+			"tuple(a string, b int32)",
+			map[string]interface{}{
+				"a": "Hello Worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+				"b": int32(2),
 			},
 		},
 		{
-			`[{"name":"int1","type":"int32[2]"},{"name":"int2","type":"int32[]"}]`,
-			[]interface{}{
-				[2]int32{1, 2},
-				[]int32{4, 5, 6},
-			},
-		},
-		{ // First dynamic second static
-			`[{"name":"int1","type":"int32[]"},{"name":"int2","type":"int32[2]"}]`,
-			[]interface{}{
-				[]int32{1, 2, 3},
-				[2]int32{4, 5},
-			},
-		},
-		{ // Both dynamic
-			`[{"name":"int1","type":"int32[]"},{"name":"int2","type":"int32[]"}]`,
-			[]interface{}{
-				[]int32{1, 2, 3},
-				[]int32{4, 5, 6},
+			"tuple(a int32[2], b int32[])",
+			map[string]interface{}{
+				"a": [2]int32{1, 2},
+				"b": []int32{4, 5, 6},
 			},
 		},
 		{
-			&Argument{
-				Type: "tuple",
-				Components: []*Argument{
-					{Name: "a", Type: "string"},
-					{Name: "b", Type: "int64"},
-				},
+			// First dynamic second static
+			"tuple(a int32[], b int32[2])",
+			map[string]interface{}{
+				"a": []int32{1, 2, 3},
+				"b": [2]int32{4, 5},
 			},
+		},
+		{
+			// Both dynamic
+			"tuple(a int32[], b int32[])",
+			map[string]interface{}{
+				"a": []int32{1, 2, 3},
+				"b": []int32{4, 5, 6},
+			},
+		},
+		{
+			"tuple(a string, b int64)",
 			map[string]interface{}{
 				"a": "hello World",
 				"b": int64(266),
@@ -188,13 +184,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// tuple array
-			&Argument{
-				Type: "tuple[2]",
-				Components: []*Argument{
-					{Name: "a", Type: "int32"},
-					{Name: "b", Type: "int32"},
-				},
-			},
+			"tuple(a int32, b int32)[2]",
 			[2]map[string]interface{}{
 				map[string]interface{}{
 					"a": int32(1),
@@ -209,12 +199,7 @@ func TestEncoding(t *testing.T) {
 
 		{
 			// tuple array with dynamic content
-			&Argument{
-				Type: "tuple[2]",
-				Components: []*Argument{
-					{Name: "a", Type: "int32[]"},
-				},
-			},
+			"tuple(a int32[])[2]",
 			[2]map[string]interface{}{
 				map[string]interface{}{
 					"a": []int32{1, 2, 3},
@@ -226,13 +211,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// tuple slice
-			&Argument{
-				Type: "tuple[]",
-				Components: []*Argument{
-					{Name: "a", Type: "int32"},
-					{Name: "b", Type: "int32[]"},
-				},
-			},
+			"tuple(a int32, b int32[])[]",
 			[]map[string]interface{}{
 				map[string]interface{}{
 					"a": int32(1),
@@ -246,20 +225,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// nested tuple
-			&Argument{
-				Type: "tuple",
-				Components: []*Argument{
-					{
-						Name: "a",
-						Type: "tuple",
-						Components: []*Argument{
-							{Name: "c", Type: "int32"},
-							{Name: "d", Type: "int32[]"},
-						},
-					},
-					{Name: "b", Type: "int32[]"},
-				},
-			},
+			"tuple(a tuple(c int32, d int32[]), b int32[])",
 			map[string]interface{}{
 				"a": map[string]interface{}{
 					"c": int32(5),
@@ -269,22 +235,7 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			&Argument{
-				Type: "tuple",
-				Components: []*Argument{
-					{Name: "a", Type: "uint8[2]"},
-					{
-						Name: "b",
-						Type: "tuple[2]", // tuple should consider how many bytes it used for the computation and shift the data
-						Components: []*Argument{
-							{Name: "e", Type: "uint8"},
-							{Name: "f", Type: "uint32"},
-						},
-					},
-					{Name: "c", Type: "uint16"},
-					{Name: "d", Type: "uint64[2][1]"},
-				},
-			},
+			"tuple(a uint8[2], b tuple(e uint8, f uint32)[2], c uint16, d uint64[2][1])",
 			map[string]interface{}{
 				"a": [2]uint8{uint8(1), uint8(2)},
 				"b": [2]map[string]interface{}{
@@ -302,13 +253,7 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			&Argument{
-				Type: "tuple[1][]",
-				Components: []*Argument{
-					{Name: "a", Type: "uint16"},
-					{Name: "b", Type: "uint16"},
-				},
-			},
+			"tuple(a uint16, b uint16)[1][]",
 			[][1]map[string]interface{}{
 				[1]map[string]interface{}{
 					map[string]interface{}{
@@ -337,17 +282,7 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			&Argument{
-				Type: "tuple",
-				Components: []*Argument{
-					{Name: "a", Type: "uint64[][]"},
-					{Name: "b", Type: "tuple[1]", Components: []*Argument{
-						{Name: "a", Type: "uint8"},
-						{Name: "b", Type: "uint32"},
-					}},
-					{Name: "c", Type: "uint64"},
-				},
-			},
+			"tuple(a uint64[][], b tuple(a uint8, b uint32)[1], c uint64)",
 			map[string]interface{}{
 				"a": [][]uint64{
 					[]uint64{3, 4},
@@ -367,24 +302,7 @@ func TestEncoding(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
-			var arg *Argument
-			if typeStr, ok := c.Type.(string); ok {
-				if strings.HasPrefix(typeStr, "[") {
-					var args []*Argument
-					if err := json.Unmarshal([]byte(typeStr), &args); err != nil {
-						t.Fatal(err)
-					}
-					arg = &Argument{Type: "tuple", Components: args}
-				} else {
-					arg = &Argument{Type: typeStr}
-				}
-			} else if aux, ok := c.Type.(*Argument); ok {
-				arg = aux
-			} else {
-				t.Fatal("bad input")
-			}
-
-			tt, err := NewType(arg)
+			tt, err := NewType(c.Type)
 			if err != nil {
 				t.Fatal(err)
 			}

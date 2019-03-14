@@ -91,17 +91,17 @@ type Method struct {
 }
 
 // Sig returns the signature of the method
-func (method Method) Sig() string {
-	types := make([]string, len(method.Inputs))
-	for i, input := range method.Inputs {
+func (m *Method) Sig() string {
+	types := make([]string, len(m.Inputs))
+	for i, input := range m.Inputs {
 		types[i] = input.Type.raw
 	}
-	return fmt.Sprintf("%v(%v)", method.Name, strings.Join(types, ","))
+	return fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ","))
 }
 
 // ID returns the id of the method
-func (method Method) ID() []byte {
-	return crypto.Keccak256([]byte(method.Sig()))[:4]
+func (m *Method) ID() []byte {
+	return crypto.Keccak256([]byte(m.Sig()))[:4]
 }
 
 // Event is a triggered log mechanism
@@ -143,7 +143,7 @@ func (a *argument) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("argument json err: %v", err)
 	}
 
-	t, err := NewType(arg)
+	t, err := NewTypeFromArgument(arg)
 	if err != nil {
 		return err
 	}
