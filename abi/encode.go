@@ -207,7 +207,7 @@ func encodeNum(v reflect.Value) ([]byte, error) {
 		return U256(big.NewInt(v.Int())), nil
 
 	case reflect.Ptr:
-		if v.Type() != bigInt {
+		if v.Type() != bigIntT {
 			return nil, encodeErr(v.Elem(), "number")
 		}
 		return U256(v.Interface().(*big.Int)), nil

@@ -27,7 +27,7 @@ var (
 	dynamicBytesT = reflect.SliceOf(reflect.TypeOf(byte(0)))
 	functionT     = reflect.ArrayOf(24, reflect.TypeOf(byte(0)))
 	tupleT        = reflect.TypeOf(map[string]interface{}{})
-	bigInt        = reflect.TypeOf(new(big.Int))
+	bigIntT       = reflect.TypeOf(new(big.Int))
 )
 
 // Kind represents the kind of abi type
@@ -122,201 +122,40 @@ func (t *Type) isDynamicType() bool {
 	return t.kind == KindString || t.kind == KindBytes || t.kind == KindSlice || (t.kind == KindArray && t.elem.isDynamicType())
 }
 
-// NewType parses an abi type string
-func NewType(arg *Argument) (*Type, error) {
-	tStr := arg.Type
-	indx := strings.Index(arg.Type, "[")
-	if indx != -1 {
-		tStr = arg.Type[:indx]
+func parseType(arg *Argument) (string, error) {
+	if !strings.HasPrefix(arg.Type, "tuple") {
+		return arg.Type, nil
 	}
 
-	t, err := parseType(tStr, arg)
-	if err != nil {
-		return nil, err
-	}
-	if t.kind != KindTuple {
-		t.raw = tStr
+	if len(arg.Components) == 0 {
+		return "", fmt.Errorf("tuple type expects components but none found")
 	}
 
-	if indx != -1 {
-		return parseList(t, arg.Type[indx:], arg)
-	}
-	return t, nil
-}
-
-func parseList(t *Type, s string, arg *Argument) (*Type, error) {
-	l, err := parseBrackets(s)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, size := range l {
-		var tAux *Type
-		if size == -1 {
-			// array
-			tAux = &Type{kind: KindSlice, elem: t, raw: fmt.Sprintf("%s[]", t.raw), t: reflect.SliceOf(t.t)}
-		} else {
-			// slice
-			tAux = &Type{kind: KindArray, elem: t, raw: fmt.Sprintf("%s[%d]", t.raw, size), size: size, t: reflect.ArrayOf(size, t.t)}
-		}
-		t = tAux
-	}
-	return t, nil
-}
-
-var typeRegexp = regexp.MustCompile("^([[:alpha:]]+)([[:digit:]]*)$")
-
-func parseType(s string, arg *Argument) (*Type, error) {
-	match := typeRegexp.FindStringSubmatch(s)
-	if len(match) == 0 {
-		return nil, fmt.Errorf("type format is incorrect. Expected 'type''bytes' but found '%s'", s)
-	}
-	match = match[1:]
-
-	var err error
-	t := match[0]
-
-	b := 0
-	if bytesStr := match[1]; bytesStr != "" {
-		b, err = strconv.Atoi(bytesStr)
+	// parse the arg components from the tuple
+	str := []string{}
+	for _, i := range arg.Components {
+		aux, err := parseType(i)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse bytes '%s': %v", bytesStr, err)
+			return "", err
 		}
+		str = append(str, i.Name+" "+aux)
 	}
-
-	switch t {
-	case "bool":
-		if b != 0 {
-			return nil, fmt.Errorf("bytes to allowed in bool format")
-		}
-		return &Type{kind: KindBool, t: boolT}, nil
-
-	case "uint":
-		if b == 0 {
-			return nil, fmt.Errorf("expected bytes in uint")
-		}
-
-		var k reflect.Type
-		switch b {
-		case 8:
-			k = uint8T
-		case 16:
-			k = uint16T
-		case 32:
-			k = uint32T
-		case 64:
-			k = uint64T
-		default:
-			if b%8 != 0 {
-				return nil, fmt.Errorf("number of bytes has to be M mod 8")
-			}
-			k = bigInt
-		}
-
-		return &Type{kind: KindUInt, size: b, t: k}, nil
-
-	case "int":
-		if b == 0 {
-			return nil, fmt.Errorf("expected bytes in int")
-		}
-
-		var k reflect.Type
-		switch b {
-		case 8:
-			k = int8T
-		case 16:
-			k = int16T
-		case 32:
-			k = int32T
-		case 64:
-			k = int64T
-		default:
-			if b%8 != 0 {
-				return nil, fmt.Errorf("number of bytes has to be M mod 8")
-			}
-			k = bigInt
-		}
-		return &Type{kind: KindInt, size: b, t: k}, nil
-
-	case "address":
-		if b != 0 {
-			return nil, fmt.Errorf("bytes to allowed in address")
-		}
-		return &Type{kind: KindAddress, size: 20, t: addressT}, nil
-
-	case "string":
-		if b != 0 {
-			return nil, fmt.Errorf("bytes to allowed in string")
-		}
-		return &Type{kind: KindString, t: stringT}, nil
-
-	case "bytes":
-		if b == 0 {
-			return &Type{kind: KindBytes, t: dynamicBytesT}, nil
-		}
-		// fixed bytes
-		return &Type{kind: KindFixedBytes, size: b, t: reflect.ArrayOf(b, reflect.TypeOf(byte(0)))}, nil
-
-	case "function":
-		if b != 0 {
-			return nil, fmt.Errorf("bytes to allowed in function")
-		}
-		return &Type{kind: KindFunction, size: 24, t: functionT}, nil
-
-	case "tuple":
-		elems := []*TupleElem{}
-		for _, c := range arg.Components {
-			elem, err := NewType(c)
-			if err != nil {
-				return nil, err
-			}
-			elems = append(elems, &TupleElem{
-				Name: c.Name,
-				Elem: elem,
-			})
-		}
-
-		rawAux := []string{}
-		for _, i := range elems {
-			rawAux = append(rawAux, i.Elem.raw)
-		}
-		raw := fmt.Sprintf("(%s)", strings.Join(rawAux, ","))
-
-		return &Type{kind: KindTuple, raw: raw, tuple: elems, t: tupleT}, nil
-	}
-
-	return nil, fmt.Errorf("invalid type '%s'", t)
+	return fmt.Sprintf("tuple(%s)%s", strings.Join(str, ","), strings.TrimPrefix(arg.Type, "tuple")), nil
 }
 
-func parseBrackets(s string) ([]int, error) {
-	res := []int{}
-	for {
-		if s[0] != '[' {
-			return nil, fmt.Errorf("bad")
-		}
-
-		indx := strings.Index(s, "]")
-		if indx == -1 {
-			return nil, fmt.Errorf("close bracket not found")
-		}
-
-		val := s[1:indx]
-		if val == "" {
-			res = append(res, -1)
-		} else {
-			j, err := strconv.Atoi(val)
-			if err != nil {
-				return nil, err
-			}
-			res = append(res, j)
-		}
-
-		s = s[indx+1:]
-		if s == "" {
-			break
-		}
+// NewTypeFromArgument parses an abi type from an argument
+func NewTypeFromArgument(arg *Argument) (*Type, error) {
+	str, err := parseType(arg)
+	if err != nil {
+		return nil, err
 	}
-	return res, nil
+	return NewType(str)
+}
+
+// NewType parses a type in string format
+func NewType(s string) (*Type, error) {
+	l := newLexer(s)
+	return readType(l)
 }
 
 func getTypeSize(t *Type) int {
@@ -333,4 +172,329 @@ func getTypeSize(t *Type) int {
 		return total
 	}
 	return 32
+}
+
+var typeRegexp = regexp.MustCompile("^([[:alpha:]]+)([[:digit:]]*)$")
+
+func expectedToken(t tokenType) error {
+	return fmt.Errorf("expected token %s", t.String())
+}
+
+func readType(l *lexer) (*Type, error) {
+	var tt *Type
+
+	tok := l.nextToken()
+	if tok.typ == tupleToken {
+		if l.nextToken().typ != lparenToken {
+			return nil, expectedToken(lparenToken)
+		}
+
+		var next token
+		elems := []*TupleElem{}
+		for {
+
+			// read name
+			name := l.nextToken()
+			if name.typ != strToken {
+				return nil, expectedToken(strToken)
+			}
+
+			elem, err := readType(l)
+			if err != nil {
+				return nil, err
+			}
+			elems = append(elems, &TupleElem{
+				Name: name.literal,
+				Elem: elem,
+			})
+
+			next = l.nextToken()
+			if next.typ == commaToken {
+				continue
+			} else {
+				break
+			}
+		}
+
+		rawAux := []string{}
+		for _, i := range elems {
+			rawAux = append(rawAux, i.Elem.raw)
+		}
+		raw := fmt.Sprintf("(%s)", strings.Join(rawAux, ","))
+
+		tt = &Type{kind: KindTuple, raw: raw, tuple: elems, t: tupleT}
+
+	} else if tok.typ != strToken {
+		return nil, expectedToken(strToken)
+
+	} else {
+		// Check normal types
+		elem, err := decodeSimpleType(tok.literal)
+		if err != nil {
+			return nil, err
+		}
+		tt = elem
+	}
+
+	// check for arrays at the end of the type
+	for {
+		if l.ch != '[' {
+			break
+		}
+
+		l.nextToken()
+		n := l.nextToken()
+
+		var tAux *Type
+		if n.typ == rbracketToken {
+			tAux = &Type{kind: KindSlice, elem: tt, raw: fmt.Sprintf("%s[]", tt.raw), t: reflect.SliceOf(tt.t)}
+
+		} else if n.typ == numberToken {
+			size, err := strconv.ParseUint(n.literal, 10, 32)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read array size '%s': %v", n.literal, err)
+			}
+
+			tAux = &Type{kind: KindArray, elem: tt, raw: fmt.Sprintf("%s[%d]", tt.raw, size), size: int(size), t: reflect.ArrayOf(int(size), tt.t)}
+			if l.nextToken().typ != rbracketToken {
+				return nil, expectedToken(rbracketToken)
+			}
+		} else {
+			return nil, fmt.Errorf("unexpected token %s", n.typ.String())
+		}
+
+		tt = tAux
+	}
+	return tt, nil
+}
+
+func decodeSimpleType(str string) (*Type, error) {
+	match := typeRegexp.FindStringSubmatch(str)
+	if len(match) == 0 {
+		return nil, fmt.Errorf("type format is incorrect. Expected 'type''bytes' but found '%s'", str)
+	}
+	match = match[1:]
+
+	var err error
+	t := match[0]
+
+	bytes := 0
+	ok := false
+
+	if bytesStr := match[1]; bytesStr != "" {
+		bytes, err = strconv.Atoi(bytesStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse bytes '%s': %v", bytesStr, err)
+		}
+		ok = true
+	}
+
+	// Only int and uint need bytes for sure, 'bytes' may
+	// have or not, the rest dont have bytes
+	if t == "int" || t == "uint" {
+		if !ok {
+			return nil, fmt.Errorf("int and uint expect bytes")
+		}
+	} else if t != "bytes" && ok {
+		return nil, fmt.Errorf("type %s does not expect bytes", t)
+	}
+
+	switch t {
+	case "uint":
+		var k reflect.Type
+		switch bytes {
+		case 8:
+			k = uint8T
+		case 16:
+			k = uint16T
+		case 32:
+			k = uint32T
+		case 64:
+			k = uint64T
+		default:
+			if bytes%8 != 0 {
+				panic(fmt.Errorf("number of bytes has to be M mod 8"))
+			}
+			k = bigIntT
+		}
+		return &Type{kind: KindUInt, size: int(bytes), t: k, raw: fmt.Sprintf("uint%d", bytes)}, nil
+
+	case "int":
+		var k reflect.Type
+		switch bytes {
+		case 8:
+			k = int8T
+		case 16:
+			k = int16T
+		case 32:
+			k = int32T
+		case 64:
+			k = int64T
+		default:
+			if bytes%8 != 0 {
+				panic(fmt.Errorf("number of bytes has to be M mod 8"))
+			}
+			k = bigIntT
+		}
+		return &Type{kind: KindInt, size: int(bytes), t: k, raw: fmt.Sprintf("int%d", bytes)}, nil
+
+	case "byte":
+		bytes = 1
+		fallthrough
+
+	case "bytes":
+		if bytes == 0 {
+			return &Type{kind: KindBytes, t: dynamicBytesT, raw: "bytes"}, nil
+		}
+		return &Type{kind: KindFixedBytes, size: int(bytes), raw: fmt.Sprintf("bytes%d", bytes), t: reflect.ArrayOf(int(bytes), reflect.TypeOf(byte(0)))}, nil
+
+	case "string":
+		return &Type{kind: KindString, t: stringT, raw: "string"}, nil
+
+	case "bool":
+		return &Type{kind: KindBool, t: boolT, raw: "bool"}, nil
+
+	case "address":
+		return &Type{kind: KindAddress, t: addressT, raw: "address"}, nil
+
+	case "function":
+		return &Type{kind: KindFunction, size: 24, t: functionT, raw: "function"}, nil
+
+	default:
+		return nil, fmt.Errorf("unknown type '%s'", t)
+	}
+}
+
+type tokenType int
+
+const (
+	eofToken tokenType = iota
+	strToken
+	numberToken
+	tupleToken
+	lparenToken
+	rparenToken
+	lbracketToken
+	rbracketToken
+	commaToken
+	invalidToken
+)
+
+func (t tokenType) String() string {
+	names := [...]string{
+		"eof",
+		"string",
+		"number",
+		"tuple",
+		"(",
+		")",
+		"[",
+		"]",
+		",",
+		"<invalid>",
+	}
+	return names[t]
+}
+
+type token struct {
+	typ     tokenType
+	literal string
+}
+
+type lexer struct {
+	input        string
+	position     int
+	readPosition int
+	ch           byte
+}
+
+func newLexer(input string) *lexer {
+	l := &lexer{input: input}
+	l.readChar()
+	return l
+}
+
+func (l *lexer) readChar() {
+	if l.readPosition >= len(l.input) {
+		l.ch = 0
+	} else {
+		l.ch = l.input[l.readPosition]
+	}
+
+	l.position = l.readPosition
+	l.readPosition++
+}
+
+func (l *lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+	return l.input[l.readPosition]
+}
+
+func (l *lexer) nextToken() token {
+	var tok token
+
+	// skip whitespace
+	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+		l.readChar()
+	}
+
+	switch l.ch {
+	case ',':
+		tok.typ = commaToken
+	case '(':
+		tok.typ = lparenToken
+	case ')':
+		tok.typ = rparenToken
+	case '[':
+		tok.typ = lbracketToken
+	case ']':
+		tok.typ = rbracketToken
+	case 0:
+		tok.typ = eofToken
+	default:
+		if isLetter(l.ch) {
+			tok.literal = l.readIdentifier()
+			if tok.literal == "tuple" {
+				tok.typ = tupleToken
+			} else {
+				tok.typ = strToken
+			}
+
+			return tok
+		} else if isDigit(l.ch) {
+			return token{numberToken, l.readNumber()}
+		} else {
+			tok.typ = invalidToken
+		}
+	}
+
+	l.readChar()
+	return tok
+}
+
+func (l *lexer) readIdentifier() string {
+	pos := l.position
+	for isLetter(l.ch) || isDigit(l.ch) {
+		l.readChar()
+	}
+
+	return l.input[pos:l.position]
+}
+
+func (l *lexer) readNumber() string {
+	position := l.position
+	for isDigit(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position]
+}
+
+func isDigit(ch byte) bool {
+	return '0' <= ch && ch <= '9'
+}
+
+func isLetter(ch byte) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
 }

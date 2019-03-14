@@ -155,28 +155,28 @@ func randomNumberBits() int {
 	return randomInt(1, 31) * 8
 }
 
-func randomType() *Argument {
+func randomType() string {
 	return pickRandomType(1)
 }
 
-func pickRandomType(d int) *Argument {
+func pickRandomType(d int) string {
 PICK:
 	t := randomTypes[rand.Intn(len(randomTypes))]
 
 	basicTypes := "bool,address,string,bytes,function"
 	if strings.Contains(basicTypes, t) {
-		return &Argument{Type: t}
+		return t
 	}
 
 	switch t {
 	case "int":
-		return &Argument{Type: fmt.Sprintf("int%d", randomNumberBits())}
+		return fmt.Sprintf("int%d", randomNumberBits())
 
 	case "uint":
-		return &Argument{Type: fmt.Sprintf("uint%d", randomNumberBits())}
+		return fmt.Sprintf("uint%d", randomNumberBits())
 
 	case "fixedBytes":
-		return &Argument{Type: fmt.Sprintf("bytes%d", randomInt(1, 32))}
+		return fmt.Sprintf("bytes%d", randomInt(1, 32))
 	}
 
 	if d > 3 {
@@ -187,21 +187,20 @@ PICK:
 	r := pickRandomType(d + 1)
 	switch t {
 	case "slice":
-		return &Argument{Type: fmt.Sprintf("%s[]", r.Type), Components: r.Components}
+		return fmt.Sprintf("%s[]", r)
 
 	case "array":
 		s := randomInt(1, 3)
-		return &Argument{Type: fmt.Sprintf("%s[%d]", r.Type, s), Components: r.Components}
+		return fmt.Sprintf("%s[%d]", r, s)
 
 	case "tuple":
 		size := randomInt(1, 5)
-		elems := make([]*Argument, size)
+		elems := []string{}
 		for i := 0; i < size; i++ {
 			elem := pickRandomType(d + 1)
-			elem.Name = fmt.Sprintf("arg%d", i)
-			elems[i] = elem
+			elems = append(elems, fmt.Sprintf("arg%d %s", i, elem))
 		}
-		return &Argument{Type: "tuple", Components: elems}
+		return fmt.Sprintf("tuple(%s)", strings.Join(elems, ","))
 
 	default:
 		panic(fmt.Errorf("type not implemented: %s", t))

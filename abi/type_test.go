@@ -7,27 +7,63 @@ import (
 
 func TestType(t *testing.T) {
 	cases := []struct {
-		s *Argument
-		t *Type
+		s   string
+		a   *Argument
+		t   *Type
+		err bool
 	}{
 		{
-			s: simpleType("bool"),
+			s: "bool",
+			a: simpleType("bool"),
 			t: &Type{kind: KindBool, t: boolT, raw: "bool"},
 		},
 		{
-			s: simpleType("uint32"),
+			s: "uint32",
+			a: simpleType("uint32"),
 			t: &Type{kind: KindUInt, size: 32, t: uint32T, raw: "uint32"},
 		},
 		{
-			s: simpleType("int32"),
+			s: "int32",
+			a: simpleType("int32"),
 			t: &Type{kind: KindInt, size: 32, t: int32T, raw: "int32"},
 		},
 		{
-			s: simpleType("int32[]"),
+			s: "int32[]",
+			a: simpleType("int32[]"),
 			t: &Type{kind: KindSlice, t: reflect.SliceOf(int32T), raw: "int32[]", elem: &Type{kind: KindInt, size: 32, t: int32T, raw: "int32"}},
 		},
 		{
-			s: simpleType("string[2]"),
+			s: "bytes[2]",
+			a: simpleType("bytes[2]"),
+			t: &Type{
+				kind: KindArray,
+				t:    reflect.ArrayOf(2, dynamicBytesT),
+				raw:  "bytes[2]",
+				size: 2,
+				elem: &Type{
+					kind: KindBytes,
+					t:    dynamicBytesT,
+					raw:  "bytes",
+				},
+			},
+		},
+		{
+			s: "string[]",
+			a: simpleType("string[]"),
+			t: &Type{
+				kind: KindSlice,
+				t:    reflect.SliceOf(stringT),
+				raw:  "string[]",
+				elem: &Type{
+					kind: KindString,
+					t:    stringT,
+					raw:  "string",
+				},
+			},
+		},
+		{
+			s: "string[2]",
+			a: simpleType("string[2]"),
 			t: &Type{
 				kind: KindArray,
 				size: 2,
@@ -41,7 +77,8 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: simpleType("string[2][]"),
+			s: "string[2][]",
+			a: simpleType("string[2][]"),
 			t: &Type{
 				kind: KindSlice,
 				t:    reflect.SliceOf(reflect.ArrayOf(2, stringT)),
@@ -60,11 +97,12 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: &Argument{
+			s: "tuple(arg0 int64)",
+			a: &Argument{
 				Type: "tuple",
 				Components: []*Argument{
 					{
-						Name: "a",
+						Name: "arg0",
 						Type: "int64",
 					},
 				},
@@ -75,7 +113,7 @@ func TestType(t *testing.T) {
 				t:    tupleT,
 				tuple: []*TupleElem{
 					{
-						Name: "a",
+						Name: "arg0",
 						Elem: &Type{
 							kind: KindInt,
 							size: 64,
@@ -87,11 +125,12 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: &Argument{
+			s: "tuple(arg_0 int64)[2]",
+			a: &Argument{
 				Type: "tuple[2]",
 				Components: []*Argument{
 					{
-						Name: "a",
+						Name: "arg_0",
 						Type: "int64",
 					},
 				},
@@ -107,7 +146,7 @@ func TestType(t *testing.T) {
 					t:    tupleT,
 					tuple: []*TupleElem{
 						{
-							Name: "a",
+							Name: "arg_0",
 							Elem: &Type{
 								kind: KindInt,
 								size: 64,
@@ -120,7 +159,8 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: &Argument{
+			s: "tuple(a int64)[]",
+			a: &Argument{
 				Type: "tuple[]",
 				Components: []*Argument{
 					{
@@ -151,17 +191,103 @@ func TestType(t *testing.T) {
 				},
 			},
 		},
+		{
+			s: "tuple(arg0 int32, b_2 tuple(c int32))",
+			a: &Argument{
+				Type: "tuple",
+				Components: []*Argument{
+					{
+						Name: "arg0",
+						Type: "int32",
+					},
+					{
+						Name: "b_2",
+						Type: "tuple",
+						Components: []*Argument{
+							{
+								Name: "c",
+								Type: "int32",
+							},
+						},
+					},
+				},
+			},
+			t: &Type{
+				kind: KindTuple,
+				t:    tupleT,
+				raw:  "(int32,(int32))",
+				tuple: []*TupleElem{
+					{
+						Name: "arg0",
+						Elem: &Type{
+							kind: KindInt,
+							size: 32,
+							t:    int32T,
+							raw:  "int32",
+						},
+					},
+					{
+						Name: "b_2",
+						Elem: &Type{
+							kind: KindTuple,
+							t:    tupleT,
+							raw:  "(int32)",
+							tuple: []*TupleElem{
+								{
+									Name: "c",
+									Elem: &Type{
+										kind: KindInt,
+										size: 32,
+										t:    int32T,
+										raw:  "int32",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			s:   "int[[",
+			err: true,
+		},
+		{
+			s:   "int",
+			err: true,
+		},
+		{
+			s:   "tuple[](a int32)",
+			err: true,
+		},
+		{
+			s:   "int32[a]",
+			err: true,
+		},
 	}
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			e, err := NewType(c.s)
-			if err != nil {
+			e0, err := NewType(c.s)
+			if err != nil && !c.err {
 				t.Fatal(err)
 			}
+			if err == nil && c.err {
+				t.Fatal("it should have failed")
+			}
 
-			if !reflect.DeepEqual(c.t, e) {
-				t.Fatal("bad new type")
+			if !c.err {
+				e1, err := NewTypeFromArgument(c.a)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if !reflect.DeepEqual(c.t, e0) {
+					t.Fatal("bad new type")
+				}
+				if !reflect.DeepEqual(c.t, e1) {
+					t.Fatal("bad")
+				}
 			}
 		})
 	}
@@ -169,7 +295,7 @@ func TestType(t *testing.T) {
 
 func TestSize(t *testing.T) {
 	cases := []struct {
-		Input interface{}
+		Input string
 		Size  int
 	}{
 		{
@@ -191,29 +317,14 @@ func TestSize(t *testing.T) {
 			"string[]", 32,
 		},
 		{
-			&Argument{
-				Type: "tuple[1]",
-				Components: []*Argument{
-					{Name: "a", Type: "uint8"},
-					{Name: "b", Type: "uint32"},
-				},
-			},
+			"tuple(a uint8, b uint32)[1]",
 			64,
 		},
 	}
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			var arg *Argument
-			if typeStr, ok := c.Input.(string); ok {
-				arg = simpleType(typeStr)
-			} else if aux, ok := c.Input.(*Argument); ok {
-				arg = aux
-			} else {
-				t.Fatal("unknown input")
-			}
-
-			tt, err := NewType(arg)
+			tt, err := NewType(c.Input)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -221,61 +332,6 @@ func TestSize(t *testing.T) {
 			size := getTypeSize(tt)
 			if size != c.Size {
 				t.Fatalf("expected size %d but found %d", c.Size, size)
-			}
-		})
-	}
-}
-
-func TestBrackets(t *testing.T) {
-	cases := []struct {
-		Input    string
-		Expected []int
-		Error    bool
-	}{
-		{
-			Input:    "[][][2]",
-			Expected: []int{-1, -1, 2},
-		},
-		{
-			Input: "[[[",
-			Error: true,
-		},
-		{
-			Input: "]]]",
-			Error: true,
-		},
-		{
-			Input: "[[[]]]",
-			Error: true,
-		},
-		{
-			Input:    "[][]",
-			Expected: []int{-1, -1},
-		},
-		{
-			Input:    "[1]",
-			Expected: []int{1},
-		},
-		{
-			Input:    "[]",
-			Expected: []int{-1},
-		},
-	}
-
-	for _, c := range cases {
-		t.Run("", func(t *testing.T) {
-			r, err := parseBrackets(c.Input)
-			if err != nil && !c.Error {
-				t.Fatalf("Failed not expected: %v", err)
-			}
-			if err == nil && c.Error {
-				t.Fatal("Expected to failed")
-			}
-
-			if !c.Error {
-				if !reflect.DeepEqual(r, c.Expected) {
-					t.Fatal("bad")
-				}
 			}
 		})
 	}
