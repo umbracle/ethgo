@@ -1,7 +1,6 @@
 package abi
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -162,10 +161,6 @@ func TestType(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(c.t, e) {
-
-				fmt.Println(c.t)
-				fmt.Println(e)
-
 				t.Fatal("bad new type")
 			}
 		})

@@ -124,6 +124,7 @@ func (a *arguments) Type() *Type {
 	inputs := []*TupleElem{}
 	for _, i := range *a {
 		inputs = append(inputs, &TupleElem{
+			Name: i.Name,
 			Elem: i.Type,
 		})
 	}

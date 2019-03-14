@@ -26,7 +26,7 @@ var (
 	stringT       = reflect.TypeOf("")
 	dynamicBytesT = reflect.SliceOf(reflect.TypeOf(byte(0)))
 	functionT     = reflect.ArrayOf(24, reflect.TypeOf(byte(0)))
-	tupleT        = reflect.TypeOf([]interface{}{})
+	tupleT        = reflect.TypeOf(map[string]interface{}{})
 	bigInt        = reflect.TypeOf(new(big.Int))
 )
 
