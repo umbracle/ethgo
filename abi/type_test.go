@@ -264,6 +264,14 @@ func TestType(t *testing.T) {
 			s:   "int32[a]",
 			err: true,
 		},
+		{
+			s:   "tuple(a int32",
+			err: true,
+		},
+		{
+			s:   "tuple(a int32,",
+			err: true,
+		},
 	}
 
 	for _, c := range cases {

@@ -180,6 +180,10 @@ func expectedToken(t tokenType) error {
 	return fmt.Errorf("expected token %s", t.String())
 }
 
+func notExpectedToken(t tokenType) error {
+	return fmt.Errorf("token '%s' not expected", t.String())
+}
+
 func readType(l *lexer) (*Type, error) {
 	var tt *Type
 
@@ -211,8 +215,10 @@ func readType(l *lexer) (*Type, error) {
 			next = l.nextToken()
 			if next.typ == commaToken {
 				continue
-			} else {
+			} else if next.typ == rparenToken {
 				break
+			} else {
+				return nil, notExpectedToken(next.typ)
 			}
 		}
 
@@ -260,7 +266,7 @@ func readType(l *lexer) (*Type, error) {
 				return nil, expectedToken(rbracketToken)
 			}
 		} else {
-			return nil, fmt.Errorf("unexpected token %s", n.typ.String())
+			return nil, notExpectedToken(n.typ)
 		}
 
 		tt = tAux
