@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -141,7 +142,7 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 
 	orig := data
 	origLen := len(orig)
-	for _, arg := range t.tuple {
+	for indx, arg := range t.tuple {
 		entry := data
 		if arg.Elem.isDynamicType() {
 			offset, err := readOffset(data, origLen)
@@ -161,8 +162,13 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 		} else {
 			data = data[32:]
 		}
-		if _, ok := res[arg.Name]; !ok {
-			res[arg.Name] = val
+
+		name := arg.Name
+		if name == "" {
+			name = strconv.Itoa(indx)
+		}
+		if _, ok := res[name]; !ok {
+			res[name] = val
 		} else {
 			return nil, nil, fmt.Errorf("tuple with repeated values")
 		}

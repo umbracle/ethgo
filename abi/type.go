@@ -106,6 +106,26 @@ type Type struct {
 	t     reflect.Type
 }
 
+// Size returns the size of the type
+func (t *Type) Size() int {
+	return t.size
+}
+
+// TupleElems returns the elems of the tuple
+func (t *Type) TupleElems() []*TupleElem {
+	return t.tuple
+}
+
+// GoType returns the go type
+func (t *Type) GoType() reflect.Type {
+	return t.t
+}
+
+// Kind returns the kind of the type
+func (t *Type) Kind() Kind {
+	return t.kind
+}
+
 func (t *Type) isVariableInput() bool {
 	return t.kind == KindSlice || t.kind == KindBytes || t.kind == KindString
 }
@@ -197,18 +217,23 @@ func readType(l *lexer) (*Type, error) {
 		elems := []*TupleElem{}
 		for {
 
-			// read name
-			name := l.nextToken()
-			if name.typ != strToken {
-				return nil, expectedToken(strToken)
-			}
-
+			name := ""
 			elem, err := readType(l)
 			if err != nil {
-				return nil, err
+				// Failed to decode type because its a name
+				if l.current.typ != strToken {
+					return nil, expectedToken(strToken)
+				}
+
+				name = l.current.literal
+				elem, err = readType(l)
+				if err != nil {
+					return nil, err
+				}
 			}
+
 			elems = append(elems, &TupleElem{
-				Name: name.literal,
+				Name: name,
 				Elem: elem,
 			})
 
@@ -409,6 +434,7 @@ type token struct {
 
 type lexer struct {
 	input        string
+	current      token
 	position     int
 	readPosition int
 	ch           byte
@@ -439,6 +465,12 @@ func (l *lexer) peekChar() byte {
 }
 
 func (l *lexer) nextToken() token {
+	tok := l.nextTokenImpl()
+	l.current = tok
+	return tok
+}
+
+func (l *lexer) nextTokenImpl() token {
 	var tok token
 
 	// skip whitespace

@@ -314,6 +314,67 @@ func TestEncoding(t *testing.T) {
 	}
 }
 
+func TestEncodingArguments(t *testing.T) {
+	cases := []struct {
+		Arg   *Argument
+		Input interface{}
+	}{
+		{
+			&Argument{
+				Type: "tuple",
+				Components: []*Argument{
+					&Argument{
+						Name: "",
+						Type: "int32",
+					},
+					&Argument{
+						Name: "",
+						Type: "int32",
+					},
+				},
+			},
+			map[string]interface{}{
+				"0": int32(1),
+				"1": int32(2),
+			},
+		},
+		{
+			&Argument{
+				Type: "tuple",
+				Components: []*Argument{
+					&Argument{
+						Name: "a",
+						Type: "int32",
+					},
+					&Argument{
+						Name: "",
+						Type: "int32",
+					},
+				},
+			},
+			map[string]interface{}{
+				"a": int32(1),
+				"1": int32(2),
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run("", func(t *testing.T) {
+			t.Parallel()
+
+			tt, err := NewTypeFromArgument(c.Arg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := testEncodeDecode(tt, c.Input); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func testEncodeDecode(tt *Type, input interface{}) error {
 	res1, err := Encode(input, tt)
 	if err != nil {
