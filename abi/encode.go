@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -128,7 +129,11 @@ func encodeTuple(v reflect.Value, t *Type) ([]byte, error) {
 		if isList {
 			aux = v.Index(i)
 		} else {
-			aux = v.MapIndex(reflect.ValueOf(elem.Name))
+			name := elem.Name
+			if name == "" {
+				name = strconv.Itoa(i)
+			}
+			aux = v.MapIndex(reflect.ValueOf(name))
 		}
 		if aux.Kind() == reflect.Invalid {
 			return nil, fmt.Errorf("cannot get key %s", elem.Name)
