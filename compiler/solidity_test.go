@@ -1,13 +1,38 @@
 package compiler
 
 import (
+	"bytes"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 )
 
+var (
+	solcDir  = "/tmp/go-web3-solc"
+	solcPath = solcDir + "/solidity"
+)
+
+func init() {
+	_, err := os.Stat(solcDir)
+	if err == nil {
+		// already exists
+		return
+	}
+	if !os.IsNotExist(err) {
+		panic(err)
+	}
+	// solc folder does not exists
+	if err := DownloadSolidity("0.5.5", solcDir, false); err != nil {
+		panic(err)
+	}
+}
+
 func TestSolidityCompiler(t *testing.T) {
-	solc := NewSolidityCompiler("solc")
+	solc := NewSolidityCompiler(solcPath)
 
 	cases := []struct {
 		code      string
@@ -57,5 +82,62 @@ func TestSolidityCompiler(t *testing.T) {
 				t.Fatal("bad")
 			}
 		})
+	}
+}
+
+func existsSolidity(t *testing.T, path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false
+		} else {
+			t.Fatal(err)
+		}
+	}
+
+	cmd := exec.Command(path, "--version")
+	var stderr, stdout bytes.Buffer
+	cmd.Stderr = &stderr
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("solidity version failed: %s", string(stderr.Bytes()))
+	}
+	if len(stdout.Bytes()) == 0 {
+		t.Fatal("empty output")
+	}
+	return true
+}
+
+func TestDownloadSolidityCompiler(t *testing.T) {
+	dst1, err := ioutil.TempDir("/tmp", "go-web3-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dst1)
+
+	if err := DownloadSolidity("0.5.5", dst1, true); err != nil {
+		t.Fatal(err)
+	}
+	if existsSolidity(t, filepath.Join(dst1, "solidity")) {
+		t.Fatal("it should not exist")
+	}
+	if !existsSolidity(t, filepath.Join(dst1, "solidity-0.5.5")) {
+		t.Fatal("it should exist")
+	}
+
+	dst2, err := ioutil.TempDir("/tmp", "go-web3-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dst2)
+
+	if err := DownloadSolidity("0.5.5", dst2, false); err != nil {
+		t.Fatal(err)
+	}
+	if !existsSolidity(t, filepath.Join(dst2, "solidity")) {
+		t.Fatal("it should exist")
+	}
+	if existsSolidity(t, filepath.Join(dst2, "solidity-0.5.5")) {
+		t.Fatal("it should not exist")
 	}
 }
