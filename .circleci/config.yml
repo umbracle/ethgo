@@ -10,10 +10,6 @@ jobs:
             - go-mod-v1-{{ checksum "go.sum" }}
       
       - checkout
-      - run:
-          command: |
-            sudo ./scripts/circleci.sh install_solidity
-      
       - run: go test -v ./...
 
       - save_cache:
