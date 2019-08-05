@@ -1,7 +1,8 @@
 package abi
 
 import (
-	"context"
+	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -12,10 +13,23 @@ import (
 	"testing"
 	"time"
 
-	ethereum "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/umbracle/minimal/types"
 )
+
+func encodeHex(b []byte) string {
+	return "0x" + hex.EncodeToString(b)
+}
+
+func decodeHex(str string) []byte {
+	if strings.HasPrefix(str, "0x") {
+		str = str[2:]
+	}
+	buf, err := hex.DecodeString(str)
+	if err != nil {
+		panic(fmt.Errorf("could not decode hex: %v", err))
+	}
+	return buf
+}
 
 func TestEncoding(t *testing.T) {
 	cases := []struct {
@@ -44,7 +58,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			"bytes",
-			hexutil.MustDecode("0x12345678911121314151617181920211"),
+			decodeHex("0x12345678911121314151617181920211"),
 		},
 		{
 			"string",
@@ -56,7 +70,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			"address[]",
-			[]common.Address{{1}, {2}},
+			[]types.Address{{1}, {2}},
 		},
 		{
 			"bytes10[]",
@@ -68,8 +82,8 @@ func TestEncoding(t *testing.T) {
 		{
 			"bytes[]",
 			[][]byte{
-				hexutil.MustDecode("0x11"),
-				hexutil.MustDecode("0x22"),
+				decodeHex("0x11"),
+				decodeHex("0x22"),
 			},
 		},
 		{
@@ -437,12 +451,19 @@ func TestRandomEncoding(t *testing.T) {
 	}
 }
 
+type hexBuf []byte
+
+func (h *hexBuf) UnmarshalJSON(b []byte) error {
+	*h = decodeHex(strings.Trim(string(b), "\""))
+	return nil
+}
+
 func testTypeWithContract(t *Type) error {
 	g := &generateContractImpl{}
 	contract := g.run(t)
 
-	client := newClient()
-	accounts, err := client.listAccounts()
+	client := &ethClient{}
+	accounts, err := client.accounts()
 	if err != nil {
 		return nil
 	}
@@ -470,21 +491,19 @@ func testTypeWithContract(t *Type) error {
 		return err
 	}
 
-	msg := ethereum.CallMsg{
-		From: etherbase,
-		To:   &receipt.ContractAddress,
-		Data: append(method.ID(), data...),
+	msg := map[string]string{
+		"from": etherbase,
+		"to":   receipt["contractAddress"].(string),
+		"data": encodeHex(append(method.ID(), data...)),
 	}
-
-	resp, err := client.CallContract(context.Background(), msg, nil)
-	if err != nil {
+	var resp hexBuf
+	if err := client.call("eth_call", &resp, &msg, "latest"); err != nil {
 		return fmt.Errorf("failed to call contract: %v", err)
 	}
 	if len(resp) == 0 {
 		return fmt.Errorf("empty")
 	}
-
-	if !reflect.DeepEqual(resp, data) {
+	if !bytes.Equal(resp, data) {
 		return fmt.Errorf("bad")
 	}
 	return nil

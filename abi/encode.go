@@ -6,9 +6,11 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+)
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
+var (
+	zero = big.NewInt(0)
+	one  = big.NewInt(1)
 )
 
 // Encode encodes a value
@@ -165,15 +167,14 @@ func encodeFixedBytes(v reflect.Value) ([]byte, error) {
 	if v.Kind() == reflect.Array {
 		v = convertArrayToBytes(v)
 	}
-	res := common.RightPadBytes(v.Bytes(), 32)
-	return res, nil
+	return rightPad(v.Bytes(), 32), nil
 }
 
 func encodeAddress(v reflect.Value) ([]byte, error) {
 	if v.Kind() == reflect.Array {
 		v = convertArrayToBytes(v)
 	}
-	return common.LeftPadBytes(v.Bytes(), 32), nil
+	return leftPad(v.Bytes(), 32), nil
 }
 
 func encodeBytes(v reflect.Value) ([]byte, error) {
@@ -190,12 +191,12 @@ func encodeString(v reflect.Value) ([]byte, error) {
 	return packBytesSlice([]byte(v.String()), v.Len())
 }
 
-func packBytesSlice(bytes []byte, l int) ([]byte, error) {
+func packBytesSlice(buf []byte, l int) ([]byte, error) {
 	len, err := encodeNum(reflect.ValueOf(l))
 	if err != nil {
 		return nil, err
 	}
-	return append(len, common.RightPadBytes(bytes, (l+31)/32*32)...), nil
+	return append(len, rightPad(buf, (l+31)/32*32)...), nil
 }
 
 func packNum(offset int) []byte {
@@ -206,16 +207,16 @@ func packNum(offset int) []byte {
 func encodeNum(v reflect.Value) ([]byte, error) {
 	switch v.Kind() {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return U256(new(big.Int).SetUint64(v.Uint())), nil
+		return toU256(new(big.Int).SetUint64(v.Uint())), nil
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return U256(big.NewInt(v.Int())), nil
+		return toU256(big.NewInt(v.Int())), nil
 
 	case reflect.Ptr:
 		if v.Type() != bigIntT {
 			return nil, encodeErr(v.Elem(), "number")
 		}
-		return U256(v.Interface().(*big.Int)), nil
+		return toU256(v.Interface().(*big.Int)), nil
 
 	default:
 		return nil, encodeErr(v, "number")
@@ -227,9 +228,9 @@ func encodeBool(v reflect.Value) ([]byte, error) {
 		return nil, encodeErr(v, "bool")
 	}
 	if v.Bool() {
-		return math.PaddedBigBytes(common.Big1, 32), nil
+		return leftPad(one.Bytes(), 32), nil
 	}
-	return math.PaddedBigBytes(common.Big0, 32), nil
+	return leftPad(zero.Bytes(), 32), nil
 }
 
 func encodeErr(v reflect.Value, t string) error {
@@ -261,4 +262,46 @@ func mapFromStruct(v reflect.Value) (reflect.Value, error) {
 		}
 	}
 	return reflect.ValueOf(res), nil
+}
+
+var (
+	tt256   = new(big.Int).Lsh(big.NewInt(1), 256)   // 2 ** 256
+	tt256m1 = new(big.Int).Sub(tt256, big.NewInt(1)) // 2 ** 256 - 1
+)
+
+// U256 converts a big Int into a 256bit EVM number.
+func toU256(n *big.Int) []byte {
+	b := new(big.Int)
+	b = b.Set(n)
+
+	if b.Sign() < 0 || b.BitLen() > 256 {
+		b.And(b, tt256m1)
+	}
+
+	return leftPad(b.Bytes(), 32)
+}
+
+func padBytes(b []byte, size int, left bool) []byte {
+	l := len(b)
+	if l == size {
+		return b
+	}
+	if l > size {
+		return b[l-size:]
+	}
+	tmp := make([]byte, size)
+	if left {
+		copy(tmp[size-l:], b)
+	} else {
+		copy(tmp, b)
+	}
+	return tmp
+}
+
+func leftPad(b []byte, size int) []byte {
+	return padBytes(b, size, true)
+}
+
+func rightPad(b []byte, size int) []byte {
+	return padBytes(b, size, false)
 }

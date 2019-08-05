@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/umbracle/minimal/types"
 )
 
 // batch of predefined reflect types
@@ -22,7 +22,7 @@ var (
 	int16T        = reflect.TypeOf(int16(0))
 	int32T        = reflect.TypeOf(int32(0))
 	int64T        = reflect.TypeOf(int64(0))
-	addressT      = reflect.TypeOf(common.Address{})
+	addressT      = reflect.TypeOf(types.Address{})
 	stringT       = reflect.TypeOf("")
 	dynamicBytesT = reflect.SliceOf(reflect.TypeOf(byte(0)))
 	functionT     = reflect.ArrayOf(24, reflect.TypeOf(byte(0)))

@@ -1,22 +1,18 @@
 package abi
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"math/rand"
+	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/umbracle/go-web3/compiler"
-
-	ethereum "github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
-	ethrpc "github.com/ethereum/go-ethereum/rpc"
+	"github.com/umbracle/minimal/types"
 )
 
 const (
@@ -24,88 +20,81 @@ const (
 	defaultGasLimit = "0x500000"
 )
 
+type jsonRPCRequest struct {
+	ID     int             `json:"id"`
+	Method string          `json:"method"`
+	Params json.RawMessage `json:"params"`
+}
+
+type jsonRPCResponse struct {
+	ID     int                 `json:"id"`
+	Result json.RawMessage     `json:"result"`
+	Error  *jsonRPCErrorObject `json:"error,omitempty"`
+}
+
+type jsonRPCErrorObject struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
 type ethClient struct {
-	*ethclient.Client
-	rpc *ethrpc.Client
-
-	gasPrice string
-	gasLimit string
+	url string
 }
 
-func newClient() *ethClient {
-	return newClientWithEndpoint("http://localhost:8545")
-}
+var errNotFound = fmt.Errorf("not found")
 
-func newClientWithEndpoint(endpoint string) *ethClient {
-	rpc, err := ethrpc.Dial(endpoint)
-	if err != nil {
-		panic(err)
+func (e *ethClient) call(method string, out interface{}, params ...interface{}) error {
+	if e.url == "" {
+		e.url = "http://127.0.0.1:8545"
 	}
 
-	return &ethClient{ethclient.NewClient(rpc), rpc, defaultGasPrice, defaultGasLimit}
-}
-
-func (c *ethClient) listAccounts() ([]common.Address, error) {
-	var accounts []common.Address
-	err := c.rpc.Call(&accounts, "eth_accounts")
-	return accounts, err
-}
-
-func (c *ethClient) sendTx(tx *transaction) (*transactionResult, error) {
-	tx.GasPrice = defaultGasPrice
-	tx.Gas = defaultGasLimit
-
-	var hash common.Hash
-	if err := c.rpc.Call(&hash, "eth_sendTransaction", tx); err != nil {
-		return nil, err
+	var err error
+	jsonReq := &jsonRPCRequest{
+		Method: method,
 	}
-
-	result := &transactionResult{
-		Hash:   hash,
-		client: c,
-	}
-
-	return result, nil
-}
-
-func (c *ethClient) SendTxAndWait(tx *transaction) (*types.Receipt, error) {
-	result, err := c.sendTx(tx)
-	if err != nil {
-		return nil, err
-	}
-	return result.Wait()
-}
-
-type transaction struct {
-	From     common.Address  `json:"from"`
-	To       *common.Address `json:"to"`
-	Data     string          `json:"data"`
-	Gas      string          `json:"gas"`
-	GasPrice string          `json:"gasPrice"`
-}
-
-type transactionResult struct {
-	Hash   common.Hash
-	client *ethClient
-}
-
-func (t *transactionResult) Wait() (*types.Receipt, error) {
-	for {
-		receipt, err := t.client.TransactionReceipt(context.Background(), t.Hash)
+	if len(params) > 0 {
+		jsonReq.Params, err = json.Marshal(params)
 		if err != nil {
-			if err != ethereum.NotFound {
-				return nil, err
-			}
+			return err
 		}
-		if receipt != nil {
-			return receipt, nil
-		}
-
-		time.Sleep(500 * time.Millisecond)
 	}
+	raw, err := json.Marshal(jsonReq)
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(e.url, "application/json", bytes.NewBuffer(raw))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var jsonResp jsonRPCResponse
+	d := json.NewDecoder(resp.Body)
+	if err := d.Decode(&jsonResp); err != nil {
+		return err
+	}
+
+	if jsonResp.Error != nil {
+		return fmt.Errorf(jsonResp.Error.Message)
+	}
+	if bytes.Equal(jsonResp.Result, []byte("null")) {
+		return errNotFound
+	}
+	if err := json.Unmarshal(jsonResp.Result, out); err != nil {
+		return err
+	}
+	return nil
 }
 
-func compileAndDeployContract(source string, deployer common.Address, client *ethClient) (*ABI, *types.Receipt, error) {
+func (e *ethClient) accounts() ([]string, error) {
+	var resp []string
+	err := e.call("eth_accounts", &resp)
+	return resp, err
+}
+
+func compileAndDeployContract(source string, deployer string, client *ethClient) (*ABI, map[string]interface{}, error) {
 	data, err := compiler.NewSolidityCompiler("solc").Compile(source)
 	if err != nil {
 		return nil, nil, err
@@ -122,16 +111,37 @@ func compileAndDeployContract(source string, deployer common.Address, client *et
 		return nil, nil, err
 	}
 
-	tx := &transaction{
-		From: deployer,
-		Data: "0x" + string(contract.Bin),
+	txn := map[string]string{
+		"from":     deployer,
+		"data":     "0x" + string(contract.Bin),
+		"gasPrice": defaultGasPrice,
+		"gas":      defaultGasLimit,
 	}
 
-	rr, err := client.SendTxAndWait(tx)
-	if err != nil {
+	var txnHash types.Hash
+	if err := client.call("eth_sendTransaction", &txnHash, txn); err != nil {
 		return nil, nil, err
 	}
-	return abi, rr, nil
+
+	c := 0
+	for {
+		var receipt interface{}
+		err := client.call("eth_getTransactionReceipt", &receipt, txnHash.String())
+		if err != nil {
+			if err != errNotFound {
+				return nil, nil, err
+			}
+		}
+		if receipt != nil {
+			return abi, receipt.(map[string]interface{}), nil
+		}
+
+		if c > 5 {
+			return nil, nil, fmt.Errorf("timeout to get the receipt")
+		}
+		time.Sleep(500 * time.Millisecond)
+		c++
+	}
 }
 
 func randomInt(min, max int) int {
@@ -237,7 +247,7 @@ func generateRandomType(t *Type) interface{} {
 		return false
 
 	case KindAddress:
-		return common.HexToAddress(randString(randomInt(1, 32), hexLetters))
+		return types.StringToAddress(randString(randomInt(1, 32), hexLetters))
 
 	case KindString:
 		return randString(randomInt(1, 100), letters)
