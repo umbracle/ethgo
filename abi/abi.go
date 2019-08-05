@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"io"
 	"strings"
+	"sync"
 
-	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/crypto/sha3"
 )
 
 // ABI represents the ethereum abi format
@@ -101,7 +103,11 @@ func (m *Method) Sig() string {
 
 // ID returns the id of the method
 func (m *Method) ID() []byte {
-	return crypto.Keccak256([]byte(m.Sig()))[:4]
+	k := acquireKeccak()
+	k.Write([]byte(m.Sig()))
+	dst := k.Sum(nil)[:4]
+	releaseKeccak(k)
+	return dst
 }
 
 // Event is a triggered log mechanism
@@ -160,4 +166,19 @@ type Argument struct {
 	Type       string
 	Indexed    bool
 	Components []*Argument
+}
+
+var keccakPool = sync.Pool{
+	New: func() interface{} {
+		return sha3.NewLegacyKeccak256()
+	},
+}
+
+func acquireKeccak() hash.Hash {
+	return keccakPool.Get().(hash.Hash)
+}
+
+func releaseKeccak(k hash.Hash) {
+	k.Reset()
+	keccakPool.Put(k)
 }

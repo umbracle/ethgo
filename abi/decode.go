@@ -7,8 +7,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/umbracle/minimal/types"
 )
 
 // Decode decodes the input with a given type
@@ -57,7 +56,7 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 		val = input[32 : 32+length]
 
 	case KindAddress:
-		val = common.BytesToAddress(data)
+		val = types.BytesToAddress(data)
 
 	case KindFixedBytes:
 		val, err = readFixedBytes(t, data)
@@ -253,14 +252,6 @@ func readLength(data []byte) (int, error) {
 		return 0, fmt.Errorf("length insufficient %v require %v", len(data), length)
 	}
 	return length, nil
-}
-
-// U256 converts a big Int into a 256bit EVM number.
-func U256(n *big.Int) []byte {
-	b := new(big.Int)
-	b = b.Set(n)
-
-	return math.PaddedBigBytes(math.U256(b), 32)
 }
 
 func allZeros(b []byte) bool {
