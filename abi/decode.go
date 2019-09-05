@@ -6,8 +6,6 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
-
-	"github.com/umbracle/minimal/types"
 )
 
 // Decode decodes the input with a given type
@@ -56,7 +54,7 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 		val = input[32 : 32+length]
 
 	case KindAddress:
-		val = types.BytesToAddress(data)
+		val, err = readAddr(data)
 
 	case KindFixedBytes:
 		val, err = readFixedBytes(t, data)
@@ -79,6 +77,15 @@ var (
 		big.NewInt(0).Exp(big.NewInt(2), big.NewInt(255), nil),
 		big.NewInt(-1))
 )
+
+func readAddr(b []byte) ([20]byte, error) {
+	res := [20]byte{}
+	if len(b) != 32 {
+		return res, fmt.Errorf("len is not correct")
+	}
+	copy(res[:], b[12:])
+	return res, nil
+}
 
 func readInteger(t *Type, b []byte) interface{} {
 	switch t.t.Kind() {

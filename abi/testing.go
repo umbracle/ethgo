@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/umbracle/go-web3/compiler"
-	"github.com/umbracle/minimal/types"
 )
 
 const (
@@ -118,7 +117,7 @@ func compileAndDeployContract(source string, deployer string, client *ethClient)
 		"gas":      defaultGasLimit,
 	}
 
-	var txnHash types.Hash
+	var txnHash string
 	if err := client.call("eth_sendTransaction", &txnHash, txn); err != nil {
 		return nil, nil, err
 	}
@@ -126,7 +125,7 @@ func compileAndDeployContract(source string, deployer string, client *ethClient)
 	c := 0
 	for {
 		var receipt interface{}
-		err := client.call("eth_getTransactionReceipt", &receipt, txnHash.String())
+		err := client.call("eth_getTransactionReceipt", &receipt, txnHash)
 		if err != nil {
 			if err != errNotFound {
 				return nil, nil, err
@@ -247,7 +246,9 @@ func generateRandomType(t *Type) interface{} {
 		return false
 
 	case KindAddress:
-		return types.StringToAddress(randString(randomInt(1, 32), hexLetters))
+		buf := [20]byte{}
+		rand.Read(buf[:])
+		return buf
 
 	case KindString:
 		return randString(randomInt(1, 100), letters)

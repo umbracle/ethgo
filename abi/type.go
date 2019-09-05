@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/umbracle/minimal/types"
 )
 
 // batch of predefined reflect types
@@ -22,7 +20,7 @@ var (
 	int16T        = reflect.TypeOf(int16(0))
 	int32T        = reflect.TypeOf(int32(0))
 	int64T        = reflect.TypeOf(int64(0))
-	addressT      = reflect.TypeOf(types.Address{})
+	addressT      = reflect.TypeOf([20]byte{})
 	stringT       = reflect.TypeOf("")
 	dynamicBytesT = reflect.SliceOf(reflect.TypeOf(byte(0)))
 	functionT     = reflect.ArrayOf(24, reflect.TypeOf(byte(0)))
