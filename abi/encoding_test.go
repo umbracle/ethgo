@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/umbracle/minimal/types"
 )
 
 func encodeHex(b []byte) string {
@@ -70,7 +68,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			"address[]",
-			[]types.Address{{1}, {2}},
+			[][20]byte{{1}, {2}},
 		},
 		{
 			"bytes10[]",
