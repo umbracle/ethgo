@@ -2,15 +2,15 @@ package compiler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/hashicorp/go-getter"
 )
 
 // SolcOutput is the output of the compilation.
@@ -69,24 +69,28 @@ func (s *Solidity) Compile(code string) (interface{}, error) {
 // DownloadSolidity downloads the solidity compiler
 func DownloadSolidity(version string, dst string, renameDst bool) error {
 	url := "https://github.com/ethereum/solidity/releases/download/v" + version + "/solc-static-linux"
-	pwd, err := os.Getwd()
-	if err != nil {
-		return err
+
+	// check if the dst is correct
+	exists := false
+	fi, err := os.Stat(dst)
+	if err == nil {
+		switch mode := fi.Mode(); {
+		case mode.IsDir():
+			exists = true
+		case mode.IsRegular():
+			return fmt.Errorf("dst is a file")
+		}
+	} else {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("failed to stat dst '%s': %v", dst, err)
+		}
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	client := &getter.Client{
-		Ctx:     ctx,
-		Src:     url,
-		Dst:     dst,
-		Pwd:     pwd,
-		Mode:    getter.ClientModeAny,
-		Options: []getter.ClientOption{},
-	}
-	if err := client.Get(); err != nil {
-		return err
+	// create the destiny path if does not exists
+	if !exists {
+		if err := os.MkdirAll(dst, 0755); err != nil {
+			return fmt.Errorf("cannot create dst path: %v", err)
+		}
 	}
 
 	// rename binary
@@ -94,13 +98,43 @@ func DownloadSolidity(version string, dst string, renameDst bool) error {
 	if renameDst {
 		name += "-" + version
 	}
-	dstPath := filepath.Join(dst, name)
-	if err := os.Rename(filepath.Join(dst, "solc-static-linux"), dstPath); err != nil {
+
+	// tmp folder to download the binary
+	tmpDir, err := ioutil.TempDir("/tmp", "solc-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	path := filepath.Join(tmpDir, name)
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
 		return err
 	}
 
 	// make binary executable
-	if err := os.Chmod(dstPath, 0755); err != nil {
+	if err := os.Chmod(path, 0755); err != nil {
+		return err
+	}
+
+	// move file to dst
+	if err := os.Rename(path, filepath.Join(dst, name)); err != nil {
 		return err
 	}
 	return nil
