@@ -10,8 +10,11 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/umbracle/go-web3/testutil"
 )
 
 func encodeHex(b []byte) string {
@@ -319,7 +322,7 @@ func TestEncoding(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := testEncodeDecode(tt, c.Input); err != nil {
+			if err := testEncodeDecode(t, tt, c.Input); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -380,14 +383,14 @@ func TestEncodingArguments(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err := testEncodeDecode(tt, c.Input); err != nil {
+			if err := testEncodeDecode(t, tt, c.Input); err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
 }
 
-func testEncodeDecode(tt *Type, input interface{}) error {
+func testEncodeDecode(t *testing.T, tt *Type, input interface{}) error {
 	res1, err := Encode(input, tt)
 	if err != nil {
 		return err
@@ -401,7 +404,7 @@ func testEncodeDecode(tt *Type, input interface{}) error {
 		return fmt.Errorf("bad")
 	}
 	if tt.kind == KindTuple {
-		if err := testTypeWithContract(tt); err != nil {
+		if err := testTypeWithContract(t, tt); err != nil {
 			return err
 		}
 	}
@@ -442,7 +445,7 @@ func TestRandomEncoding(t *testing.T) {
 			tt := generateRandomArgs(randomInt(1, 4))
 			input := generateRandomType(tt)
 
-			if err := testEncodeDecode(tt, input); err != nil {
+			if err := testEncodeDecode(t, tt, input); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -456,18 +459,29 @@ func (h *hexBuf) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func testTypeWithContract(t *Type) error {
-	g := &generateContractImpl{}
-	contract := g.run(t)
+var once sync.Once
+var testServer *testutil.TestServer
 
-	client := &ethClient{}
+func getTestServer(t *testing.T) *testutil.TestServer {
+	once.Do(func() {
+		testServer = testutil.NewTestServer(t, nil)
+	})
+	return testServer
+}
+
+func testTypeWithContract(t *testing.T, typ *Type) error {
+	g := &generateContractImpl{}
+	contract := g.run(typ)
+
+	server := getTestServer(t)
+	client := &ethClient{server.HttpAddr()}
+
 	accounts, err := client.accounts()
 	if err != nil {
 		return nil
 	}
 
 	etherbase := accounts[0]
-
 	abi, receipt, err := compileAndDeployContract(contract, etherbase, client)
 	if err != nil {
 		if strings.Contains(err.Error(), "Stack too deep") {

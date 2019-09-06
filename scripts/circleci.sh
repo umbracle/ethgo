@@ -2,7 +2,7 @@
 
 set -o errexit
 
-start_geth () {
+install_geth () {
     VERSION=1.9.1-b7b2f60f
 
     NAME=geth-linux-amd64-$VERSION
@@ -11,8 +11,7 @@ start_geth () {
     curl -sfSO "${RELEASE}"
     tar -xvzf $NAME.tar.gz
 
-    nohup $NAME/geth --dev --rpc &
-    sleep 5
+    mv $NAME/geth /usr/local/bin/geth
 }
 
 install_solidity() {
@@ -24,5 +23,5 @@ install_solidity() {
     mv /tmp/solc /usr/local/bin/solc
 }
 
-start_geth
+install_geth
 install_solidity
