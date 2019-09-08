@@ -1,7 +1,6 @@
 package abi
 
 import (
-	"bytes"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -10,10 +9,11 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
+	"github.com/umbracle/go-web3"
+	"github.com/umbracle/go-web3/compiler"
 	"github.com/umbracle/go-web3/testutil"
 )
 
@@ -313,16 +313,17 @@ func TestEncoding(t *testing.T) {
 		},
 	}
 
+	server := testutil.NewTestServer(t, nil)
+	defer server.Close()
+
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			t.Parallel()
-
 			tt, err := NewType(c.Type)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if err := testEncodeDecode(t, tt, c.Input); err != nil {
+			if err := testEncodeDecode(t, server, tt, c.Input); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -374,23 +375,24 @@ func TestEncodingArguments(t *testing.T) {
 		},
 	}
 
+	server := testutil.NewTestServer(t, nil)
+	defer server.Close()
+
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			t.Parallel()
-
 			tt, err := NewTypeFromArgument(c.Arg)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if err := testEncodeDecode(t, tt, c.Input); err != nil {
+			if err := testEncodeDecode(t, server, tt, c.Input); err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
 }
 
-func testEncodeDecode(t *testing.T, tt *Type, input interface{}) error {
+func testEncodeDecode(t *testing.T, server *testutil.TestServer, tt *Type, input interface{}) error {
 	res1, err := Encode(input, tt)
 	if err != nil {
 		return err
@@ -404,7 +406,7 @@ func testEncodeDecode(t *testing.T, tt *Type, input interface{}) error {
 		return fmt.Errorf("bad")
 	}
 	if tt.kind == KindTuple {
-		if err := testTypeWithContract(t, tt); err != nil {
+		if err := testTypeWithContract(t, server, tt); err != nil {
 			return err
 		}
 	}
@@ -438,55 +440,46 @@ func TestRandomEncoding(t *testing.T) {
 		n = 100
 	}
 
+	server := testutil.NewTestServer(t, nil)
+	defer server.Close()
+
 	for i := 0; i < int(n); i++ {
 		t.Run("", func(t *testing.T) {
-			t.Parallel()
-
 			tt := generateRandomArgs(randomInt(1, 4))
 			input := generateRandomType(tt)
 
-			if err := testEncodeDecode(t, tt, input); err != nil {
+			if err := testEncodeDecode(t, server, tt, input); err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
 }
 
-type hexBuf []byte
-
-func (h *hexBuf) UnmarshalJSON(b []byte) error {
-	*h = decodeHex(strings.Trim(string(b), "\""))
-	return nil
-}
-
-var once sync.Once
-var testServer *testutil.TestServer
-
-func getTestServer(t *testing.T) *testutil.TestServer {
-	once.Do(func() {
-		testServer = testutil.NewTestServer(t, nil)
-	})
-	return testServer
-}
-
-func testTypeWithContract(t *testing.T, typ *Type) error {
+func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) error {
 	g := &generateContractImpl{}
-	contract := g.run(typ)
+	source := g.run(typ)
 
-	server := getTestServer(t)
-	client := &ethClient{server.HttpAddr()}
-
-	accounts, err := client.accounts()
+	rawData, err := compiler.NewSolidityCompiler("solc").Compile(source)
 	if err != nil {
-		return nil
+		return err
 	}
 
-	etherbase := accounts[0]
-	abi, receipt, err := compileAndDeployContract(contract, etherbase, client)
+	output := rawData.(*compiler.SolcOutput)
+	solcContrat, ok := output.Contracts["<stdin>:Sample"]
+	if !ok {
+		return fmt.Errorf("Expected the contract to be called Sample")
+	}
+
+	abi, err := NewABI(string(solcContrat.Abi))
 	if err != nil {
-		if strings.Contains(err.Error(), "Stack too deep") {
-			return nil
-		}
+		return err
+	}
+
+	txn := &web3.Transaction{
+		Data: "0x" + string(solcContrat.Bin),
+	}
+	receipt, err := server.SendTxn(txn)
+	if err != nil {
 		return err
 	}
 
@@ -503,19 +496,14 @@ func testTypeWithContract(t *testing.T, typ *Type) error {
 		return err
 	}
 
-	msg := map[string]string{
-		"from": etherbase,
-		"to":   receipt["contractAddress"].(string),
-		"data": encodeHex(append(method.ID(), data...)),
+	res, err := server.Call(&web3.CallMsg{
+		To:   receipt.ContractAddress,
+		Data: encodeHex(append(method.ID(), data...)),
+	})
+	if err != nil {
+		return err
 	}
-	var resp hexBuf
-	if err := client.call("eth_call", &resp, &msg, "latest"); err != nil {
-		return fmt.Errorf("failed to call contract: %v", err)
-	}
-	if len(resp) == 0 {
-		return fmt.Errorf("empty")
-	}
-	if !bytes.Equal(resp, data) {
+	if res != encodeHex(data) {
 		return fmt.Errorf("bad")
 	}
 	return nil

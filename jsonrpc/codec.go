@@ -65,26 +65,3 @@ func parseHexBytes(str string) ([]byte, error) {
 	}
 	return buf, nil
 }
-
-type BlockNumber int
-
-const (
-	Latest   BlockNumber = -1
-	Earliest             = -2
-	Pending              = -3
-)
-
-func (b BlockNumber) String() string {
-	switch b {
-	case Latest:
-		return "latest"
-	case Earliest:
-		return "earliest"
-	case Pending:
-		return "pending"
-	}
-	if b < 0 {
-		panic("internal. blocknumber is negative")
-	}
-	return fmt.Sprintf("0x%x", uint64(b))
-}
