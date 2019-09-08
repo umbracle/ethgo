@@ -7,10 +7,12 @@ import (
 	"github.com/umbracle/go-web3"
 )
 
+// Eth is the eth namespace
 type Eth struct {
 	c *Client
 }
 
+// Eth returns the reference to the eth namespace
 func (c *Client) Eth() *Eth {
 	return c.endpoints.e
 }
@@ -66,7 +68,7 @@ func (e *Eth) GetTransactionReceipt(hash string) (*web3.Receipt, error) {
 }
 
 // GetBalance returns the balance of the account of given address.
-func (e *Eth) GetBalance(addr string, blockNumber BlockNumber) (*big.Int, error) {
+func (e *Eth) GetBalance(addr string, blockNumber web3.BlockNumber) (*big.Int, error) {
 	var out string
 	if err := e.c.Call("eth_getBalance", &out, addr, blockNumber.String()); err != nil {
 		return nil, err
@@ -85,4 +87,22 @@ func (e *Eth) GasPrice() (uint64, error) {
 		return 0, err
 	}
 	return parseUint64orHex(out)
+}
+
+// Call executes a new message call immediately without creating a transaction on the block chain.
+func (e *Eth) Call(msg *web3.CallMsg) (string, error) {
+	var out string
+	if err := e.c.Call("eth_call", &out, msg); err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
+// GetLogs returns an array of all logs matching a given filter object
+func (e *Eth) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
+	var out []*web3.Log
+	if err := e.c.Call("eth_getLogs", &out, filter); err != nil {
+		return nil, err
+	}
+	return out, nil
 }

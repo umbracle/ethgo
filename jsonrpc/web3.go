@@ -1,9 +1,11 @@
 package jsonrpc
 
+// Web3 is the web3 namespace
 type Web3 struct {
 	c *Client
 }
 
+// Web3 returns the reference to the web3 namespace
 func (c *Client) Web3() *Web3 {
 	return c.endpoints.w
 }

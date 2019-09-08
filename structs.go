@@ -1,6 +1,9 @@
 package web3
 
-import "math/big"
+import (
+	"fmt"
+	"math/big"
+)
 
 type Block struct {
 	Number           uint64
@@ -34,4 +37,46 @@ type Transaction struct {
 type Receipt struct {
 	TransactionHash string `json:"transactionHash"`
 	ContractAddress string `json:"contractAddress"`
+	BlockHash       string `json:"blockHash"`
+}
+
+type CallMsg struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+	Data string `json:"data"`
+}
+
+type LogFilter struct {
+	Address   []string `json:"address"`
+	Topics    []string `json:"topics"`
+	BlockHash string   `json:"blockhash"`
+}
+
+type Log struct {
+	Address string   `json:"address"`
+	Topics  []string `json:"topics"`
+	Data    string   `json:"data"`
+}
+
+type BlockNumber int
+
+const (
+	Latest   BlockNumber = -1
+	Earliest             = -2
+	Pending              = -3
+)
+
+func (b BlockNumber) String() string {
+	switch b {
+	case Latest:
+		return "latest"
+	case Earliest:
+		return "earliest"
+	case Pending:
+		return "pending"
+	}
+	if b < 0 {
+		panic("internal. blocknumber is negative")
+	}
+	return fmt.Sprintf("0x%x", uint64(b))
 }

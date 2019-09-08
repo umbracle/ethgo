@@ -1,9 +1,11 @@
 package jsonrpc
 
+// Net is the net namespace
 type Net struct {
 	c *Client
 }
 
+// Net returns the reference to the net namespace
 func (c *Client) Net() *Net {
 	return c.endpoints.n
 }

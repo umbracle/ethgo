@@ -104,6 +104,11 @@ type Type struct {
 	t     reflect.Type
 }
 
+// String returns the raw representation of the type
+func (t *Type) String() string {
+	return t.raw
+}
+
 // Size returns the size of the type
 func (t *Type) Size() int {
 	return t.size
