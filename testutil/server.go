@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	DefaultGasPrice = 1879048192
-	DefaultGasLimit = 5242880
+	DefaultGasPrice = 1879048192 // 0x70000000
+	DefaultGasLimit = 5242880    // 0x500000
 )
 
 const (
@@ -161,7 +161,7 @@ func (t *TestServer) Call(msg *web3.CallMsg) (string, error) {
 
 // TxnTo sends a transaction to a given method without any arguments
 func (t *TestServer) TxnTo(address string, method string) *web3.Receipt {
-	sig := methodSig(method)
+	sig := MethodSig(method)
 	receipt, err := t.SendTxn(&web3.Transaction{
 		To:    address,
 		Input: sig,
@@ -205,7 +205,7 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract) string {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.SolcContract, string) {
 	solcContract := compile(c.Print())
 
 	receipt, err := t.SendTxn(&web3.Transaction{
@@ -214,7 +214,7 @@ func (t *TestServer) DeployContract(c *Contract) string {
 	if err != nil {
 		panic(err)
 	}
-	return receipt.ContractAddress
+	return solcContract, receipt.ContractAddress
 }
 
 func (t *TestServer) testHTTPEndpoint() bool {
@@ -325,7 +325,8 @@ func compile(source string) *compiler.SolcContract {
 	return solcContract
 }
 
-func methodSig(name string) string {
+// MethodSig returns the signature of a non-parametrized function
+func MethodSig(name string) string {
 	h := sha3.NewLegacyKeccak256()
 	h.Write([]byte(name + "()"))
 	b := h.Sum(nil)
