@@ -90,12 +90,21 @@ func (e *Eth) GasPrice() (uint64, error) {
 }
 
 // Call executes a new message call immediately without creating a transaction on the block chain.
-func (e *Eth) Call(msg *web3.CallMsg) (string, error) {
+func (e *Eth) Call(msg *web3.CallMsg, block web3.BlockNumber) (string, error) {
 	var out string
-	if err := e.c.Call("eth_call", &out, msg); err != nil {
+	if err := e.c.Call("eth_call", &out, msg, block.String()); err != nil {
 		return "", err
 	}
 	return out, nil
+}
+
+// EstimateGas generates and returns an estimate of how much gas is necessary to allow the transaction to complete.
+func (e *Eth) EstimateGas(msg *web3.CallMsg) (uint64, error) {
+	var out string
+	if err := e.c.Call("eth_estimateGas", &out, msg); err != nil {
+		return 0, err
+	}
+	return parseUint64orHex(out)
 }
 
 // GetLogs returns an array of all logs matching a given filter object

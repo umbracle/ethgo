@@ -1,7 +1,6 @@
 package jsonrpc
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -146,12 +145,34 @@ func TestEthSendTransaction(t *testing.T) {
 	}
 }
 
+func TestEstimateGas(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	c := NewClient(s.HTTPAddr())
+
+	cc := &testutil.Contract{}
+	cc.AddEvent(testutil.NewEvent("A").Add("address", true))
+	cc.EmitEvent("setA", "A", addr0)
+
+	_, addr := s.DeployContract(cc)
+
+	msg := &web3.CallMsg{
+		From: s.Account(0),
+		To:   addr,
+		Data: testutil.MethodSig("setA"),
+	}
+
+	gas, err := c.Eth().EstimateGas(msg)
+	assert.NoError(t, err)
+	assert.NotEqual(t, gas, 0)
+}
+
 func TestEthGetLogs(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
 	c := NewClient(s.HTTPAddr())
-	fmt.Println(c)
 
 	cc := &testutil.Contract{}
 	cc.AddEvent(testutil.NewEvent("A").
@@ -161,7 +182,7 @@ func TestEthGetLogs(t *testing.T) {
 	cc.EmitEvent("setA1", "A", addr0, addr1)
 	cc.EmitEvent("setA2", "A", addr1, addr0)
 
-	addr := s.DeployContract(cc)
+	_, addr := s.DeployContract(cc)
 
 	r := s.TxnTo(addr, "setA2")
 

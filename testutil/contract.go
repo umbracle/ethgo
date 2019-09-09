@@ -57,6 +57,27 @@ func (c *Contract) addCallback(f func() string) {
 	c.callbacks = append(c.callbacks, f)
 }
 
+// AddDualCaller adds a call function that returns the same values that takes
+func (c *Contract) AddDualCaller(funcName string, args ...string) {
+	c.addCallback(func() string {
+		var params, rets, body []string
+		for indx, i := range args {
+			name := "val_" + strconv.Itoa(indx)
+			// function params
+			params = append(params, i+" "+name)
+			// function returns
+			rets = append(rets, i)
+			// function body
+			body = append(body, name)
+		}
+
+		str := "function " + funcName + "(" + strings.Join(params, ",") + ") public view returns (" + strings.Join(rets, ",") + ") {\n"
+		str += "return (" + strings.Join(body, ",") + ");\n"
+		str += "}"
+		return str
+	})
+}
+
 // EmitEvent emits a specific event
 func (c *Contract) EmitEvent(funcName string, name string, args ...string) {
 	exists := false

@@ -41,9 +41,10 @@ type Receipt struct {
 }
 
 type CallMsg struct {
-	From string `json:"from"`
-	To   string `json:"to"`
-	Data string `json:"data"`
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Data     string `json:"data"`
+	GasPrice string `json:"gasPrice"`
 }
 
 type LogFilter struct {
