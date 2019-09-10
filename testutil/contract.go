@@ -126,7 +126,13 @@ func (e *Event) printSetter() string {
 	body := []string{}
 	for indx, i := range e.fields {
 		// function params
-		params = append(params, fmt.Sprintf("%s val_%d", i.typ, indx))
+
+		// Some params are in memory
+		typ := i.typ
+		if typ == "string" || strings.Contains(typ, "[") {
+			typ = typ + " memory"
+		}
+		params = append(params, fmt.Sprintf("%s val_%d", typ, indx))
 		// function body
 		body = append(body, fmt.Sprintf("val_%d", indx))
 	}
