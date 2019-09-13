@@ -48,6 +48,7 @@ func getOpenPort() string {
 type TestServerConfig struct {
 	DataDir  string
 	HTTPPort string
+	WSPort   string
 }
 
 // ServerConfigCallback is the callback to modify the config
@@ -81,6 +82,7 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 	config := &TestServerConfig{
 		DataDir:  dir,
 		HTTPPort: getOpenPort(),
+		WSPort:   getOpenPort(),
 	}
 	if cb != nil {
 		cb(config)
@@ -97,6 +99,9 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 
 	// enable rpc
 	args = append(args, "--rpc", "--rpcport", config.HTTPPort)
+
+	// enable ws
+	args = append(args, "--ws", "--wsport", config.WSPort)
 
 	// Start the server
 	cmd := exec.Command(path, args...)
@@ -130,6 +135,16 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 // Account returns a specific account
 func (t *TestServer) Account(i int) string {
 	return t.accounts[i]
+}
+
+// IPCPath returns the ipc endpoint
+func (t *TestServer) IPCPath() string {
+	return filepath.Join(filepath.Join(t.config.DataDir, "geth.ipc"))
+}
+
+// WSAddr returns the websocket endpoint
+func (t *TestServer) WSAddr() string {
+	return "ws://localhost:" + t.config.WSPort
 }
 
 // HTTPAddr returns the http endpoint
@@ -190,6 +205,7 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 	}
 
 	var receipt *web3.Receipt
+	var count uint64
 	for {
 		err := t.client.call("eth_getTransactionReceipt", &receipt, hash)
 		if err != nil {
@@ -200,6 +216,11 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 		if receipt != nil {
 			break
 		}
+		if count > 100 {
+			return nil, fmt.Errorf("timeout")
+		}
+		time.Sleep(50 * time.Millisecond)
+		count++
 	}
 	return receipt, nil
 }

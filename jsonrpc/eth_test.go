@@ -19,7 +19,7 @@ func TestEthAccounts(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 	_, err := c.Eth().Accounts()
 	assert.NoError(t, err)
 }
@@ -28,7 +28,7 @@ func TestEthBlockNumber(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 	for i := uint64(0); i < 10; i++ {
 		num, err := c.Eth().BlockNumber()
 		assert.NoError(t, err)
@@ -41,7 +41,7 @@ func TestEthGetBalance(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 
 	before, err := c.Eth().GetBalance(s.Account(0), web3.Latest)
 	assert.NoError(t, err)
@@ -71,7 +71,7 @@ func TestEthGetBlockByNumber(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 
 	block, err := c.Eth().GetBlockByNumber(0, true)
 	assert.NoError(t, err)
@@ -95,7 +95,7 @@ func TestEthGetBlockByHash(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 
 	// get block 0 first by number
 	block, err := c.Eth().GetBlockByNumber(0, true)
@@ -112,7 +112,7 @@ func TestEthGasPrice(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 	_, err := c.Eth().GasPrice()
 	assert.NoError(t, err)
 }
@@ -121,7 +121,7 @@ func TestEthSendTransaction(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 
 	txn := &web3.Transaction{
 		From:     s.Account(0),
@@ -149,7 +149,7 @@ func TestEstimateGas(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 
 	cc := &testutil.Contract{}
 	cc.AddEvent(testutil.NewEvent("A").Add("address", true))
@@ -172,7 +172,7 @@ func TestEthGetLogs(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
 
 	cc := &testutil.Contract{}
 	cc.AddEvent(testutil.NewEvent("A").
