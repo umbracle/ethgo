@@ -9,16 +9,11 @@ import (
 )
 
 func TestWeb3ClientVersion(t *testing.T) {
-
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
-
-	/*
-		s := NewTestServer(t, nil)
-		defer s.Close()
-	*/
+	c, _ := NewClient(s.HTTPAddr())
+	defer c.Close()
 
 	_, err := c.Web3().ClientVersion()
 	assert.NoError(t, err)
@@ -28,7 +23,8 @@ func TestWeb3Sha3(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
-	c := NewClient(s.HTTPAddr())
+	c, _ := NewClient(s.HTTPAddr())
+	defer c.Close()
 
 	src := []byte{0x1, 0x2, 0x3}
 

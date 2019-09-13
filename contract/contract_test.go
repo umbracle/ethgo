@@ -44,7 +44,7 @@ func TestContract(t *testing.T) {
 	abi, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
 
-	p := jsonrpc.NewClient(s.HTTPAddr())
+	p, _ := jsonrpc.NewClient(s.HTTPAddr())
 	c := NewContract(addr, abi, p)
 	c.SetFrom(s.Account(0))
 
