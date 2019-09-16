@@ -12,6 +12,14 @@ import (
 	"github.com/umbracle/go-web3/jsonrpc/codec"
 )
 
+func newWebsocket(url string) (Transport, error) {
+	codec, _, err := websocket.DefaultDialer.Dial(url, http.Header{})
+	if err != nil {
+		return nil, err
+	}
+	return newStream(codec)
+}
+
 // ErrTimeout happens when the websocket requests times out
 var ErrTimeout = fmt.Errorf("timeout")
 
@@ -22,10 +30,9 @@ type ackMessage struct {
 
 type callback func(b []byte, err error)
 
-// Websocket is a websocket transport
-type Websocket struct {
-	seq  uint64
-	conn *websocket.Conn
+type stream struct {
+	seq   uint64
+	codec Codec
 
 	handlerLock sync.Mutex
 	handler     map[uint64]callback
@@ -34,14 +41,9 @@ type Websocket struct {
 	timer   *time.Timer
 }
 
-func newWebsocket(url string) (*Websocket, error) {
-	conn, _, err := websocket.DefaultDialer.Dial(url, http.Header{})
-	if err != nil {
-		return nil, err
-	}
-
-	w := &Websocket{
-		conn:    conn,
+func newStream(codec Codec) (*stream, error) {
+	w := &stream{
+		codec:   codec,
 		closeCh: make(chan struct{}),
 		handler: map[uint64]callback{},
 	}
@@ -51,56 +53,51 @@ func newWebsocket(url string) (*Websocket, error) {
 }
 
 // Close implements the the transport interface
-func (w *Websocket) Close() error {
-	close(w.closeCh)
-	return w.conn.Close()
+func (s *stream) Close() error {
+	close(s.closeCh)
+	return s.codec.Close()
 }
 
-func (w *Websocket) incSeq() uint64 {
-	return atomic.AddUint64(&w.seq, 1)
+func (s *stream) incSeq() uint64 {
+	return atomic.AddUint64(&s.seq, 1)
 }
 
-func (w *Websocket) isClosed() bool {
+func (s *stream) isClosed() bool {
 	select {
-	case <-w.closeCh:
+	case <-s.closeCh:
 		return true
 	default:
 		return false
 	}
 }
 
-func (w *Websocket) listen() {
+func (s *stream) listen() {
 	for {
-		typ, buf, err := w.conn.ReadMessage()
+		var resp codec.Response
+		err := s.codec.ReadJSON(&resp)
+
 		if err != nil {
-			if !w.isClosed() {
+			if !s.isClosed() {
 				// log error
 			}
 			return
 		}
-		if typ == websocket.TextMessage {
-			go w.handleMsg(buf)
-		}
+
+		go s.handleMsg(resp)
 	}
 }
 
-func (w *Websocket) handleMsg(buf []byte) {
-	var response codec.Response
-	if err := json.Unmarshal(buf, &response); err != nil {
-		// log failed to decode jsonrpc response
-		return
-	}
-
-	w.handlerLock.Lock()
-	callback, ok := w.handler[response.ID]
+func (s *stream) handleMsg(response codec.Response) {
+	s.handlerLock.Lock()
+	callback, ok := s.handler[response.ID]
 	if !ok {
-		w.handlerLock.Unlock()
+		s.handlerLock.Unlock()
 		return
 	}
 
 	// delete handler
-	delete(w.handler, response.ID)
-	w.handlerLock.Unlock()
+	delete(s.handler, response.ID)
+	s.handlerLock.Unlock()
 
 	if response.Error != nil {
 		callback(nil, response.Error)
@@ -109,7 +106,7 @@ func (w *Websocket) handleMsg(buf []byte) {
 	}
 }
 
-func (w *Websocket) setHandler(id uint64, ack chan *ackMessage) {
+func (s *stream) setHandler(id uint64, ack chan *ackMessage) {
 	callback := func(b []byte, err error) {
 		select {
 		case ack <- &ackMessage{b, err}:
@@ -117,14 +114,14 @@ func (w *Websocket) setHandler(id uint64, ack chan *ackMessage) {
 		}
 	}
 
-	w.handlerLock.Lock()
-	w.handler[id] = callback
-	w.handlerLock.Unlock()
+	s.handlerLock.Lock()
+	s.handler[id] = callback
+	s.handlerLock.Unlock()
 
-	w.timer = time.AfterFunc(5*time.Second, func() {
-		w.handlerLock.Lock()
-		delete(w.handler, id)
-		w.handlerLock.Unlock()
+	s.timer = time.AfterFunc(5*time.Second, func() {
+		s.handlerLock.Lock()
+		delete(s.handler, id)
+		s.handlerLock.Unlock()
 
 		select {
 		case ack <- &ackMessage{nil, ErrTimeout}:
@@ -134,8 +131,8 @@ func (w *Websocket) setHandler(id uint64, ack chan *ackMessage) {
 }
 
 // Call implements the transport interface
-func (w *Websocket) Call(method string, out interface{}, params ...interface{}) error {
-	seq := w.incSeq()
+func (s *stream) Call(method string, out interface{}, params ...interface{}) error {
+	seq := s.incSeq()
 	request := codec.Request{
 		ID:     seq,
 		Method: method,
@@ -148,24 +145,26 @@ func (w *Websocket) Call(method string, out interface{}, params ...interface{}) 
 		request.Params = data
 	}
 
-	raw, err := json.Marshal(request)
-	if err != nil {
-		return err
-	}
-
 	ack := make(chan *ackMessage)
-	w.setHandler(seq, ack)
+	s.setHandler(seq, ack)
 
-	if err := w.conn.WriteMessage(websocket.TextMessage, raw); err != nil {
+	if err := s.codec.WriteJSON(request); err != nil {
 		return err
 	}
 
 	resp := <-ack
 	if resp.err != nil {
-		return err
+		return resp.err
 	}
 	if err := json.Unmarshal(resp.buf, out); err != nil {
 		return err
 	}
 	return nil
+}
+
+// Codec is the codec to write and read messages
+type Codec interface {
+	ReadJSON(v interface{}) error
+	WriteJSON(v interface{}) error
+	Close() error
 }
