@@ -1,6 +1,9 @@
 package transport
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 // Transport is an inteface for transport methods to send jsonrpc requests
 type Transport interface {
@@ -11,10 +14,18 @@ type Transport interface {
 	Close() error
 }
 
+const (
+	wsPrefix = "ws://"
+)
+
 // NewTransport creates a new transport object
 func NewTransport(url string) (Transport, error) {
-	if strings.HasPrefix(url, "ws://") {
+	if strings.HasPrefix(url, wsPrefix) {
 		return newWebsocket(url)
+	}
+	if _, err := os.Stat(url); !os.IsNotExist(err) {
+		// path exists, it could be an ipc path
+		return newIPC(url)
 	}
 	return newHTTP(url), nil
 }
