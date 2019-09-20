@@ -44,6 +44,22 @@ func getOpenPort() string {
 	}
 }
 
+// MultiAddr creates new servers to test different addresses
+func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr string)) {
+	s := NewTestServer(t, cb)
+
+	// http addr
+	c(s, s.HTTPAddr())
+
+	// ws addr
+	c(s, s.WSAddr())
+
+	// ip addr
+	c(s, s.IPCPath())
+
+	s.Close()
+}
+
 // TestServerConfig is the configuration of the server
 type TestServerConfig struct {
 	DataDir  string
