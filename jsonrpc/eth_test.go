@@ -16,25 +16,29 @@ var (
 )
 
 func TestEthAccounts(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+		c, _ := NewClient(addr)
+		defer c.Close()
 
-	c, _ := NewClient(s.HTTPAddr())
-	_, err := c.Eth().Accounts()
-	assert.NoError(t, err)
+		_, err := c.Eth().Accounts()
+		assert.NoError(t, err)
+	})
 }
 
 func TestEthBlockNumber(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	i := uint64(0)
+	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+		c, _ := NewClient(addr)
+		defer c.Close()
 
-	c, _ := NewClient(s.HTTPAddr())
-	for i := uint64(0); i < 10; i++ {
-		num, err := c.Eth().BlockNumber()
-		assert.NoError(t, err)
-		assert.Equal(t, num, i)
-		assert.NoError(t, s.ProcessBlock())
-	}
+		for count := 0; count < 10; count, i = count+1, i+1 {
+			num, err := c.Eth().BlockNumber()
+			assert.NoError(t, err)
+			assert.Equal(t, num, i)
+			assert.NoError(t, s.ProcessBlock())
+			count++
+		}
+	})
 }
 
 func TestEthGetBalance(t *testing.T) {
@@ -92,29 +96,30 @@ func TestEthGetBlockByNumber(t *testing.T) {
 }
 
 func TestEthGetBlockByHash(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+		c, _ := NewClient(addr)
+		defer c.Close()
 
-	c, _ := NewClient(s.HTTPAddr())
+		// get block 0 first by number
+		block, err := c.Eth().GetBlockByNumber(0, true)
+		assert.NoError(t, err)
+		assert.Equal(t, block.Number, uint64(0))
 
-	// get block 0 first by number
-	block, err := c.Eth().GetBlockByNumber(0, true)
-	assert.NoError(t, err)
-	assert.Equal(t, block.Number, uint64(0))
-
-	// get block 0 by hash
-	block2, err := c.Eth().GetBlockByHash(block.Hash, true)
-	assert.NoError(t, err)
-	assert.Equal(t, block, block2)
+		// get block 0 by hash
+		block2, err := c.Eth().GetBlockByHash(block.Hash, true)
+		assert.NoError(t, err)
+		assert.Equal(t, block, block2)
+	})
 }
 
 func TestEthGasPrice(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+		c, _ := NewClient(addr)
+		defer c.Close()
 
-	c, _ := NewClient(s.HTTPAddr())
-	_, err := c.Eth().GasPrice()
-	assert.NoError(t, err)
+		_, err := c.Eth().GasPrice()
+		assert.NoError(t, err)
+	})
 }
 
 func TestEthSendTransaction(t *testing.T) {
