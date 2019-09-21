@@ -26,6 +26,11 @@ func NewContract(addr string, abi *abi.ABI, provider *jsonrpc.Client) *Contract 
 	}
 }
 
+// Addr returns the address of the contract
+func (c *Contract) Addr() string {
+	return c.addr
+}
+
 // SetFrom sets the origin of the calls
 func (c *Contract) SetFrom(addr string) {
 	c.from = addr
@@ -35,6 +40,8 @@ func (c *Contract) SetFrom(addr string) {
 func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, error) {
 	return c.Txn(method, args).EstimateGas()
 }
+
+const emptyAddr = "0x0000000000000000000000000000000000000000"
 
 // Call calls a method in the contract
 func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
@@ -50,9 +57,14 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	}
 	data = append(m.ID(), data...)
 
+	from := c.from
+	if from == "" {
+		from = emptyAddr
+	}
+
 	// Call function
 	msg := &web3.CallMsg{
-		From: c.from,
+		From: from,
 		To:   c.addr,
 		Data: "0x" + hex.EncodeToString(data),
 	}

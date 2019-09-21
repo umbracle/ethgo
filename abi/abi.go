@@ -117,13 +117,13 @@ type Event struct {
 	Inputs    arguments
 }
 
-type argument struct {
+type ArgumentObj struct {
 	Name    string
 	Type    *Type
 	Indexed bool
 }
 
-type arguments []*argument
+type arguments []*ArgumentObj
 
 // Type returns the type of the argument in tuple form
 func (a *arguments) Type() *Type {
@@ -143,7 +143,7 @@ func (a *arguments) Type() *Type {
 	return tt
 }
 
-func (a *argument) UnmarshalJSON(data []byte) error {
+func (a *ArgumentObj) UnmarshalJSON(data []byte) error {
 	var arg *Argument
 	if err := json.Unmarshal(data, &arg); err != nil {
 		return fmt.Errorf("argument json err: %v", err)
