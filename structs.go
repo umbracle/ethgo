@@ -81,3 +81,10 @@ func (b BlockNumber) String() string {
 	}
 	return fmt.Sprintf("0x%x", uint64(b))
 }
+
+func EncodeBlock(block ...BlockNumber) BlockNumber {
+	if len(block) != 1 {
+		return Latest
+	}
+	return block[0]
+}
