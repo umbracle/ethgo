@@ -13,9 +13,12 @@ import (
 )
 
 func newWebsocket(url string) (Transport, error) {
-	codec, _, err := websocket.DefaultDialer.Dial(url, http.Header{})
+	wsConn, _, err := websocket.DefaultDialer.Dial(url, http.Header{})
 	if err != nil {
 		return nil, err
+	}
+	codec := &websocketCodec{
+		conn: wsConn,
 	}
 	return newStream(codec)
 }
@@ -34,8 +37,13 @@ type stream struct {
 	seq   uint64
 	codec Codec
 
+	// call handlers
 	handlerLock sync.Mutex
 	handler     map[uint64]callback
+
+	// subscriptions
+	subsLock sync.Mutex
+	subs     map[string]func(b []byte)
 
 	closeCh chan struct{}
 	timer   *time.Timer
@@ -46,6 +54,7 @@ func newStream(codec Codec) (*stream, error) {
 		codec:   codec,
 		closeCh: make(chan struct{}),
 		handler: map[uint64]callback{},
+		subs:    map[string]func(b []byte){},
 	}
 
 	go w.listen()
@@ -72,10 +81,11 @@ func (s *stream) isClosed() bool {
 }
 
 func (s *stream) listen() {
-	for {
-		var resp codec.Response
-		err := s.codec.ReadJSON(&resp)
+	buf := []byte{}
 
+	for {
+		var err error
+		buf, err = s.codec.Read(buf[:0])
 		if err != nil {
 			if !s.isClosed() {
 				// log error
@@ -83,8 +93,43 @@ func (s *stream) listen() {
 			return
 		}
 
-		go s.handleMsg(resp)
+		var resp codec.Response
+		if err = json.Unmarshal(buf, &resp); err != nil {
+			return
+		}
+
+		if resp.ID != 0 {
+			go s.handleMsg(resp)
+		} else {
+			// handle subscription
+			var respSub codec.Request
+			if err = json.Unmarshal(buf, &respSub); err != nil {
+				return
+			}
+
+			if respSub.Method == "eth_subscription" {
+				go s.handleSubscription(respSub)
+			}
+		}
 	}
+}
+
+func (s *stream) handleSubscription(response codec.Request) {
+	var sub codec.Subscription
+	if err := json.Unmarshal(response.Params, &sub); err != nil {
+		panic(err)
+	}
+
+	s.subsLock.Lock()
+	callback, ok := s.subs[sub.ID]
+	s.subsLock.Unlock()
+
+	if !ok {
+		return
+	}
+
+	// call the callback function
+	callback(sub.Result)
 }
 
 func (s *stream) handleMsg(response codec.Response) {
@@ -148,7 +193,11 @@ func (s *stream) Call(method string, out interface{}, params ...interface{}) err
 	ack := make(chan *ackMessage)
 	s.setHandler(seq, ack)
 
-	if err := s.codec.WriteJSON(request); err != nil {
+	raw, err := json.Marshal(request)
+	if err != nil {
+		return err
+	}
+	if err := s.codec.Write(raw); err != nil {
 		return err
 	}
 
@@ -162,9 +211,70 @@ func (s *stream) Call(method string, out interface{}, params ...interface{}) err
 	return nil
 }
 
+func (s *stream) unsubscribe(id string) error {
+	s.subsLock.Lock()
+	defer s.subsLock.Unlock()
+
+	if _, ok := s.subs[id]; !ok {
+		return fmt.Errorf("subscription %s not found", id)
+	}
+	delete(s.subs, id)
+
+	var result bool
+	if err := s.Call("eth_unsubscribe", &result, id); err != nil {
+		return err
+	}
+	if !result {
+		return fmt.Errorf("failed to unsubscribe")
+	}
+	return nil
+}
+
+func (s *stream) setSubscription(id string, callback func(b []byte)) {
+	s.subsLock.Lock()
+	defer s.subsLock.Unlock()
+
+	s.subs[id] = callback
+}
+
+// Subscribe implements the PubSubTransport interface
+func (s *stream) Subscribe(method string, callback func(b []byte)) (func() error, error) {
+	var out string
+	if err := s.Call("eth_subscribe", &out, method); err != nil {
+		return nil, err
+	}
+
+	s.setSubscription(out, callback)
+	cancel := func() error {
+		return s.unsubscribe(out)
+	}
+	return cancel, nil
+}
+
+type websocketCodec struct {
+	conn *websocket.Conn
+}
+
+func (w *websocketCodec) Close() error {
+	return w.conn.Close()
+}
+
+func (w *websocketCodec) Write(b []byte) error {
+	return w.conn.WriteMessage(websocket.TextMessage, b)
+}
+
+func (w *websocketCodec) Read(b []byte) ([]byte, error) {
+	_, buf, err := w.conn.ReadMessage()
+	if err != nil {
+		return nil, err
+	}
+	b = append(b, buf...)
+	return b, nil
+}
+
 // Codec is the codec to write and read messages
 type Codec interface {
-	ReadJSON(v interface{}) error
-	WriteJSON(v interface{}) error
+	Read([]byte) ([]byte, error)
+	Write([]byte) error
 	Close() error
 }

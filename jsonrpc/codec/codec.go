@@ -26,6 +26,12 @@ type ErrorObject struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
+// Subscription is a jsonrpc subscription
+type Subscription struct {
+	ID     string          `json:"subscription"`
+	Result json.RawMessage `json:"result"`
+}
+
 // Error implements error interface
 func (e *ErrorObject) Error() string {
 	data, err := json.Marshal(e)

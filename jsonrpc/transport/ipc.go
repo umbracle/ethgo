@@ -11,41 +11,35 @@ func newIPC(addr string) (Transport, error) {
 		return nil, err
 	}
 
-	codec := &ipcCodec{conn}
+	codec := &ipcCodec{
+		buf:  json.RawMessage{},
+		conn: conn,
+		dec:  json.NewDecoder(conn),
+	}
+
 	return newStream(codec)
 }
 
-func readJSON(c net.Conn, r interface{}) error {
-	dec := json.NewDecoder(c)
-	if err := dec.Decode(&r); err != nil {
-		return err
-	}
-	return nil
-}
-
 type ipcCodec struct {
-	c net.Conn
+	buf  json.RawMessage
+	conn net.Conn
+	dec  *json.Decoder
 }
 
 func (i *ipcCodec) Close() error {
-	return i.c.Close()
+	return i.conn.Close()
 }
 
-func (i *ipcCodec) ReadJSON(v interface{}) error {
-	dec := json.NewDecoder(i.c)
-	if err := dec.Decode(&v); err != nil {
-		return err
+func (i *ipcCodec) Read(b []byte) ([]byte, error) {
+	i.buf = i.buf[:0]
+	if err := i.dec.Decode(&i.buf); err != nil {
+		return nil, err
 	}
-	return nil
+	b = append(b, i.buf...)
+	return b, nil
 }
 
-func (i *ipcCodec) WriteJSON(v interface{}) error {
-	raw, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-	if _, err := i.c.Write(raw); err != nil {
-		return err
-	}
-	return nil
+func (i *ipcCodec) Write(b []byte) error {
+	_, err := i.conn.Write(b)
+	return err
 }
