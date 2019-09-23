@@ -242,7 +242,7 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract) (*compiler.SolcContract, string) {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, string) {
 	solcContract := compile(c.Print())
 
 	receipt, err := t.SendTxn(&web3.Transaction{
@@ -348,14 +348,12 @@ func (e *ethClient) call(method string, out interface{}, params ...interface{}) 
 	return nil
 }
 
-func compile(source string) *compiler.SolcContract {
-	rawData, err := compiler.NewSolidityCompiler("solc").Compile(source)
+func compile(source string) *compiler.Artifact {
+	output, err := compiler.NewSolidityCompiler("solc").(*compiler.Solidity).CompileCode(source)
 	if err != nil {
 		panic(err)
 	}
-
-	output := rawData.(*compiler.SolcOutput)
-	solcContract, ok := output.Contracts["<stdin>:Sample"]
+	solcContract, ok := output["<stdin>:Sample"]
 	if !ok {
 		panic(fmt.Errorf("Expected the contract to be called Sample"))
 	}
