@@ -31,8 +31,8 @@ func init() {
 	}
 }
 
-func TestSolidityCompiler(t *testing.T) {
-	solc := NewSolidityCompiler(solcPath)
+func TestSolidityInline(t *testing.T) {
+	solc := NewSolidityCompiler(solcPath).(*Solidity)
 
 	cases := []struct {
 		code      string
@@ -62,14 +62,13 @@ func TestSolidityCompiler(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			data, err := solc.Compile(c.code)
+			output, err := solc.CompileCode(c.code)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			output := data.(*SolcOutput)
 			result := map[string]struct{}{}
-			for i := range output.Contracts {
+			for i := range output {
 				result[strings.TrimPrefix(i, "<stdin>:")] = struct{}{}
 			}
 
@@ -85,14 +84,29 @@ func TestSolidityCompiler(t *testing.T) {
 	}
 }
 
+func TestSolidity(t *testing.T) {
+	solc := NewSolidityCompiler(solcPath)
+
+	files := []string{
+		"./fixtures/ballot.sol",
+		"./fixtures/simple_auction.sol",
+	}
+	output, err := solc.Compile(files...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(output) != 2 {
+		t.Fatal("two expected")
+	}
+}
+
 func existsSolidity(t *testing.T, path string) bool {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false
-		} else {
-			t.Fatal(err)
 		}
+		t.Fatal(err)
 	}
 
 	cmd := exec.Command(path, "--version")

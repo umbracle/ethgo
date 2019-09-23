@@ -13,22 +13,15 @@ import (
 	"strings"
 )
 
-// SolcOutput is the output of the compilation.
-type SolcOutput struct {
-	Contracts map[string]*SolcContract
+type solcOutput struct {
+	Contracts map[string]*solcContract
 	Version   string
 }
 
-// SolcContract refers to a solidity compiled contract
-type SolcContract struct {
-	BinRuntime    string `json:"bin-runtime"`
-	SrcMapRuntime string `json:"srcmap-runtime"`
-	Bin           string
-	SrcMap        string
-	Abi           string
-	Devdoc        string
-	Userdoc       string
-	Metadata      string
+type solcContract struct {
+	BinRuntime string `json:"bin-runtime"`
+	Bin        string
+	Abi        string
 }
 
 // Solidity is the solidity compiler
@@ -41,29 +34,65 @@ func NewSolidityCompiler(path string) Compiler {
 	return &Solidity{path}
 }
 
+// CompileCode compiles a solidity code
+func (s *Solidity) CompileCode(code string) (map[string]*Artifact, error) {
+	if code == "" {
+		return nil, fmt.Errorf("code is empty")
+	}
+	artifacts, err := s.compileImpl(code)
+	if err != nil {
+		return nil, err
+	}
+	return artifacts, nil
+}
+
 // Compile implements the compiler interface
-func (s *Solidity) Compile(code string) (interface{}, error) {
+func (s *Solidity) Compile(files ...string) (map[string]*Artifact, error) {
+	if len(files) == 0 {
+		return nil, fmt.Errorf("no input files")
+	}
+	return s.compileImpl("", files...)
+}
+
+func (s *Solidity) compileImpl(code string, files ...string) (map[string]*Artifact, error) {
 	args := []string{
 		"--combined-json",
-		"bin,bin-runtime,srcmap,srcmap-runtime,abi,userdoc,devdoc",
-		"-",
+		"bin,bin-runtime,abi",
+	}
+	if code != "" {
+		args = append(args, "-")
+	}
+	if len(files) != 0 {
+		args = append(args, files...)
 	}
 
+	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(s.path, args...)
-	cmd.Stdin = strings.NewReader(code)
-
-	var stderr, stdout bytes.Buffer
-	cmd.Stderr = &stderr
-	cmd.Stdout = &stdout
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%v\n%s", err, stderr.Bytes())
+	if code != "" {
+		cmd.Stdin = strings.NewReader(code)
 	}
 
-	var output *SolcOutput
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("failed to compile: %s", string(stderr.Bytes()))
+	}
+
+	var output *solcOutput
 	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
 		return nil, err
 	}
-	return output, nil
+
+	artifacts := map[string]*Artifact{}
+	for name, i := range output.Contracts {
+		artifacts[name] = &Artifact{
+			Bin:        i.Bin,
+			BinRuntime: i.BinRuntime,
+			Abi:        i.Abi,
+		}
+	}
+	return artifacts, nil
 }
 
 // DownloadSolidity downloads the solidity compiler
