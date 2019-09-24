@@ -9,14 +9,8 @@ import (
 	"text/template"
 
 	"github.com/umbracle/go-web3/abi"
+	"github.com/umbracle/go-web3/compiler"
 )
-
-type artifact struct {
-	Name   string
-	ABI    *abi.ABI
-	ABIStr string
-	Bin    string
-}
 
 type config struct {
 	Package string
@@ -72,7 +66,7 @@ func encodeArg(str interface{}) string {
 	}
 }
 
-func gen(artifacts []*artifact, config *config) error {
+func gen(artifacts map[string]*compiler.Artifact, config *config) error {
 	funcMap := template.FuncMap{
 		"title":     strings.Title,
 		"clean":     cleanName,
@@ -81,18 +75,25 @@ func gen(artifacts []*artifact, config *config) error {
 	}
 	tmpl, err := template.New("eth-abi").Funcs(funcMap).Parse(templateAbiStr)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	for _, artifact := range artifacts {
+	for name, artifact := range artifacts {
+		// parse abi
+		abi, err := abi.NewABI(artifact.Abi)
+		if err != nil {
+			return err
+		}
 		input := map[string]interface{}{
 			"Ptr":      "a",
 			"Config":   config,
 			"Contract": artifact,
+			"Abi":      abi,
+			"Name":     name,
 		}
 		var b bytes.Buffer
 		if err := tmpl.Execute(&b, input); err != nil {
-			panic(err)
+			return err
 		}
 
 		str := string(b.Bytes())
@@ -100,8 +101,7 @@ func gen(artifacts []*artifact, config *config) error {
 			// remove the math/big library
 			str = strings.Replace(str, "\"math/big\"\n", "", -1)
 		}
-
-		if err := ioutil.WriteFile(filepath.Join(config.Output, artifact.Name+".go"), []byte(str), 0644); err != nil {
+		if err := ioutil.WriteFile(filepath.Join(config.Output, name+".go"), []byte(str), 0644); err != nil {
 			return err
 		}
 	}
@@ -120,29 +120,29 @@ import (
 	"github.com/umbracle/go-web3/jsonrpc"
 )
 
-// {{.Contract.Name}} is a solidity contract
-type {{.Contract.Name}} struct {
+// {{.Name}} is a solidity contract
+type {{.Name}} struct {
 	c *contract.Contract
 }
 
-// New{{.Contract.Name}} creates a new instance of the contract at a specific address
-func New{{.Contract.Name}}(addr string, provider *jsonrpc.Client) *{{.Contract.Name}}{
-	return &{{.Contract.Name}}{c: contract.NewContract(addr, abi{{.Contract.Name}}, provider)}
+// New{{.Name}} creates a new instance of the contract at a specific address
+func New{{.Name}}(addr string, provider *jsonrpc.Client) *{{.Name}} {
+	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, provider)}
 }
 
 // Contract returns the contract object
-func ({{.Ptr}}* {{.Contract.Name}}) Contract() *contract.Contract {
+func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
 	return {{.Ptr}}.c
 }
 
 // calls
-{{range $key, $value := .Contract.ABI.Methods}}{{if .Const}}
+{{range $key, $value := .Abi.Methods}}{{if .Const}}
 // {{title $key}} calls the {{$key}} method in the solidity contract
-func ({{$.Ptr}}* {{$.Contract.Name}}) {{title $key}}({{range .Inputs}}{{clean .Name}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
+func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $val := .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
 	var out map[string]interface{}
 	{{ $length := len .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
 
-	out, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range .Inputs}}, {{clean .Name}}{{end}})
+	out, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range $index, $val := .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
 	if err != nil {
 		return
 	}
@@ -159,23 +159,21 @@ func ({{$.Ptr}}* {{$.Contract.Name}}) {{title $key}}({{range .Inputs}}{{clean .N
 {{end}}{{end}}
 
 // txns
-{{range $key, $value := .Contract.ABI.Methods}}{{if not .Const}}
+{{range $key, $value := .Abi.Methods}}{{if not .Const}}
 // {{title $key}} sends a {{$key}} transaction in the solidity contract
-func ({{$.Ptr}}* {{$.Contract.Name}}) {{title $key}}({{range $index, $input := .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
+func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $input := .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
 	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := .Inputs}}, {{clean $elem.Name}}{{end}})
 }
 {{end}}{{end}}
 
-var abi{{.Contract.Name}} *abi.ABI
+var abi{{.Name}} *abi.ABI
 
 func init() {
 	var err error
-	abi{{.Contract.Name}}, err = abi.NewABI(abi{{.Contract.Name}}Str)
+	abi{{.Name}}, err = abi.NewABI(abi{{.Name}}Str)
 	if err != nil {
-		panic(fmt.Errorf("cannot parse {{.Contract.Name}} abi: %v", err))
+		panic(fmt.Errorf("cannot parse {{.Name}} abi: %v", err))
 	}
 }
 
-var bin{{.Contract.Name}} = []byte{}
-
-var abi{{.Contract.Name}}Str = ` + "`" + `{{.Contract.ABIStr}}` + "`"
+var abi{{.Name}}Str = ` + "`" + `{{.Contract.Abi}}` + "`"
