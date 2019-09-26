@@ -74,7 +74,7 @@ type ServerConfigCallback func(c *TestServerConfig)
 type TestServer struct {
 	cmd      *exec.Cmd
 	config   *TestServerConfig
-	accounts []string
+	accounts []web3.Address
 	client   *ethClient
 	t        *testing.T
 }
@@ -149,7 +149,7 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 }
 
 // Account returns a specific account
-func (t *TestServer) Account(i int) string {
+func (t *TestServer) Account(i int) web3.Address {
 	return t.accounts[i]
 }
 
@@ -178,9 +178,15 @@ func (t *TestServer) ProcessBlock() error {
 	return err
 }
 
+var emptyAddr web3.Address
+
+func isEmptyAddr(w web3.Address) bool {
+	return bytes.Equal(w[:], emptyAddr[:])
+}
+
 // Call sends a contract call
 func (t *TestServer) Call(msg *web3.CallMsg) (string, error) {
-	if msg.From == "" {
+	if isEmptyAddr(msg.From) {
 		msg.From = t.Account(0)
 	}
 	var resp string
@@ -191,10 +197,10 @@ func (t *TestServer) Call(msg *web3.CallMsg) (string, error) {
 }
 
 // TxnTo sends a transaction to a given method without any arguments
-func (t *TestServer) TxnTo(address string, method string) *web3.Receipt {
+func (t *TestServer) TxnTo(address web3.Address, method string) *web3.Receipt {
 	sig := MethodSig(method)
 	receipt, err := t.SendTxn(&web3.Transaction{
-		To:    address,
+		To:    address.String(),
 		Input: sig,
 	})
 	if err != nil {
@@ -205,7 +211,7 @@ func (t *TestServer) TxnTo(address string, method string) *web3.Receipt {
 
 // SendTxn sends a transaction
 func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
-	if txn.From == "" {
+	if isEmptyAddr(txn.From) {
 		txn.From = t.Account(0)
 	}
 	if txn.GasPrice == 0 {
@@ -242,11 +248,15 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, string) {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, web3.Address) {
 	solcContract := compile(c.Print())
 
+	buf, err := hex.DecodeString(solcContract.Bin)
+	if err != nil {
+		panic(err)
+	}
 	receipt, err := t.SendTxn(&web3.Transaction{
-		Data: "0x" + solcContract.Bin,
+		Input: buf,
 	})
 	if err != nil {
 		panic(err)
@@ -361,9 +371,14 @@ func compile(source string) *compiler.Artifact {
 }
 
 // MethodSig returns the signature of a non-parametrized function
-func MethodSig(name string) string {
+func MethodSig(name string) []byte {
 	h := sha3.NewLegacyKeccak256()
 	h.Write([]byte(name + "()"))
 	b := h.Sum(nil)
-	return "0x" + hex.EncodeToString(b[:4])
+
+	fmt.Println("-- method sig --")
+	fmt.Println("0x" + hex.EncodeToString(b[:4]))
+
+	return b[:4]
+	// return "0x" + hex.EncodeToString(b[:4])
 }

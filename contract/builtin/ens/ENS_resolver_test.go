@@ -1,15 +1,17 @@
 package ens
 
 import (
-	"testing"
 	"encoding/hex"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
+	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/jsonrpc"
 )
 
-const (
+var (
 	url         = "https://mainnet.infura.io"
-	mainnetAddr = "0x314159265dD8dbb310642f98f50C066173C1259b"
+	mainnetAddr = web3.HexToAddress("0x314159265dD8dbb310642f98f50C066173C1259b")
 )
 
 func TestResolveAddr(t *testing.T) {
@@ -17,20 +19,20 @@ func TestResolveAddr(t *testing.T) {
 	r := NewENSResolver(mainnetAddr, c)
 
 	cases := []struct {
-		Addr string
+		Addr     string
 		Expected string
-	} {
+	}{
 		{
-			Addr: "arachnid.eth",
+			Addr:     "arachnid.eth",
 			Expected: "0xfdb33f8ac7ce72d7d4795dd8610e323b4c122fbb",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
-			found, err := r.Resolve("arachnid.eth")
+			found, err := r.Resolve(c.Addr)
 			assert.NoError(t, err)
-			assert.Equal(t, "0x" + hex.EncodeToString(found[:]), c.Expected)
+			assert.Equal(t, "0x"+hex.EncodeToString(found[:]), c.Expected)
 		})
 	}
 }

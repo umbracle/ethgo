@@ -71,7 +71,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			"address[]",
-			[][20]byte{{1}, {2}},
+			[]web3.Address{{1}, {2}},
 		},
 		{
 			"bytes10[]",
@@ -332,18 +332,18 @@ func TestEncoding(t *testing.T) {
 
 func TestEncodingArguments(t *testing.T) {
 	cases := []struct {
-		Arg   *Argument
+		Arg   *ArgumentStr
 		Input interface{}
 	}{
 		{
-			&Argument{
+			&ArgumentStr{
 				Type: "tuple",
-				Components: []*Argument{
-					&Argument{
+				Components: []*ArgumentStr{
+					&ArgumentStr{
 						Name: "",
 						Type: "int32",
 					},
-					&Argument{
+					&ArgumentStr{
 						Name: "",
 						Type: "int32",
 					},
@@ -355,14 +355,14 @@ func TestEncodingArguments(t *testing.T) {
 			},
 		},
 		{
-			&Argument{
+			&ArgumentStr{
 				Type: "tuple",
-				Components: []*Argument{
-					&Argument{
+				Components: []*ArgumentStr{
+					&ArgumentStr{
 						Name: "a",
 						Type: "int32",
 					},
-					&Argument{
+					&ArgumentStr{
 						Name: "",
 						Type: "int32",
 					},
@@ -463,18 +463,22 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	if err != nil {
 		return err
 	}
-	solcContrat, ok := output["<stdin>:Sample"]
+	solcContract, ok := output["<stdin>:Sample"]
 	if !ok {
 		return fmt.Errorf("Expected the contract to be called Sample")
 	}
 
-	abi, err := NewABI(string(solcContrat.Abi))
+	abi, err := NewABI(string(solcContract.Abi))
 	if err != nil {
 		return err
 	}
 
+	binBuf, err := hex.DecodeString(solcContract.Bin)
+	if err != nil {
+		return err
+	}
 	txn := &web3.Transaction{
-		Data: "0x" + string(solcContrat.Bin),
+		Input: binBuf,
 	}
 	receipt, err := server.SendTxn(txn)
 	if err != nil {
@@ -496,7 +500,7 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 
 	res, err := server.Call(&web3.CallMsg{
 		To:   receipt.ContractAddress,
-		Data: encodeHex(append(method.ID(), data...)),
+		Data: append(method.ID(), data...),
 	})
 	if err != nil {
 		return err

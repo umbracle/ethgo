@@ -16,7 +16,7 @@ type ERC20 struct {
 }
 
 // NewERC20 creates a new instance of the contract at a specific address
-func NewERC20(addr string, provider *jsonrpc.Client) *ERC20 {
+func NewERC20(addr web3.Address, provider *jsonrpc.Client) *ERC20 {
 	return &ERC20{c: contract.NewContract(addr, abiERC20, provider)}
 }
 
@@ -28,7 +28,7 @@ func (a *ERC20) Contract() *contract.Contract {
 // calls
 
 // Allowance calls the allowance method in the solidity contract
-func (a *ERC20) Allowance(owner [20]byte, spender [20]byte, block ...web3.BlockNumber) (val0 *big.Int, err error) {
+func (a *ERC20) Allowance(owner web3.Address, spender web3.Address, block ...web3.BlockNumber) (val0 *big.Int, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -48,7 +48,7 @@ func (a *ERC20) Allowance(owner [20]byte, spender [20]byte, block ...web3.BlockN
 }
 
 // BalanceOf calls the balanceOf method in the solidity contract
-func (a *ERC20) BalanceOf(owner [20]byte, block ...web3.BlockNumber) (val0 *big.Int, err error) {
+func (a *ERC20) BalanceOf(owner web3.Address, block ...web3.BlockNumber) (val0 *big.Int, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -151,17 +151,17 @@ func (a *ERC20) TotalSupply(block ...web3.BlockNumber) (val0 *big.Int, err error
 // txns
 
 // Approve sends a approve transaction in the solidity contract
-func (a *ERC20) Approve(spender [20]byte, value *big.Int) *contract.Txn {
+func (a *ERC20) Approve(spender web3.Address, value *big.Int) *contract.Txn {
 	return a.c.Txn("approve", spender, value)
 }
 
 // Transfer sends a transfer transaction in the solidity contract
-func (a *ERC20) Transfer(to [20]byte, value *big.Int) *contract.Txn {
+func (a *ERC20) Transfer(to web3.Address, value *big.Int) *contract.Txn {
 	return a.c.Txn("transfer", to, value)
 }
 
 // TransferFrom sends a transferFrom transaction in the solidity contract
-func (a *ERC20) TransferFrom(from [20]byte, to [20]byte, value *big.Int) *contract.Txn {
+func (a *ERC20) TransferFrom(from web3.Address, to web3.Address, value *big.Int) *contract.Txn {
 	return a.c.Txn("transferFrom", from, to, value)
 }
 

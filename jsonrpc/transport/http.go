@@ -66,6 +66,7 @@ func (h *HTTP) Call(method string, out interface{}, params ...interface{}) error
 	if response.Error != nil {
 		return response.Error
 	}
+
 	if err := json.Unmarshal(response.Result, out); err != nil {
 		return err
 	}

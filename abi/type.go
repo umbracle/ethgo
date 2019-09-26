@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/umbracle/go-web3"
 )
 
 // batch of predefined reflect types
@@ -20,7 +22,7 @@ var (
 	int16T        = reflect.TypeOf(int16(0))
 	int32T        = reflect.TypeOf(int32(0))
 	int64T        = reflect.TypeOf(int64(0))
-	addressT      = reflect.TypeOf([20]byte{})
+	addressT      = reflect.TypeOf(web3.Address{})
 	stringT       = reflect.TypeOf("")
 	dynamicBytesT = reflect.SliceOf(reflect.TypeOf(byte(0)))
 	functionT     = reflect.ArrayOf(24, reflect.TypeOf(byte(0)))
@@ -145,7 +147,7 @@ func (t *Type) isDynamicType() bool {
 	return t.kind == KindString || t.kind == KindBytes || t.kind == KindSlice || (t.kind == KindArray && t.elem.isDynamicType())
 }
 
-func parseType(arg *Argument) (string, error) {
+func parseType(arg *ArgumentStr) (string, error) {
 	if !strings.HasPrefix(arg.Type, "tuple") {
 		return arg.Type, nil
 	}
@@ -167,7 +169,7 @@ func parseType(arg *Argument) (string, error) {
 }
 
 // NewTypeFromArgument parses an abi type from an argument
-func NewTypeFromArgument(arg *Argument) (*Type, error) {
+func NewTypeFromArgument(arg *ArgumentStr) (*Type, error) {
 	str, err := parseType(arg)
 	if err != nil {
 		return nil, err

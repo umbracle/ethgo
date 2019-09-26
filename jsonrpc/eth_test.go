@@ -1,8 +1,8 @@
 package jsonrpc
 
 import (
+	"bytes"
 	"math/big"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	addr0 = "0x0000000000000000000000000000000000000000"
-	addr1 = "0x0000000000000000000000000000000000000001"
+	addr0 = web3.Address{0x1}
+	addr1 = web3.Address{0x2}
 )
 
 func TestEthAccounts(t *testing.T) {
@@ -150,7 +150,7 @@ func TestEthSendTransaction(t *testing.T) {
 	}
 }
 
-func TestEstimateGas(t *testing.T) {
+func TestEthEstimateGas(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 
@@ -158,7 +158,7 @@ func TestEstimateGas(t *testing.T) {
 
 	cc := &testutil.Contract{}
 	cc.AddEvent(testutil.NewEvent("A").Add("address", true))
-	cc.EmitEvent("setA", "A", addr0)
+	cc.EmitEvent("setA", "A", addr0.String())
 
 	_, addr := s.DeployContract(cc)
 
@@ -184,15 +184,15 @@ func TestEthGetLogs(t *testing.T) {
 		Add("address", true).
 		Add("address", true))
 
-	cc.EmitEvent("setA1", "A", addr0, addr1)
-	cc.EmitEvent("setA2", "A", addr1, addr0)
+	cc.EmitEvent("setA1", "A", addr0.String(), addr1.String())
+	cc.EmitEvent("setA2", "A", addr1.String(), addr0.String())
 
 	_, addr := s.DeployContract(cc)
 
 	r := s.TxnTo(addr, "setA2")
 
 	filter := &web3.LogFilter{
-		BlockHash: r.BlockHash,
+		BlockHash: &r.BlockHash,
 	}
 	logs, err := c.Eth().GetLogs(filter)
 	assert.NoError(t, err)
@@ -203,10 +203,10 @@ func TestEthGetLogs(t *testing.T) {
 	assert.Equal(t, log.Address, addr)
 
 	// first topic is the signature of the event
-	assert.Equal(t, log.Topics[0], cc.GetEvent("A").Sig())
+	assert.Equal(t, log.Topics[0].String(), cc.GetEvent("A").Sig())
 
 	// topics have 32 bytes and the addr are 20 bytes, then, assert.Equal wont work.
 	// this is a workaround until we build some helper function to test this better
-	assert.True(t, strings.HasSuffix(log.Topics[1], addr1[2:]))
-	assert.True(t, strings.HasSuffix(log.Topics[2], addr0[2:]))
+	assert.True(t, bytes.HasSuffix(log.Topics[1][:], addr1[:]))
+	assert.True(t, bytes.HasSuffix(log.Topics[2][:], addr0[:]))
 }

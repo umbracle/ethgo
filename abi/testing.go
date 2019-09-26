@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"reflect"
 	"strings"
+
+	"github.com/umbracle/go-web3"
 )
 
 func randomInt(min, max int) int {
@@ -111,7 +113,7 @@ func generateRandomType(t *Type) interface{} {
 		return false
 
 	case KindAddress:
-		buf := [20]byte{}
+		buf := web3.Address{}
 		rand.Read(buf[:])
 		return buf
 

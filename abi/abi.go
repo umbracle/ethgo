@@ -41,8 +41,8 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 		Name      string
 		Constant  bool
 		Anonymous bool
-		Inputs    arguments
-		Outputs   arguments
+		Inputs    Arguments
+		Outputs   Arguments
 	}
 
 	if err := json.Unmarshal(data, &fields); err != nil {
@@ -88,8 +88,8 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 type Method struct {
 	Name    string
 	Const   bool
-	Inputs  arguments
-	Outputs arguments
+	Inputs  Arguments
+	Outputs Arguments
 }
 
 // Sig returns the signature of the method
@@ -114,19 +114,19 @@ func (m *Method) ID() []byte {
 type Event struct {
 	Name      string
 	Anonymous bool
-	Inputs    arguments
+	Inputs    Arguments
 }
 
-type ArgumentObj struct {
+type Argument struct {
 	Name    string
 	Type    *Type
 	Indexed bool
 }
 
-type arguments []*ArgumentObj
+type Arguments []*Argument
 
 // Type returns the type of the argument in tuple form
-func (a *arguments) Type() *Type {
+func (a *Arguments) Type() *Type {
 	inputs := []*TupleElem{}
 	for _, i := range *a {
 		inputs = append(inputs, &TupleElem{
@@ -143,8 +143,8 @@ func (a *arguments) Type() *Type {
 	return tt
 }
 
-func (a *ArgumentObj) UnmarshalJSON(data []byte) error {
-	var arg *Argument
+func (a *Argument) UnmarshalJSON(data []byte) error {
+	var arg *ArgumentStr
 	if err := json.Unmarshal(data, &arg); err != nil {
 		return fmt.Errorf("argument json err: %v", err)
 	}
@@ -160,12 +160,12 @@ func (a *ArgumentObj) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Argument encodes a type object
-type Argument struct {
+// ArgumentStr encodes a type object
+type ArgumentStr struct {
 	Name       string
 	Type       string
 	Indexed    bool
-	Components []*Argument
+	Components []*ArgumentStr
 }
 
 var keccakPool = sync.Pool{

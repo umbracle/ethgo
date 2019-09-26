@@ -8,7 +8,7 @@ import (
 func TestType(t *testing.T) {
 	cases := []struct {
 		s   string
-		a   *Argument
+		a   *ArgumentStr
 		t   *Type
 		err bool
 	}{
@@ -98,9 +98,9 @@ func TestType(t *testing.T) {
 		},
 		{
 			s: "tuple(arg0 int64)",
-			a: &Argument{
+			a: &ArgumentStr{
 				Type: "tuple",
-				Components: []*Argument{
+				Components: []*ArgumentStr{
 					{
 						Name: "arg0",
 						Type: "int64",
@@ -126,9 +126,9 @@ func TestType(t *testing.T) {
 		},
 		{
 			s: "tuple(arg_0 int64)[2]",
-			a: &Argument{
+			a: &ArgumentStr{
 				Type: "tuple[2]",
-				Components: []*Argument{
+				Components: []*ArgumentStr{
 					{
 						Name: "arg_0",
 						Type: "int64",
@@ -160,9 +160,9 @@ func TestType(t *testing.T) {
 		},
 		{
 			s: "tuple(a int64)[]",
-			a: &Argument{
+			a: &ArgumentStr{
 				Type: "tuple[]",
-				Components: []*Argument{
+				Components: []*ArgumentStr{
 					{
 						Name: "a",
 						Type: "int64",
@@ -193,9 +193,9 @@ func TestType(t *testing.T) {
 		},
 		{
 			s: "tuple(arg0 int32, b_2 tuple(c int32))",
-			a: &Argument{
+			a: &ArgumentStr{
 				Type: "tuple",
-				Components: []*Argument{
+				Components: []*ArgumentStr{
 					{
 						Name: "arg0",
 						Type: "int32",
@@ -203,7 +203,7 @@ func TestType(t *testing.T) {
 					{
 						Name: "b_2",
 						Type: "tuple",
-						Components: []*Argument{
+						Components: []*ArgumentStr{
 							{
 								Name: "c",
 								Type: "int32",
@@ -345,8 +345,8 @@ func TestSize(t *testing.T) {
 	}
 }
 
-func simpleType(s string) *Argument {
-	return &Argument{
+func simpleType(s string) *ArgumentStr {
+	return &ArgumentStr{
 		Type: s,
 	}
 }
