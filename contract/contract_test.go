@@ -1,7 +1,6 @@
 package contract
 
 import (
-	"encoding/hex"
 	"math/big"
 	"testing"
 
@@ -12,24 +11,9 @@ import (
 	"github.com/umbracle/go-web3/testutil"
 )
 
-func mustDecode(data string) []byte {
-	raw, err := hex.DecodeString(data[2:])
-	if err != nil {
-		panic(err)
-	}
-	return raw
-}
-
-func mustDecodeAddr(data string) [20]byte {
-	raw := mustDecode(data)
-	buf := [20]byte{}
-	copy(buf[:], raw)
-	return buf
-}
-
 var (
 	addr0  = "0x0000000000000000000000000000000000000000"
-	addr0B = mustDecodeAddr(addr0)
+	addr0B = web3.HexToAddress(addr0)
 )
 
 func TestContract(t *testing.T) {

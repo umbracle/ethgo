@@ -16,7 +16,7 @@ type Resolver struct {
 }
 
 // NewResolver creates a new instance of the contract at a specific address
-func NewResolver(addr string, provider *jsonrpc.Client) *Resolver {
+func NewResolver(addr web3.Address, provider *jsonrpc.Client) *Resolver {
 	return &Resolver{c: contract.NewContract(addr, abiResolver, provider)}
 }
 
@@ -48,12 +48,12 @@ func (a *Resolver) ABI(node [32]byte, contentTypes *big.Int, block ...web3.Block
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
 	}
-	
+
 	return
 }
 
 // Addr calls the addr method in the solidity contract
-func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (val0 [20]byte, err error) {
+func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -63,12 +63,12 @@ func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (val0 [20]byte
 	}
 
 	// decode outputs
-	val0, ok = out["ret"].([20]byte)
+	val0, ok = out["ret"].(web3.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
@@ -88,7 +88,7 @@ func (a *Resolver) Content(node [32]byte, block ...web3.BlockNumber) (val0 [32]b
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
@@ -108,7 +108,7 @@ func (a *Resolver) Name(node [32]byte, block ...web3.BlockNumber) (val0 string, 
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
@@ -133,7 +133,7 @@ func (a *Resolver) Pubkey(node [32]byte, block ...web3.BlockNumber) (val0 [32]by
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
 	}
-	
+
 	return
 }
 
@@ -153,10 +153,9 @@ func (a *Resolver) SupportsInterface(interfaceID [4]byte, block ...web3.BlockNum
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
-
 
 // txns
 
@@ -166,7 +165,7 @@ func (a *Resolver) SetABI(node [32]byte, contentType *big.Int, data []byte) *con
 }
 
 // SetAddr sends a setAddr transaction in the solidity contract
-func (a *Resolver) SetAddr(node [32]byte, addr [20]byte) *contract.Txn {
+func (a *Resolver) SetAddr(node [32]byte, addr web3.Address) *contract.Txn {
 	return a.c.Txn("setAddr", node, addr)
 }
 
@@ -184,7 +183,6 @@ func (a *Resolver) SetName(node [32]byte, name string) *contract.Txn {
 func (a *Resolver) SetPubkey(node [32]byte, x [32]byte, y [32]byte) *contract.Txn {
 	return a.c.Txn("setPubkey", node, x, y)
 }
-
 
 var abiResolver *abi.ABI
 

@@ -1,8 +1,6 @@
 package ens
 
 import (
-	"encoding/hex"
-
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/jsonrpc"
 )
@@ -12,21 +10,18 @@ type ENSResolver struct {
 	provider *jsonrpc.Client
 }
 
-func NewENSResolver(addr string, provider *jsonrpc.Client) *ENSResolver {
+func NewENSResolver(addr web3.Address, provider *jsonrpc.Client) *ENSResolver {
 	return &ENSResolver{NewENS(addr, provider), provider}
 }
 
-func (e *ENSResolver) Resolve(addr string, block ...web3.BlockNumber) (res [20]byte, err error) {
-	aux := NameHash(addr)
-	addrHash := [32]byte{}
-	copy(addrHash[:], aux)
-
+func (e *ENSResolver) Resolve(addr string, block ...web3.BlockNumber) (res web3.Address, err error) {
+	addrHash := NameHash(addr)
 	resolverAddr, err := e.e.Resolver(addrHash, block...)
 	if err != nil {
 		return
 	}
 
-	resolver := NewResolver("0x"+hex.EncodeToString(resolverAddr[:]), e.provider)
+	resolver := NewResolver(resolverAddr, e.provider)
 	res, err = resolver.Addr(addrHash, block...)
-	return 
+	return
 }

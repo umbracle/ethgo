@@ -1,62 +1,116 @@
 package web3
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 )
 
+// Address is an Ethereum address
+type Address [20]byte
+
+// HexToAddress converts an hex string value to an address object
+func HexToAddress(str string) Address {
+	a := Address{}
+	a.UnmarshalText([]byte(str))
+	return a
+}
+
+// UnmarshalText implements the unmarshal interface
+func (a *Address) UnmarshalText(b []byte) error {
+	return unmarshalTextByte(a[:], b, 20)
+}
+
+// MarshalText implements the marshal interface
+func (a Address) MarshalText() ([]byte, error) {
+	return []byte(a.String()), nil
+}
+
+func (a Address) String() string {
+	return "0x" + hex.EncodeToString(a[:])
+}
+
+// Hash is an Ethereum hash
+type Hash [32]byte
+
+// UnmarshalText implements the unmarshal interface
+func (h *Hash) UnmarshalText(b []byte) error {
+	return unmarshalTextByte(h[:], b, 32)
+}
+
+// MarshalText implements the marshal interface
+func (h Hash) MarshalText() ([]byte, error) {
+	return []byte(h.String()), nil
+}
+
+func (h Hash) String() string {
+	return "0x" + hex.EncodeToString(h[:])
+}
+
 type Block struct {
 	Number           uint64
-	Hash             string
-	ParentHash       []byte
-	Sha3Uncles       []byte
-	TransactionsRoot []byte
-	StateRoot        []byte
-	ReceiptsRoot     []byte
-	Miner            []byte
+	Hash             Hash
+	ParentHash       Hash
+	Sha3Uncles       Hash
+	TransactionsRoot Hash
+	StateRoot        Hash
+	ReceiptsRoot     Hash
+	Miner            Address
 	Difficulty       *big.Int
-	TotalDifficulty  *big.Int
 	ExtraData        []byte
 	GasLimit         uint64
 	GasUsed          uint64
 	Timestamp        uint64
 	Transactions     []*Transaction
-	Uncles           [][]byte
+	Uncles           []Hash
 }
 
 type Transaction struct {
-	From     string
+	From     Address
 	To       string
-	Data     string
-	Input    string
+	Input    []byte
 	GasPrice uint64
 	Gas      uint64
 	Value    *big.Int
 }
 
-type Receipt struct {
-	TransactionHash string `json:"transactionHash"`
-	ContractAddress string `json:"contractAddress"`
-	BlockHash       string `json:"blockHash"`
-}
-
 type CallMsg struct {
-	From     string `json:"from"`
-	To       string `json:"to"`
-	Data     string `json:"data"`
-	GasPrice string `json:"gasPrice"`
+	From     Address `json:"from"`
+	To       Address `json:"to"`
+	Data     []byte  `json:"data"`
+	GasPrice uint64  `json:"gasPrice"`
 }
 
 type LogFilter struct {
-	Address   []string `json:"address"`
-	Topics    []string `json:"topics"`
-	BlockHash string   `json:"blockhash"`
+	// TODO, change
+	Address   []Address `json:"address,omitempty"`
+	Topics    []Hash    `json:"topics,omitempty"`
+	BlockHash *Hash     `json:"blockhash"`
+}
+
+type Receipt struct {
+	TransactionHash   Hash
+	TransactionIndex  uint64
+	ContractAddress   Address
+	BlockHash         Hash
+	From              Address
+	BlockNumber       uint64
+	GasUsed           uint64
+	CumulativeGasUsed uint64
+	LogsBloom         []byte
+	Logs              []*Log
 }
 
 type Log struct {
-	Address string   `json:"address"`
-	Topics  []string `json:"topics"`
-	Data    string   `json:"data"`
+	Removed          bool
+	LogIndex         uint64
+	TransactionIndex uint64
+	TransactionHash  Hash
+	BlockHash        Hash
+	BlockNumber      uint64
+	Address          Address
+	Topics           []Hash
+	Data             []byte
 }
 
 type BlockNumber int

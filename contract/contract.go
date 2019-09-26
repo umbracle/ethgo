@@ -11,14 +11,14 @@ import (
 
 // Contract is an Ethereum contract
 type Contract struct {
-	addr     string
-	from     string
+	addr     web3.Address
+	from     *web3.Address
 	abi      *abi.ABI
 	provider *jsonrpc.Client
 }
 
 // NewContract creates a new contract instance
-func NewContract(addr string, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
+func NewContract(addr web3.Address, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
 	return &Contract{
 		addr:     addr,
 		abi:      abi,
@@ -27,13 +27,13 @@ func NewContract(addr string, abi *abi.ABI, provider *jsonrpc.Client) *Contract 
 }
 
 // Addr returns the address of the contract
-func (c *Contract) Addr() string {
+func (c *Contract) Addr() web3.Address {
 	return c.addr
 }
 
 // SetFrom sets the origin of the calls
-func (c *Contract) SetFrom(addr string) {
-	c.from = addr
+func (c *Contract) SetFrom(addr web3.Address) {
+	c.from = &addr
 }
 
 // EstimateGas estimates the gas for a contract call
@@ -57,17 +57,15 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	}
 	data = append(m.ID(), data...)
 
-	from := c.from
-	if from == "" {
-		from = emptyAddr
-	}
-
 	// Call function
 	msg := &web3.CallMsg{
-		From: from,
 		To:   c.addr,
-		Data: "0x" + hex.EncodeToString(data),
+		Data: data,
 	}
+	if c.from != nil {
+		msg.From = *c.from
+	}
+
 	rawStr, err := c.provider.Eth().Call(msg, block)
 	if err != nil {
 		return nil, err
@@ -104,7 +102,7 @@ type Txn struct {
 	data     []byte
 	gasLimit uint64
 	gasPrice uint64
-	hash     string
+	hash     web3.Hash
 	receipt  *web3.Receipt
 }
 
@@ -118,9 +116,9 @@ func (t *Txn) EstimateGas() (uint64, error) {
 
 func (t *Txn) estimateGas() (uint64, error) {
 	msg := &web3.CallMsg{
-		From: t.contract.from,
+		From: *t.contract.from,
 		To:   t.contract.addr,
-		Data: "0x" + hex.EncodeToString(t.data),
+		Data: t.data,
 	}
 	return t.contract.provider.Eth().EstimateGas(msg)
 }
@@ -149,9 +147,9 @@ func (t *Txn) Do() error {
 
 	// send transaction
 	txn := &web3.Transaction{
-		From:     t.contract.from,
-		To:       t.contract.addr,
-		Data:     "0x" + hex.EncodeToString(t.data),
+		From:     *t.contract.from,
+		To:       t.contract.addr.String(),
+		Input:    t.data,
 		GasPrice: t.gasPrice,
 		Gas:      t.gasLimit,
 	}
@@ -194,7 +192,7 @@ func (t *Txn) SetGasLimit(gasLimit uint64) *Txn {
 
 // Wait waits till the transaction is mined
 func (t *Txn) Wait() error {
-	if t.hash == "" {
+	if (t.hash == web3.Hash{}) {
 		panic("transaction not executed")
 	}
 
@@ -216,4 +214,13 @@ func (t *Txn) Wait() error {
 // Receipt returns the receipt of the transaction after wait
 func (t *Txn) Receipt() *web3.Receipt {
 	return t.receipt
+}
+
+// Event parses a specific event
+func (c *Contract) Event(name string, log *web3.Log) (map[string]interface{}, error) {
+	event, ok := c.abi.Events[name]
+	if !ok {
+		return nil, fmt.Errorf("event %s not found", name)
+	}
+	return abi.ParseLog(event.Inputs, log)
 }

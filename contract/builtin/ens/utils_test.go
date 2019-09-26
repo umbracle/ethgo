@@ -2,7 +2,7 @@ package ens
 
 import (
 	"testing"
-	"encoding/hex"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestNameHash(t *testing.T) {
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
 			found := NameHash(c.Name)
-			assert.Equal(t, c.Expected, "0x"+hex.EncodeToString(found))
+			assert.Equal(t, c.Expected, found.String())
 		})
 	}
 }

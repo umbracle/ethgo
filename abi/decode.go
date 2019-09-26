@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"reflect"
 	"strconv"
+
+	"github.com/umbracle/go-web3"
 )
 
 // Decode decodes the input with a given type
@@ -78,8 +80,8 @@ var (
 		big.NewInt(-1))
 )
 
-func readAddr(b []byte) ([20]byte, error) {
-	res := [20]byte{}
+func readAddr(b []byte) (web3.Address, error) {
+	res := web3.Address{}
 	if len(b) != 32 {
 		return res, fmt.Errorf("len is not correct")
 	}

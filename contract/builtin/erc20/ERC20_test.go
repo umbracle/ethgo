@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/jsonrpc"
 )
 
-const (
+var (
 	url   = "https://mainnet.infura.io"
-	zeroX = "0xe41d2489571d322189246dafa5ebde1f4699f498"
+	zeroX = web3.HexToAddress("0xe41d2489571d322189246dafa5ebde1f4699f498")
 )
 
 func TestERC20Decimals(t *testing.T) {

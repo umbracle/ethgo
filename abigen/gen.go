@@ -34,14 +34,14 @@ func inputArg(str string) string {
 }
 
 func encodeArg(str interface{}) string {
-	arg, ok := str.(*abi.ArgumentObj)
+	arg, ok := str.(*abi.Argument)
 	if !ok {
 		panic("bad")
 	}
 
 	switch arg.Type.Kind() {
 	case abi.KindAddress:
-		return "[20]byte"
+		return "web3.Address"
 
 	case abi.KindString:
 		return "string"
@@ -126,7 +126,7 @@ type {{.Name}} struct {
 }
 
 // New{{.Name}} creates a new instance of the contract at a specific address
-func New{{.Name}}(addr string, provider *jsonrpc.Client) *{{.Name}} {
+func New{{.Name}}(addr web3.Address, provider *jsonrpc.Client) *{{.Name}} {
 	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, provider)}
 }
 

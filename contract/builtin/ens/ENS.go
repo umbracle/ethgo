@@ -2,7 +2,7 @@ package ens
 
 import (
 	"fmt"
-	
+
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/contract"
@@ -15,7 +15,7 @@ type ENS struct {
 }
 
 // NewENS creates a new instance of the contract at a specific address
-func NewENS(addr string, provider *jsonrpc.Client) *ENS {
+func NewENS(addr web3.Address, provider *jsonrpc.Client) *ENS {
 	return &ENS{c: contract.NewContract(addr, abiENS, provider)}
 }
 
@@ -27,7 +27,7 @@ func (a *ENS) Contract() *contract.Contract {
 // calls
 
 // Owner calls the owner method in the solidity contract
-func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (val0 [20]byte, err error) {
+func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -37,17 +37,17 @@ func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (val0 [20]byte, er
 	}
 
 	// decode outputs
-	val0, ok = out["0"].([20]byte)
+	val0, ok = out["0"].(web3.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
 // Resolver calls the resolver method in the solidity contract
-func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (val0 [20]byte, err error) {
+func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -57,12 +57,12 @@ func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (val0 [20]byte,
 	}
 
 	// decode outputs
-	val0, ok = out["0"].([20]byte)
+	val0, ok = out["0"].(web3.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
@@ -82,25 +82,24 @@ func (a *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (val0 uint64, err er
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
-
 
 // txns
 
 // SetOwner sends a setOwner transaction in the solidity contract
-func (a *ENS) SetOwner(node [32]byte, owner [20]byte) *contract.Txn {
+func (a *ENS) SetOwner(node [32]byte, owner web3.Address) *contract.Txn {
 	return a.c.Txn("setOwner", node, owner)
 }
 
 // SetResolver sends a setResolver transaction in the solidity contract
-func (a *ENS) SetResolver(node [32]byte, resolver [20]byte) *contract.Txn {
+func (a *ENS) SetResolver(node [32]byte, resolver web3.Address) *contract.Txn {
 	return a.c.Txn("setResolver", node, resolver)
 }
 
 // SetSubnodeOwner sends a setSubnodeOwner transaction in the solidity contract
-func (a *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner [20]byte) *contract.Txn {
+func (a *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner web3.Address) *contract.Txn {
 	return a.c.Txn("setSubnodeOwner", node, label, owner)
 }
 
@@ -108,7 +107,6 @@ func (a *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner [20]byte) *co
 func (a *ENS) SetTTL(node [32]byte, ttl uint64) *contract.Txn {
 	return a.c.Txn("setTTL", node, ttl)
 }
-
 
 var abiENS *abi.ABI
 
