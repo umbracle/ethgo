@@ -1,6 +1,7 @@
 package jsonrpc
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 
@@ -96,6 +97,18 @@ func (e *Eth) Call(msg *web3.CallMsg, block web3.BlockNumber) (string, error) {
 		return "", err
 	}
 	return out, nil
+}
+
+// EstimateGasContract estimates the gas to deploy a contract
+func (e *Eth) EstimateGasContract(bin []byte) (uint64, error) {
+	var out string
+	msg := map[string]interface{}{
+		"data": "0x" + hex.EncodeToString(bin),
+	}
+	if err := e.c.Call("eth_estimateGas", &out, msg); err != nil {
+		return 0, err
+	}
+	return parseUint64orHex(out)
 }
 
 // EstimateGas generates and returns an estimate of how much gas is necessary to allow the transaction to complete.

@@ -73,7 +73,11 @@ func gen(artifacts map[string]*compiler.Artifact, config *config) error {
 		"arg":       encodeArg,
 		"outputArg": outputArg,
 	}
-	tmpl, err := template.New("eth-abi").Funcs(funcMap).Parse(templateAbiStr)
+	tmplAbi, err := template.New("eth-abi").Funcs(funcMap).Parse(templateAbiStr)
+	if err != nil {
+		return err
+	}
+	tmplBin, err := template.New("eth-abi").Funcs(funcMap).Parse(templateBinStr)
 	if err != nil {
 		return err
 	}
@@ -91,17 +95,22 @@ func gen(artifacts map[string]*compiler.Artifact, config *config) error {
 			"Abi":      abi,
 			"Name":     name,
 		}
+
+		filename := strings.ToLower(name)
+
 		var b bytes.Buffer
-		if err := tmpl.Execute(&b, input); err != nil {
+		if err := tmplAbi.Execute(&b, input); err != nil {
+			return err
+		}
+		if err := ioutil.WriteFile(filepath.Join(config.Output, filename+".go"), []byte(b.Bytes()), 0644); err != nil {
 			return err
 		}
 
-		str := string(b.Bytes())
-		if !strings.Contains(str, "*big.Int") {
-			// remove the math/big library
-			str = strings.Replace(str, "\"math/big\"\n", "", -1)
+		b.Reset()
+		if err := tmplBin.Execute(&b, input); err != nil {
+			return err
 		}
-		if err := ioutil.WriteFile(filepath.Join(config.Output, name+".go"), []byte(str), 0644); err != nil {
+		if err := ioutil.WriteFile(filepath.Join(config.Output, filename+"_artifacts.go"), []byte(b.Bytes()), 0644); err != nil {
 			return err
 		}
 	}
@@ -115,16 +124,24 @@ import (
 	"math/big"
 
 	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/contract"
 	"github.com/umbracle/go-web3/jsonrpc"
+)
+
+var (
+	_ = big.NewInt
 )
 
 // {{.Name}} is a solidity contract
 type {{.Name}} struct {
 	c *contract.Contract
 }
-
+{{if .Contract.Bin}}
+// Deploy{{.Name}} deploys a new {{.Name}} contract
+func Deploy{{.Name}}(provider *jsonrpc.Client, from web3.Address, args ...interface{}) *contract.Txn {
+	return contract.DeployContract(provider, from, abi{{.Name}}, bin{{.Name}}, args...)
+}
+{{end}}
 // New{{.Name}} creates a new instance of the contract at a specific address
 func New{{.Name}}(addr web3.Address, provider *jsonrpc.Client) *{{.Name}} {
 	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, provider)}
@@ -164,16 +181,45 @@ func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $val := .Inputs}}{{i
 func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $input := .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
 	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := .Inputs}}, {{clean $elem.Name}}{{end}})
 }
-{{end}}{{end}}
+{{end}}{{end}}`
+
+var templateBinStr = `package {{.Config.Package}}
+
+import (
+	"encoding/hex"
+	"fmt"
+
+	"github.com/umbracle/go-web3/abi"
+)
 
 var abi{{.Name}} *abi.ABI
 
+// {{.Name}}Abi returns the abi of the {{.Name}} contract
+func {{.Name}}Abi() *abi.ABI {
+	return abi{{.Name}}
+}
+
+var bin{{.Name}} []byte
+{{if .Contract.Bin}}
+// {{.Name}}Bin returns the bin of the {{.Name}} contract
+func {{.Name}}Bin() []byte {
+	return bin{{.Name}}
+}
+{{end}}
 func init() {
 	var err error
 	abi{{.Name}}, err = abi.NewABI(abi{{.Name}}Str)
 	if err != nil {
 		panic(fmt.Errorf("cannot parse {{.Name}} abi: %v", err))
 	}
+	if len(bin{{.Name}}Str) != 0 {
+		bin{{.Name}}, err = hex.DecodeString(bin{{.Name}}Str[2:])
+		if err != nil {
+			panic(fmt.Errorf("cannot parse {{.Name}} bin: %v", err))
+		}
+	}
 }
 
-var abi{{.Name}}Str = ` + "`" + `{{.Contract.Abi}}` + "`"
+var bin{{.Name}}Str = "{{.Contract.Bin}}"
+
+var abi{{.Name}}Str = ` + "`" + `{{.Contract.Abi}}` + "`\n"

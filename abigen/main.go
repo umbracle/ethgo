@@ -87,7 +87,7 @@ func process(sources string, config *config) (map[string]*compiler.Artifact, err
 	return nil, nil
 }
 
-func processVyper(sources []string)  (map[string]*compiler.Artifact, error) {
+func processVyper(sources []string) (map[string]*compiler.Artifact, error) {
 	c, err := compiler.NewCompiler("vyper", "vyper")
 	if err != nil {
 		return nil, err
@@ -97,11 +97,11 @@ func processVyper(sources []string)  (map[string]*compiler.Artifact, error) {
 		return nil, err
 	}
 	res := map[string]*compiler.Artifact{}
-	for name, entry := range raw {
-		_, filename := filepath.Split(name)
-		filename = strings.TrimSuffix(filename, ".vy")
-		filename = strings.TrimSuffix(filename, ".v.py")
-		res[filename] = entry
+	for rawName, entry := range raw {
+		_, name := filepath.Split(rawName)
+		name = strings.TrimSuffix(name, ".vy")
+		name = strings.TrimSuffix(name, ".v.py")
+		res[strings.Title(name)] = entry
 	}
 	return res, nil
 }
@@ -118,7 +118,7 @@ func processSolc(sources []string) (map[string]*compiler.Artifact, error) {
 	res := map[string]*compiler.Artifact{}
 	for rawName, entry := range raw {
 		name := strings.Split(rawName, ":")[1]
-		res[name] = entry
+		res[strings.Title(name)] = entry
 	}
 	return res, nil
 }
@@ -129,18 +129,26 @@ func processAbi(sources []string, config *config) (map[string]*compiler.Artifact
 	for _, abiPath := range sources {
 		content, err := ioutil.ReadFile(abiPath)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to read file (%s): %v", abiPath, err)
+			return nil, fmt.Errorf("Failed to read abi file (%s): %v", abiPath, err)
 		}
 
-		// name of the contract
-		name := filepath.Base(abiPath)
-		name = strings.TrimSuffix(name, filepath.Ext(name))
+		// Use the name of the file to name the contract
+		path, name := filepath.Split(abiPath)
 
+		name = strings.TrimSuffix(name, filepath.Ext(name))
+		binPath := filepath.Join(path, name+".bin")
+
+		bin, err := ioutil.ReadFile(binPath)
+		if err != nil {
+			// bin not found
+			bin = []byte{}
+		}
 		if len(sources) == 1 && config.Name != "" {
 			name = config.Name
 		}
-		artifacts[name] = &compiler.Artifact{
+		artifacts[strings.Title(name)] = &compiler.Artifact{
 			Abi: string(content),
+			Bin: string(bin),
 		}
 	}
 	return artifacts, nil
