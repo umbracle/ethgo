@@ -17,6 +17,17 @@ type Contract struct {
 	provider *jsonrpc.Client
 }
 
+// DeployContract deploys a contract
+func DeployContract(provider *jsonrpc.Client, from web3.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
+	return &Txn{
+		from:     from,
+		provider: provider,
+		method:   abi.Constructor,
+		args:     args,
+		bin:      bin,
+	}
+}
+
 // NewContract creates a new contract instance
 func NewContract(addr web3.Address, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
 	return &Contract{
@@ -40,8 +51,6 @@ func (c *Contract) SetFrom(addr web3.Address) {
 func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, error) {
 	return c.Txn(method, args).EstimateGas()
 }
-
-const emptyAddr = "0x0000000000000000000000000000000000000000"
 
 // Call calls a method in the contract
 func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
@@ -87,23 +96,38 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 
 // Txn creates a new transaction object
 func (c *Contract) Txn(method string, args ...interface{}) *Txn {
+	m, ok := c.abi.Methods[method]
+	if !ok {
+		// TODO, return error
+		panic(fmt.Errorf("method %s not found", method))
+	}
+
 	return &Txn{
-		contract: c,
-		method:   method,
+		from:     *c.from,
+		addr:     &c.addr,
+		provider: c.provider,
+		method:   m,
 		args:     args,
 	}
 }
 
 // Txn is a transaction object
 type Txn struct {
-	contract *Contract
-	method   string
+	from     web3.Address
+	addr     *web3.Address
+	provider *jsonrpc.Client
+	method   *abi.Method
 	args     []interface{}
 	data     []byte
+	bin      []byte
 	gasLimit uint64
 	gasPrice uint64
 	hash     web3.Hash
 	receipt  *web3.Receipt
+}
+
+func (t *Txn) isContractDeployment() bool {
+	return t.bin != nil
 }
 
 // EstimateGas estimates the gas for the call
@@ -115,12 +139,16 @@ func (t *Txn) EstimateGas() (uint64, error) {
 }
 
 func (t *Txn) estimateGas() (uint64, error) {
+	if t.isContractDeployment() {
+		return t.provider.Eth().EstimateGasContract(t.data)
+	}
+
 	msg := &web3.CallMsg{
-		From: *t.contract.from,
-		To:   t.contract.addr,
+		From: t.from,
+		To:   *t.addr,
 		Data: t.data,
 	}
-	return t.contract.provider.Eth().EstimateGas(msg)
+	return t.provider.Eth().EstimateGas(msg)
 }
 
 // Do sends the transaction to the network
@@ -132,7 +160,7 @@ func (t *Txn) Do() error {
 
 	// estimate gas price
 	if t.gasPrice == 0 {
-		t.gasPrice, err = t.contract.provider.Eth().GasPrice()
+		t.gasPrice, err = t.provider.Eth().GasPrice()
 		if err != nil {
 			return err
 		}
@@ -147,13 +175,15 @@ func (t *Txn) Do() error {
 
 	// send transaction
 	txn := &web3.Transaction{
-		From:     *t.contract.from,
-		To:       t.contract.addr.String(),
+		From:     t.from,
 		Input:    t.data,
 		GasPrice: t.gasPrice,
 		Gas:      t.gasLimit,
 	}
-	t.hash, err = t.contract.provider.Eth().SendTransaction(txn)
+	if t.addr != nil {
+		txn.To = t.addr.String()
+	}
+	t.hash, err = t.provider.Eth().SendTransaction(txn)
 	if err != nil {
 		return err
 	}
@@ -162,19 +192,24 @@ func (t *Txn) Do() error {
 
 // Validate validates the arguments of the transaction
 func (t *Txn) Validate() error {
-	if t.data == nil {
+	if t.data != nil {
 		// Already validated
 		return nil
 	}
-	m, ok := t.contract.abi.Methods[t.method]
-	if !ok {
-		return fmt.Errorf("method %s not found", t.method)
+	if t.isContractDeployment() {
+		t.data = append(t.data, t.bin...)
 	}
-	data, err := abi.Encode(t.args, m.Inputs.Type())
-	if err != nil {
-		return fmt.Errorf("failed to encode arguments: %v", err)
+	if t.method != nil {
+		data, err := abi.Encode(t.args, t.method.Inputs.Type())
+		if err != nil {
+			return fmt.Errorf("failed to encode arguments: %v", err)
+		}
+		if !t.isContractDeployment() {
+			t.data = append(t.method.ID(), data...)
+		} else {
+			t.data = append(t.data, data...)
+		}
 	}
-	t.data = append(m.ID(), data...)
 	return nil
 }
 
@@ -198,7 +233,7 @@ func (t *Txn) Wait() error {
 
 	var err error
 	for {
-		t.receipt, err = t.contract.provider.Eth().GetTransactionReceipt(t.hash)
+		t.receipt, err = t.provider.Eth().GetTransactionReceipt(t.hash)
 		if err != nil {
 			if err.Error() != "not found" {
 				return err

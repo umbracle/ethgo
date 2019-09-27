@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/umbracle/go-web3/compiler"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -55,6 +56,41 @@ func (c *Contract) addCallback(f func() string) {
 		c.callbacks = []func() string{}
 	}
 	c.callbacks = append(c.callbacks, f)
+}
+
+// Compile compiles the contract
+func (c *Contract) Compile() (*compiler.Artifact, error) {
+	output, err := compiler.NewSolidityCompiler("solc").(*compiler.Solidity).CompileCode(c.Print())
+	if err != nil {
+		return nil, err
+	}
+	solcContract, ok := output["<stdin>:Sample"]
+	if !ok {
+		return nil, fmt.Errorf("Expected the contract to be called Sample")
+	}
+	return solcContract, nil
+}
+
+// AddConstructor creates a constructor with args that set contract variables
+func (c *Contract) AddConstructor(args ...string) {
+	// add variables
+	c.addCallback(func() string {
+		str := ""
+
+		input := []string{}
+		body := ""
+		for indx, arg := range args {
+			str += fmt.Sprintf("%s public val_%d;\n", arg, indx)
+
+			input = append(input, fmt.Sprintf("%s local_%d", arg, indx))
+			body += fmt.Sprintf("val_%d = local_%d;\n", indx, indx)
+		}
+
+		str += "constructor(" + strings.Join(input, ",") + ") public {\n"
+		str += body
+		str += "}"
+		return str
+	})
 }
 
 // AddDualCaller adds a call function that returns the same values that takes

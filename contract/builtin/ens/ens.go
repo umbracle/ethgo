@@ -2,16 +2,25 @@ package ens
 
 import (
 	"fmt"
+	"math/big"
 
 	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/contract"
 	"github.com/umbracle/go-web3/jsonrpc"
+)
+
+var (
+	_ = big.NewInt
 )
 
 // ENS is a solidity contract
 type ENS struct {
 	c *contract.Contract
+}
+
+// DeployENS deploys a new ENS contract
+func DeployENS(provider *jsonrpc.Client, from web3.Address, args ...interface{}) *contract.Txn {
+	return contract.DeployContract(provider, from, abiENS, binENS, args...)
 }
 
 // NewENS creates a new instance of the contract at a specific address
@@ -42,7 +51,7 @@ func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -62,7 +71,7 @@ func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (val0 web3.Addr
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -82,9 +91,10 @@ func (a *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (val0 uint64, err er
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
+
 
 // txns
 
@@ -107,15 +117,3 @@ func (a *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner web3.Address)
 func (a *ENS) SetTTL(node [32]byte, ttl uint64) *contract.Txn {
 	return a.c.Txn("setTTL", node, ttl)
 }
-
-var abiENS *abi.ABI
-
-func init() {
-	var err error
-	abiENS, err = abi.NewABI(abiENSStr)
-	if err != nil {
-		panic(fmt.Errorf("cannot parse ENS abi: %v", err))
-	}
-}
-
-var abiENSStr = `[{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"resolver","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"label","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setSubnodeOwner","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"ttl","type":"uint64"}],"name":"setTTL","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"node","type":"bytes32"}],"name":"ttl","outputs":[{"name":"","type":"uint64"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"resolver","type":"address"}],"name":"setResolver","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes32"},{"name":"owner","type":"address"}],"name":"setOwner","outputs":[],"payable":false,"type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"owner","type":"address"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":true,"name":"label","type":"bytes32"},{"indexed":false,"name":"owner","type":"address"}],"name":"NewOwner","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"resolver","type":"address"}],"name":"NewResolver","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"node","type":"bytes32"},{"indexed":false,"name":"ttl","type":"uint64"}],"name":"NewTTL","type":"event"}]`

@@ -249,8 +249,11 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 
 // DeployContract deploys a contract with account 0 and returns the address
 func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, web3.Address) {
-	solcContract := compile(c.Print())
-
+	// solcContract := compile(c.Print())
+	solcContract, err := c.Compile()
+	if err != nil {
+		panic(err)
+	}
 	buf, err := hex.DecodeString(solcContract.Bin)
 	if err != nil {
 		panic(err)
@@ -358,6 +361,7 @@ func (e *ethClient) call(method string, out interface{}, params ...interface{}) 
 	return nil
 }
 
+/*
 func compile(source string) *compiler.Artifact {
 	output, err := compiler.NewSolidityCompiler("solc").(*compiler.Solidity).CompileCode(source)
 	if err != nil {
@@ -369,15 +373,13 @@ func compile(source string) *compiler.Artifact {
 	}
 	return solcContract
 }
+*/
 
 // MethodSig returns the signature of a non-parametrized function
 func MethodSig(name string) []byte {
 	h := sha3.NewLegacyKeccak256()
 	h.Write([]byte(name + "()"))
 	b := h.Sum(nil)
-
-	fmt.Println("-- method sig --")
-	fmt.Println("0x" + hex.EncodeToString(b[:4]))
 
 	return b[:4]
 	// return "0x" + hex.EncodeToString(b[:4])
