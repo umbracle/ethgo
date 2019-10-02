@@ -19,7 +19,7 @@ type config struct {
 }
 
 func cleanName(str string) string {
-	return strings.Trim(str, "_")
+	return handleSnakeCase(strings.Trim(str, "_"))
 }
 
 func outputArg(str string) string {
@@ -29,8 +29,24 @@ func outputArg(str string) string {
 	return str
 }
 
-func inputArg(str string) string {
-	return str
+func handleSnakeCase(str string) string {
+	if !strings.Contains(str, "_") {
+		return str
+	}
+
+	spl := strings.Split(str, "_")
+	res := ""
+	for indx, elem := range spl {
+		if indx != 0 {
+			elem = strings.Title(elem)
+		}
+		res += elem
+	}
+	return res
+}
+
+func funcName(str string) string {
+	return strings.Title(handleSnakeCase(str))
 }
 
 func encodeArg(str interface{}) string {
@@ -72,6 +88,7 @@ func gen(artifacts map[string]*compiler.Artifact, config *config) error {
 		"clean":     cleanName,
 		"arg":       encodeArg,
 		"outputArg": outputArg,
+		"funcName":  funcName,
 	}
 	tmplAbi, err := template.New("eth-abi").Funcs(funcMap).Parse(templateAbiStr)
 	if err != nil {
@@ -154,8 +171,8 @@ func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
 
 // calls
 {{range $key, $value := .Abi.Methods}}{{if .Const}}
-// {{title $key}} calls the {{$key}} method in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $val := .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
+// {{funcName $key}} calls the {{$key}} method in the solidity contract
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
 	var out map[string]interface{}
 	{{ $length := len .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
 
@@ -177,8 +194,8 @@ func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $val := .Inputs}}{{i
 
 // txns
 {{range $key, $value := .Abi.Methods}}{{if not .Const}}
-// {{title $key}} sends a {{$key}} transaction in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{title $key}}({{range $index, $input := .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
+// {{funcName $key}} sends a {{$key}} transaction in the solidity contract
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
 	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := .Inputs}}, {{clean $elem.Name}}{{end}})
 }
 {{end}}{{end}}`
