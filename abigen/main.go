@@ -12,6 +12,10 @@ import (
 	"github.com/umbracle/go-web3/compiler"
 )
 
+const (
+	version = "0.1.0"
+)
+
 func main() {
 	var source string
 	var pckg string
@@ -29,6 +33,11 @@ func main() {
 		Package: pckg,
 		Output:  output,
 		Name:    name,
+	}
+
+	if source == "" {
+		fmt.Println(version)
+		os.Exit(0)
 	}
 
 	artifacts, err := process(source, config)
