@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/umbracle/go-web3"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -94,11 +95,7 @@ type Method struct {
 
 // Sig returns the signature of the method
 func (m *Method) Sig() string {
-	types := make([]string, len(m.Inputs))
-	for i, input := range m.Inputs {
-		types[i] = input.Type.raw
-	}
-	return fmt.Sprintf("%v(%v)", m.Name, strings.Join(types, ","))
+	return buildSignature(m.Name, m.Inputs)
 }
 
 // ID returns the id of the method
@@ -117,12 +114,37 @@ type Event struct {
 	Inputs    Arguments
 }
 
+// Sig returns the signature of the event
+func (e *Event) Sig() string {
+	return buildSignature(e.Name, e.Inputs)
+}
+
+// ID returns the id of the event used during logs
+func (e *Event) ID() (res web3.Hash) {
+	k := acquireKeccak()
+	k.Write([]byte(e.Sig()))
+	dst := k.Sum(nil)
+	releaseKeccak(k)
+	copy(res[:], dst)
+	return
+}
+
+func buildSignature(name string, args Arguments) string {
+	types := make([]string, len(args))
+	for i, input := range args {
+		types[i] = input.Type.raw
+	}
+	return fmt.Sprintf("%v(%v)", name, strings.Join(types, ","))
+}
+
+// Argument is a solidity argument for functions and events
 type Argument struct {
 	Name    string
 	Type    *Type
 	Indexed bool
 }
 
+// Arguments is a list of arguments
 type Arguments []*Argument
 
 // Type returns the type of the argument in tuple form
@@ -143,6 +165,7 @@ func (a *Arguments) Type() *Type {
 	return tt
 }
 
+// UnmarshalJSON implements the unmarshal interface
 func (a *Argument) UnmarshalJSON(data []byte) error {
 	var arg *ArgumentStr
 	if err := json.Unmarshal(data, &arg); err != nil {

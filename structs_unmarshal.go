@@ -62,15 +62,18 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 
-	// transactions
-	b.Transactions = b.Transactions[:0]
-	for _, elem := range v.GetArray("transactions") {
-		txn := new(Transaction)
-		if err := txn.unmarshalJSON(elem); err != nil {
-			return err
+	// TODO; FIX THIS
+	/*
+		// transactions
+		b.Transactions = b.Transactions[:0]
+		for _, elem := range v.GetArray("transactions") {
+			txn := new(Transaction)
+			if err := txn.unmarshalJSON(elem); err != nil {
+				return err
+			}
+			b.Transactions = append(b.Transactions, txn)
 		}
-		b.Transactions = append(b.Transactions, txn)
-	}
+	*/
 
 	// uncles
 	b.Uncles = b.Uncles[:0]

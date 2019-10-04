@@ -37,9 +37,9 @@ func (e *Eth) BlockNumber() (uint64, error) {
 }
 
 // GetBlockByNumber returns information about a block by block number.
-func (e *Eth) GetBlockByNumber(i uint64, full bool) (*web3.Block, error) {
+func (e *Eth) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, error) {
 	var b *web3.Block
-	if err := e.c.Call("eth_getBlockByNumber", &b, encodeUintToHex(i), full); err != nil {
+	if err := e.c.Call("eth_getBlockByNumber", &b, i.String(), full); err != nil {
 		return nil, err
 	}
 	return b, nil

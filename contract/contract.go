@@ -251,11 +251,26 @@ func (t *Txn) Receipt() *web3.Receipt {
 	return t.receipt
 }
 
-// Event parses a specific event
-func (c *Contract) Event(name string, log *web3.Log) (map[string]interface{}, error) {
+// Event is a solidity event
+type Event struct {
+	event *abi.Event
+}
+
+// Encode encodes an event
+func (e *Event) Encode() web3.Hash {
+	return e.event.ID()
+}
+
+// ParseLog parses a log
+func (e *Event) ParseLog(log *web3.Log) (map[string]interface{}, error) {
+	return abi.ParseLog(e.event.Inputs, log)
+}
+
+// Event returns a specific event
+func (c *Contract) Event(name string) (*Event, bool) {
 	event, ok := c.abi.Events[name]
 	if !ok {
-		return nil, fmt.Errorf("event %s not found", name)
+		return nil, false
 	}
-	return abi.ParseLog(event.Inputs, log)
+	return &Event{event}, true
 }
