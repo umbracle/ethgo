@@ -75,17 +75,28 @@ type Transaction struct {
 }
 
 type CallMsg struct {
-	From     Address `json:"from"`
-	To       Address `json:"to"`
-	Data     []byte  `json:"data"`
-	GasPrice uint64  `json:"gasPrice"`
+	From     Address
+	To       Address
+	Data     []byte
+	GasPrice uint64
 }
 
 type LogFilter struct {
-	// TODO, change
-	Address   []Address `json:"address,omitempty"`
-	Topics    []Hash    `json:"topics,omitempty"`
-	BlockHash *Hash     `json:"blockhash"`
+	Address   []Address
+	Topics    []*Hash
+	BlockHash *Hash
+	From      *BlockNumber
+	To        *BlockNumber
+}
+
+func (l *LogFilter) SetFromUint64(num uint64) {
+	b := BlockNumber(num)
+	l.From = &b
+}
+
+func (l *LogFilter) SetToUint64(num uint64) {
+	b := BlockNumber(num)
+	l.To = &b
 }
 
 type Receipt struct {
