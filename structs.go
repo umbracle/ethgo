@@ -99,6 +99,10 @@ func (l *LogFilter) SetToUint64(num uint64) {
 	l.To = &b
 }
 
+func (l *LogFilter) SetTo(b BlockNumber) {
+	l.To = &b
+}
+
 type Receipt struct {
 	TransactionHash   Hash
 	TransactionIndex  uint64
