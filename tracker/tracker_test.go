@@ -1032,5 +1032,12 @@ func compareBlocks(one, two []*web3.Block) bool {
 	if len(one) == 0 {
 		return true
 	}
+	// difficulty is hard to check, set the values to zero
+	for _, i := range one {
+		i.Difficulty = big.NewInt(0)
+	}
+	for _, i := range two {
+		i.Difficulty = big.NewInt(0)
+	}
 	return reflect.DeepEqual(one, two)
 }
