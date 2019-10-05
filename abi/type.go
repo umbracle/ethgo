@@ -111,6 +111,11 @@ func (t *Type) String() string {
 	return t.raw
 }
 
+// Elem returns the elem value for slice and arrays
+func (t *Type) Elem() *Type {
+	return t.elem
+}
+
 // Size returns the size of the type
 func (t *Type) Size() int {
 	return t.size
