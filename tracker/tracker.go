@@ -36,6 +36,7 @@ type Provider interface {
 	GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, error)
 	GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, error)
 	GetLogs(filter *web3.LogFilter) ([]*web3.Log, error)
+	ChainID() (*big.Int, error)
 }
 
 // Tracker is a contract event tracker
@@ -203,8 +204,16 @@ func (t *Tracker) preSyncCheck() error {
 	if err != nil {
 		return err
 	}
+	rChainID, err := t.provider.ChainID()
+	if err != nil {
+		return err
+	}
 
 	genesis, err := t.store.Get(dbGenesis)
+	if err != nil {
+		return err
+	}
+	chainID, err := t.store.Get(dbChainID)
 	if err != nil {
 		return err
 	}
@@ -212,8 +221,14 @@ func (t *Tracker) preSyncCheck() error {
 		if !bytes.Equal(genesis, rGenesis.Hash[:]) {
 			return fmt.Errorf("bad genesis")
 		}
+		if !bytes.Equal(chainID, rChainID.Bytes()) {
+			return fmt.Errorf("bad genesis")
+		}
 	} else {
 		if err := t.store.Set(dbGenesis, rGenesis.Hash[:]); err != nil {
+			return err
+		}
+		if err := t.store.Set(dbChainID, rChainID.Bytes()); err != nil {
 			return err
 		}
 	}
