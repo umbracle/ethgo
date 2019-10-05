@@ -221,3 +221,20 @@ func TestEthChainID(t *testing.T) {
 		assert.Equal(t, num.Uint64(), uint64(1337)) // chainid of geth-dev
 	})
 }
+
+func TestEthGetNonce(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	c, _ := NewClient(s.HTTPAddr())
+
+	num, err := c.Eth().GetNonce(s.Account(0), web3.Latest)
+	assert.NoError(t, err)
+	assert.Equal(t, num, uint64(0))
+
+	assert.NoError(t, s.ProcessBlock())
+
+	num, err = c.Eth().GetNonce(s.Account(0), web3.Latest)
+	assert.NoError(t, err)
+	assert.Equal(t, num, uint64(1))
+}

@@ -68,6 +68,15 @@ func (e *Eth) GetTransactionReceipt(hash web3.Hash) (*web3.Receipt, error) {
 	return receipt, err
 }
 
+// GetNonce returns the nonce of the account
+func (e *Eth) GetNonce(addr web3.Address, blockNumber web3.BlockNumber) (uint64, error) {
+	var nonce string
+	if err := e.c.Call("eth_getTransactionCount", &nonce, addr, blockNumber.String()); err != nil {
+		return 0, err
+	}
+	return parseUint64orHex(nonce)
+}
+
 // GetBalance returns the balance of the account of given address.
 func (e *Eth) GetBalance(addr web3.Address, blockNumber web3.BlockNumber) (*big.Int, error) {
 	var out string
