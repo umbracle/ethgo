@@ -3,12 +3,22 @@ package jsonrpc
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 )
 
 func encodeUintToHex(i uint64) string {
 	return fmt.Sprintf("0x%x", i)
+}
+
+func parseBigInt(str string) *big.Int {
+	if strings.HasPrefix(str, "0x") {
+		str = str[2:]
+	}
+	num := new(big.Int)
+	num.SetString(str, 16)
+	return num
 }
 
 func parseUint64orHex(str string) (uint64, error) {

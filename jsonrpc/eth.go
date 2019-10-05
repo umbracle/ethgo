@@ -128,3 +128,12 @@ func (e *Eth) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
 	}
 	return out, nil
 }
+
+// ChainID returns the id of the chain
+func (e *Eth) ChainID() (*big.Int, error) {
+	var out string
+	if err := e.c.Call("eth_chainId", &out); err != nil {
+		return nil, err
+	}
+	return parseBigInt(out), nil
+}
