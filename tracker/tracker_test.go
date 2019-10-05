@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"reflect"
 	"strconv"
@@ -209,6 +210,8 @@ func TestPreflight(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// change the genesis hash
+
 	l0 := mockList{}
 	l0.create(0, 100, func(b *mockBlock) {
 		b = b.Extra("1")
@@ -218,6 +221,18 @@ func TestPreflight(t *testing.T) {
 
 	tt1 := NewTracker(m, testConfig())
 	tt1.store = store
+
+	if err := tt1.preSyncCheck(); err == nil {
+		t.Fatal("it should fail")
+	}
+
+	// change the chainID
+
+	m.addScenario(l)
+	m.chainID = big.NewInt(1)
+
+	tt2 := NewTracker(m, testConfig())
+	tt2.store = store
 
 	if err := tt1.preSyncCheck(); err == nil {
 		t.Fatal("it should fail")
@@ -475,6 +490,14 @@ type mockClient struct {
 	blockNum map[uint64]web3.Hash
 	blocks   map[web3.Hash]*web3.Block
 	logs     map[web3.Hash][]*web3.Log
+	chainID  *big.Int
+}
+
+func (d *mockClient) ChainID() (*big.Int, error) {
+	if d.chainID == nil {
+		d.chainID = big.NewInt(1337)
+	}
+	return d.chainID, nil
 }
 
 func (d *mockClient) getLastBlocks(n uint64) (res []*web3.Block) {

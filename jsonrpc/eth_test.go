@@ -210,3 +210,14 @@ func TestEthGetLogs(t *testing.T) {
 	assert.True(t, bytes.HasSuffix(log.Topics[1][:], addr1[:]))
 	assert.True(t, bytes.HasSuffix(log.Topics[2][:], addr0[:]))
 }
+
+func TestEthChainID(t *testing.T) {
+	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+		c, _ := NewClient(addr)
+		defer c.Close()
+
+		num, err := c.Eth().ChainID()
+		assert.NoError(t, err)
+		assert.Equal(t, num.Uint64(), uint64(1337)) // chainid of geth-dev
+	})
+}
