@@ -466,9 +466,11 @@ func (t *Tracker) Polling(ctx context.Context) {
 					continue
 				}
 
-				select {
-				case t.EventCh <- evnt:
-				default:
+				if evnt != nil {
+					select {
+					case t.EventCh <- evnt:
+					default:
+					}
 				}
 			}
 		}
@@ -628,6 +630,10 @@ func (t *Tracker) handleReconcile(block *web3.Block) (*Event, error) {
 		evnt.addLogs(logs)
 	}
 
+	// store the last block as the new index
+	if err := t.storeLastBlock(blocks[len(blocks)-1]); err != nil {
+		return nil, err
+	}
 	return evnt, nil
 }
 
