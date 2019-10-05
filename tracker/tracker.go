@@ -5,9 +5,12 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strconv"
+	"strings"
 	"time"
 
 	web3 "github.com/umbracle/go-web3"
+	"github.com/umbracle/go-web3/etherscan"
 )
 
 const (
@@ -16,17 +19,19 @@ const (
 
 // Config is the configuration of the tracker
 type Config struct {
-	BatchSize       uint64
-	MaxBlockBacklog uint64
-	PollInterval    time.Duration
+	BatchSize          uint64
+	MaxBlockBacklog    uint64
+	PollInterval       time.Duration
+	EtherscanFastTrack bool
 }
 
 // DefaultConfig returns the default tracker config
 func DefaultConfig() *Config {
 	return &Config{
-		BatchSize:       100,
-		MaxBlockBacklog: 10,
-		PollInterval:    5 * time.Second,
+		BatchSize:          100,
+		MaxBlockBacklog:    10,
+		PollInterval:       5 * time.Second,
+		EtherscanFastTrack: false,
 	}
 }
 
@@ -59,6 +64,11 @@ func NewTracker(provider Provider, config *Config) *Tracker {
 		config:   config,
 		blocks:   []*web3.Block{},
 	}
+}
+
+// SetStore sets the store
+func (t *Tracker) SetStore(store Store) {
+	t.store = store
 }
 
 // SetFilterAddress sets the filter address for the tracker
@@ -247,9 +257,59 @@ func (t *Tracker) getFilter() *web3.LogFilter {
 	return filter
 }
 
+func (t *Tracker) fastTrack() (*web3.Block, error) {
+	// Only possible if we filter addresses
+	if t.address == nil {
+		return nil, nil
+	}
+
+	if t.config.EtherscanFastTrack {
+		chainID, err := t.provider.ChainID()
+		if err != nil {
+			return nil, err
+		}
+
+		// get the etherscan instance for this chainID
+		e, err := etherscan.NewEtherscanFromNetwork(web3.Network(chainID.Uint64()))
+		if err != nil {
+			// there is no etherscan api for this specific chainid
+			return nil, nil
+		}
+
+		params := map[string]string{
+			"address":   t.address.String(),
+			"fromBlock": "0",
+			"toBlock":   "latest",
+		}
+		var out []map[string]interface{}
+		if err := e.Query("logs", "getLogs", &out, params); err != nil {
+			return nil, err
+		}
+		if len(out) == 0 {
+			return nil, nil
+		}
+
+		cc, ok := out[0]["blockNumber"].(string)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast blocknumber")
+		}
+
+		num, err := parseUint64orHex(cc)
+		if err != nil {
+			return nil, err
+		}
+		bb, err := t.provider.GetBlockByNumber(web3.BlockNumber(num-1), false)
+		if err != nil {
+			return nil, err
+		}
+		return bb, nil
+	}
+
+	return nil, nil
+}
+
 // Sync syncs the historical data
 func (t *Tracker) Sync(ctx context.Context) error {
-
 	// do some preflight checks
 	if err := t.preSyncCheck(); err != nil {
 		return err
@@ -269,6 +329,19 @@ func (t *Tracker) Sync(ctx context.Context) error {
 	last, err := t.getLastBlock()
 	if err != nil {
 		return err
+	}
+
+	if last == nil {
+		// Try to fast track to the valid block (if possible)
+		last, err = t.fastTrack()
+		if err != nil {
+			return fmt.Errorf("failed to fasttrack: %v", err)
+		}
+		if last != nil {
+			if err := t.storeLastBlock(last); err != nil {
+				return err
+			}
+		}
 	}
 
 	// There might been a reorg when we stopped syncing last time,
@@ -648,4 +721,13 @@ func min(i, j uint64) uint64 {
 		return i
 	}
 	return j
+}
+
+func parseUint64orHex(str string) (uint64, error) {
+	base := 10
+	if strings.HasPrefix(str, "0x") {
+		str = str[2:]
+		base = 16
+	}
+	return strconv.ParseUint(str, base, 64)
 }
