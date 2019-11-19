@@ -33,6 +33,13 @@ func (a Address) String() string {
 // Hash is an Ethereum hash
 type Hash [32]byte
 
+// HexToHash converts an hex string value to a hash object
+func HexToHash(str string) Hash {
+	h := Hash{}
+	h.UnmarshalText([]byte(str))
+	return h
+}
+
 // UnmarshalText implements the unmarshal interface
 func (h *Hash) UnmarshalText(b []byte) error {
 	return unmarshalTextByte(h[:], b, 32)
