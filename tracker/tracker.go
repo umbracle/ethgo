@@ -11,6 +11,7 @@ import (
 
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/etherscan"
+	"github.com/umbracle/go-web3/jsonrpc/codec"
 )
 
 const (
@@ -150,38 +151,69 @@ func (t *Tracker) emitLogs(typ EventType, logs []*web3.Log) {
 	}
 }
 
+func tooMuchDataRequestedError(err error) bool {
+	obj, ok := err.(*codec.ErrorObject)
+	if !ok {
+		return false
+	}
+	if obj.Message == "query returned more than 10000 results" {
+		return true
+	}
+	return false
+}
+
 func (t *Tracker) syncBatch(ctx context.Context, from, to uint64) error {
-	for i := from; i <= to; i += t.config.BatchSize + 1 {
-		dst := min(to, i+t.config.BatchSize)
+	filter := t.getFilter()
 
-		filter := t.getFilter()
-		filter.SetFromUint64(i)
-		filter.SetToUint64(dst)
+	batchSize := t.config.BatchSize
+	additiveFactor := uint64(float64(batchSize) * 0.10)
 
-		logs, err := t.provider.GetLogs(filter)
-		if err != nil {
-			return err
-		}
+	i := from
 
-		// add logs to the store
-		if err := t.store.StoreLogs(logs); err != nil {
-			return err
-		}
-		t.emitLogs(EventAdd, logs)
+START:
+	dst := min(to, i+batchSize)
 
-		// update the last block entry
-		block, err := t.provider.GetBlockByNumber(web3.BlockNumber(dst), false)
-		if err != nil {
-			return err
-		}
-		if err := t.storeLastBlock(block); err != nil {
-			return err
-		}
+	filter.SetFromUint64(i)
+	filter.SetToUint64(dst)
 
-		// check if the execution is over after each query batch
-		if err := ctx.Err(); err != nil {
-			return err
+	logs, err := t.provider.GetLogs(filter)
+	if err != nil {
+		if tooMuchDataRequestedError(err) {
+			// multiplicative decrease
+			batchSize = batchSize / 2
+			goto START
 		}
+		return err
+	}
+
+	// add logs to the store
+	if err := t.store.StoreLogs(logs); err != nil {
+		return err
+	}
+	t.emitLogs(EventAdd, logs)
+
+	// update the last block entry
+	block, err := t.provider.GetBlockByNumber(web3.BlockNumber(dst), false)
+	if err != nil {
+		return err
+	}
+	if err := t.storeLastBlock(block); err != nil {
+		return err
+	}
+
+	// check if the execution is over after each query batch
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	// update the batchSize with additive increase
+	if batchSize < t.config.BatchSize {
+		batchSize = min(t.config.BatchSize, batchSize+additiveFactor)
+	}
+
+	i += batchSize + 1
+	if i <= to {
+		goto START
 	}
 	return nil
 }
