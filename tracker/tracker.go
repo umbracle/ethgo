@@ -53,6 +53,9 @@ type Tracker struct {
 	EventCh  chan *Event
 	blocks   []*web3.Block
 
+	// SyncCh is used to notify of sync events
+	SyncCh chan uint64
+
 	// filter
 	topics  []*web3.Hash
 	address *web3.Address
@@ -184,6 +187,13 @@ START:
 			goto START
 		}
 		return err
+	}
+
+	if t.SyncCh != nil {
+		select {
+		case t.SyncCh <- dst:
+		default:
+		}
 	}
 
 	// add logs to the store
@@ -358,7 +368,7 @@ func (t *Tracker) Sync(ctx context.Context) error {
 	if target == 0 {
 		return nil
 	}
-	last, err := t.getLastBlock()
+	last, err := t.GetLastBlock()
 	if err != nil {
 		return err
 	}
@@ -513,7 +523,8 @@ var (
 	lastBlock = []byte("lastBlock")
 )
 
-func (t *Tracker) getLastBlock() (*web3.Block, error) {
+// GetLastBlock returns the last block processed by the tracker
+func (t *Tracker) GetLastBlock() (*web3.Block, error) {
 	buf, err := t.store.Get(lastBlock)
 	if err != nil {
 		return nil, err
