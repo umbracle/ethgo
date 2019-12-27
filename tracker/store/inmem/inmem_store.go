@@ -1,12 +1,13 @@
-package tracker
+package inmem
 
 import (
 	"sync"
 
 	web3 "github.com/umbracle/go-web3"
+	"github.com/umbracle/go-web3/tracker/store"
 )
 
-var _ Store = (*InmemStore)(nil)
+var _ store.Store = (*InmemStore)(nil)
 
 // InmemStore implements the Store interface.
 type InmemStore struct {
@@ -21,6 +22,11 @@ func NewInmemStore() *InmemStore {
 		logs: []*web3.Log{},
 		kv:   map[string][]byte{},
 	}
+}
+
+// Logs returns the logs of the inmemory store
+func (i *InmemStore) Logs() []*web3.Log {
+	return i.logs
 }
 
 // Close implements the store interface

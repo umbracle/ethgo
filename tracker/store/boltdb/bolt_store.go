@@ -5,10 +5,10 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker"
+	"github.com/umbracle/go-web3/tracker/store"
 )
 
-var _ tracker.Store = (*BoltStore)(nil)
+var _ store.Store = (*BoltStore)(nil)
 
 var (
 	dbLogs = []byte("logs")

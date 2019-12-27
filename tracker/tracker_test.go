@@ -17,6 +17,7 @@ import (
 	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/jsonrpc"
 	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/go-web3/tracker/store/inmem"
 )
 
 func testConfig() *Config {
@@ -25,8 +26,8 @@ func testConfig() *Config {
 	return config
 }
 
-func testTracker(t *testing.T, provider Provider, configFn func(t *Tracker)) *InmemStore {
-	store := NewInmemStore()
+func testTracker(t *testing.T, provider Provider, configFn func(t *Tracker)) *inmem.InmemStore {
+	store := inmem.NewInmemStore()
 
 	tt := NewTracker(provider, testConfig())
 	tt.store = store
@@ -64,7 +65,7 @@ func TestPolling(t *testing.T) {
 	eventCh := make(chan *Event, 1024)
 
 	tt := NewTracker(client.Eth(), config)
-	tt.store = NewInmemStore()
+	tt.store = inmem.NewInmemStore()
 	tt.EventCh = eventCh
 
 	if err := tt.Sync(context.Background()); err != nil {
@@ -125,7 +126,7 @@ func TestFilterIntegration(t *testing.T) {
 
 	// sync all the logs
 	store0 := testTracker(t, client.Eth(), nil)
-	if len(store0.logs) != 20 {
+	if len(store0.Logs()) != 20 {
 		t.Fatal("bad")
 	}
 
@@ -133,7 +134,7 @@ func TestFilterIntegration(t *testing.T) {
 	store1 := testTracker(t, client.Eth(), func(tt *Tracker) {
 		tt.SetFilterAddress(addr0)
 	})
-	if len(store1.logs) != 10 {
+	if len(store1.Logs()) != 10 {
 		t.Fatal("bad")
 	}
 
@@ -144,7 +145,7 @@ func TestFilterIntegration(t *testing.T) {
 
 		tt.SetFilterTopics([]*web3.Hash{nil, &topic})
 	})
-	if len(store2.logs) != 20 {
+	if len(store2.Logs()) != 20 {
 		t.Fatal("bad")
 	}
 }
@@ -181,7 +182,7 @@ func TestFilterIntegrationEventHash(t *testing.T) {
 	store := testTracker(t, client.Eth(), func(t *Tracker) {
 		t.SetFilterTopics([]*web3.Hash{&eventTopicID})
 	})
-	if len(store.logs) != 10 {
+	if len(store.Logs()) != 10 {
 		t.Fatal("bad")
 	}
 
@@ -189,13 +190,13 @@ func TestFilterIntegrationEventHash(t *testing.T) {
 		eventTopicID[1] = 1
 		t.SetFilterTopics([]*web3.Hash{&eventTopicID})
 	})
-	if len(store1.logs) != 0 {
+	if len(store1.Logs()) != 0 {
 		t.Fatal("bad")
 	}
 }
 
 func TestPreflight(t *testing.T) {
-	store := NewInmemStore()
+	store := inmem.NewInmemStore()
 
 	l := mockList{}
 	l.create(0, 100, func(b *mockBlock) {})
@@ -240,7 +241,7 @@ func TestPreflight(t *testing.T) {
 }
 
 func TestTrackerSyncerRestarts(t *testing.T) {
-	store := NewInmemStore()
+	store := inmem.NewInmemStore()
 	m := &mockClient{}
 	l := mockList{}
 
@@ -267,7 +268,7 @@ func TestTrackerSyncerRestarts(t *testing.T) {
 		if tt.blocks[9].Number != uint64(last-1) {
 			t.Fatal("bad")
 		}
-		if !compareLogs(l.GetLogs(), store.logs) {
+		if !compareLogs(l.GetLogs(), store.Logs()) {
 			t.Fatal("bad")
 		}
 	}
@@ -295,7 +296,7 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 	m := &mockClient{}
 	m.addScenario(l)
 
-	store := NewInmemStore()
+	store := inmem.NewInmemStore()
 
 	tt0 := NewTracker(m, testConfig())
 	tt0.store = store
@@ -329,7 +330,7 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 	if err := tt1.Sync(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if !compareLogs(l1.GetLogs(), store.logs) {
+	if !compareLogs(l1.GetLogs(), store.Logs()) {
 		t.Fatal("bad")
 	}
 
@@ -337,17 +338,17 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 
 	// first half
 	for i := 0; i < forkNum; i++ {
-		if store.logs[i].Data[0] != 0x1 {
+		if store.Logs()[i].Data[0] != 0x1 {
 			t.Fatal("bad")
 		}
 	}
 	// fork point
-	if store.logs[forkNum].Data[0] != 0x2 {
+	if store.Logs()[forkNum].Data[0] != 0x2 {
 		t.Fatal("bad")
 	}
 	// second half
 	for i := forkNum + 1; i < endLen; i++ {
-		if store.logs[i].Data[0] != 0x3 {
+		if store.Logs()[i].Data[0] != 0x3 {
 			t.Fatal("bad")
 		}
 	}
@@ -371,14 +372,12 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 	c := 0 // current block
 	f := 0 // current fork
 
-	store := NewInmemStore()
+	store := inmem.NewInmemStore()
 
 	config := testConfig()
 	config.MaxBlockBacklog = backlog
 
 	for i := 0; i < n; i++ {
-		fmt.Printf("ITER: %d\n", i)
-
 		// create the new batch of blocks
 		var forkSize int
 		if randomInt(0, 10) < 3 && c > 10 {
@@ -457,7 +456,7 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 			}
 		}
 		// validate logs
-		if logs := m.getAllLogs(); !compareLogs(store.logs, logs) {
+		if logs := m.getAllLogs(); !compareLogs(store.Logs(), logs) {
 			t.Fatal("bad logs")
 		}
 
@@ -963,7 +962,7 @@ func TestTrackerReconcile(t *testing.T) {
 			// add the logs of the reconcile block because those are also unknown for the tracker
 			m.addLogs(c.Reconcile[0].block.GetLogs())
 
-			store := NewInmemStore()
+			store := inmem.NewInmemStore()
 
 			tt := NewTracker(m, DefaultConfig())
 			tt.store = store
@@ -1005,7 +1004,7 @@ func TestTrackerReconcile(t *testing.T) {
 			}
 
 			// check the post state (logs and blocks) after all the reconcile events
-			if !compareLogs(store.logs, c.Expected.GetLogs()) {
+			if !compareLogs(store.Logs(), c.Expected.GetLogs()) {
 				t.Fatal("bad3")
 			}
 			if !compareBlocks(tt.blocks, c.Expected.ToBlocks()) {

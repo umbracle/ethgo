@@ -12,6 +12,13 @@ import (
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/etherscan"
 	"github.com/umbracle/go-web3/jsonrpc/codec"
+	"github.com/umbracle/go-web3/tracker/store"
+)
+
+var (
+	dbGenesis   = []byte("genesis")
+	dbChainID   = []byte("dbChainID")
+	dbLastBlock = []byte("lastBlock")
 )
 
 const (
@@ -49,7 +56,7 @@ type Provider interface {
 type Tracker struct {
 	provider Provider
 	config   *Config
-	store    Store
+	store    store.Store
 	EventCh  chan *Event
 	blocks   []*web3.Block
 
@@ -71,7 +78,7 @@ func NewTracker(provider Provider, config *Config) *Tracker {
 }
 
 // SetStore sets the store
-func (t *Tracker) SetStore(store Store) {
+func (t *Tracker) SetStore(store store.Store) {
 	t.store = store
 }
 
@@ -519,13 +526,9 @@ func (t *Tracker) Polling(ctx context.Context) {
 	}()
 }
 
-var (
-	lastBlock = []byte("lastBlock")
-)
-
 // GetLastBlock returns the last block processed by the tracker
 func (t *Tracker) GetLastBlock() (*web3.Block, error) {
-	buf, err := t.store.Get(lastBlock)
+	buf, err := t.store.Get(dbLastBlock)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +550,7 @@ func (t *Tracker) storeLastBlock(b *web3.Block) error {
 	if err != nil {
 		return err
 	}
-	return t.store.Set(lastBlock, buf)
+	return t.store.Set(dbLastBlock, buf)
 }
 
 func (t *Tracker) addBlock(block *web3.Block) error {

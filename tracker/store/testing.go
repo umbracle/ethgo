@@ -1,38 +1,25 @@
-package trackerboltdb
+package store
 
 import (
 	"bytes"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/umbracle/go-web3"
+	web3 "github.com/umbracle/go-web3"
 )
 
-func testdb(t *testing.T) (*BoltStore, func()) {
-	dir, err := ioutil.TempDir("/tmp", "boltdb-test")
-	if err != nil {
-		t.Fatal(err)
-	}
+// SetupDB is a function that creates a backend
+type SetupDB func(t *testing.T) (Store, func())
 
-	path := filepath.Join(dir, "test.db")
-	store, err := New(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	close := func() {
-		if err := os.RemoveAll(dir); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return store, close
+// TestStore tests a tracker store
+func TestStore(t *testing.T, setup SetupDB) {
+	testGetSet(t, setup)
+	testRemoveLogs(t, setup)
+	testStoreLogs(t, setup)
 }
 
-func TestGetSet(t *testing.T) {
-	store, close := testdb(t)
+func testGetSet(t *testing.T, setup SetupDB) {
+	store, close := setup(t)
 	defer close()
 
 	k1 := []byte{0x1}
@@ -72,8 +59,8 @@ func TestGetSet(t *testing.T) {
 	}
 }
 
-func TestStoreLogs(t *testing.T) {
-	store, close := testdb(t)
+func testStoreLogs(t *testing.T, setup SetupDB) {
+	store, close := setup(t)
 	defer close()
 
 	indx, err := store.LastIndex()
@@ -87,7 +74,7 @@ func TestStoreLogs(t *testing.T) {
 	log := web3.Log{
 		BlockNumber: 10,
 	}
-	if err := store.StoreLog(&log); err != nil {
+	if err := store.StoreLogs([]*web3.Log{&log}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,8 +95,8 @@ func TestStoreLogs(t *testing.T) {
 	}
 }
 
-func TestRemoveLogs(t *testing.T) {
-	store, close := testdb(t)
+func testRemoveLogs(t *testing.T, setup SetupDB) {
+	store, close := setup(t)
 	defer close()
 
 	logs := []*web3.Log{}
@@ -132,6 +119,18 @@ func TestRemoveLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 	if indx != 5 {
+		t.Fatal("bad")
+	}
+
+	// add again the values
+	if err := store.StoreLogs(logs[5:]); err != nil {
+		t.Fatal(err)
+	}
+	indx, err = store.LastIndex()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if indx != 10 {
 		t.Fatal("bad")
 	}
 }

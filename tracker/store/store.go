@@ -1,11 +1,6 @@
-package tracker
+package store
 
 import web3 "github.com/umbracle/go-web3"
-
-var (
-	dbGenesis = []byte("genesis")
-	dbChainID = []byte("dbChainID")
-)
 
 // Store is a datastore for the tracker
 type Store interface {
