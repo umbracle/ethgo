@@ -4,6 +4,24 @@ import web3 "github.com/umbracle/go-web3"
 
 // Store is a datastore for the tracker
 type Store interface {
+	// Get gets a value
+	Get(k []byte) ([]byte, error)
+
+	// ListPrefix lists values by prefix
+	ListPrefix(prefix []byte) ([][]byte, error)
+
+	// Set sets a value
+	Set(k, v []byte) error
+
+	// Close closes the store
+	Close() error
+
+	// GetEntry returns a specific entry
+	GetEntry(hash string) (Entry, error)
+}
+
+// Entry is a filter entry in the store
+type Entry interface {
 	// LastIndex returns index of the last stored event
 	LastIndex() (uint64, error)
 
@@ -15,13 +33,4 @@ type Store interface {
 
 	// GetLog returns the log at indx
 	GetLog(indx uint64, log *web3.Log) error
-
-	// Get gets a value
-	Get(k []byte) ([]byte, error)
-
-	// Set sets a value
-	Set(k, v []byte) error
-
-	// Close closes the store
-	Close() error
 }

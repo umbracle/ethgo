@@ -28,11 +28,10 @@ func NewPostgreSQLStore(endpoint string) (*PostgreSQLStore, error) {
 		return nil, err
 	}
 
-	// create the db (TODO, test)
-	if _, err := db.Exec(sqlSchema); err != nil {
+	// create the kv database if it does not exists
+	if _, err := db.Exec(kvSQLSchema); err != nil {
 		return nil, err
 	}
-
 	return &PostgreSQLStore{db: db}, nil
 }
 
@@ -53,6 +52,19 @@ func (p *PostgreSQLStore) Get(k []byte) ([]byte, error) {
 	return []byte(out), nil
 }
 
+// ListPrefix implements the store interface
+func (p *PostgreSQLStore) ListPrefix(prefix []byte) ([][]byte, error) {
+	var out []string
+	if err := p.db.Select(&out, "SELECT val FROM kv WHERE key LIKE $1", string(prefix)+"%"); err != nil {
+		return nil, err
+	}
+	res := [][]byte{}
+	for _, val := range out {
+		res = append(res, []byte(val))
+	}
+	return res, nil
+}
+
 // Set implements the store interface
 func (p *PostgreSQLStore) Set(k, v []byte) error {
 	if _, err := p.db.Exec("INSERT INTO kv (key, val) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET val = $2", string(k), string(v)); err != nil {
@@ -61,10 +73,29 @@ func (p *PostgreSQLStore) Set(k, v []byte) error {
 	return nil
 }
 
+// GetEntry implements the store interface
+func (p *PostgreSQLStore) GetEntry(hash string) (store.Entry, error) {
+	tableName := "logs_" + hash
+	if _, err := p.db.Exec(logSQLSchema(tableName)); err != nil {
+		return nil, err
+	}
+	e := &Entry{
+		table: tableName,
+		db:    p.db,
+	}
+	return e, nil
+}
+
+// Entry is an store.Entry implementation
+type Entry struct {
+	table string
+	db    *sqlx.DB
+}
+
 // LastIndex implements the store interface
-func (p *PostgreSQLStore) LastIndex() (uint64, error) {
+func (e *Entry) LastIndex() (uint64, error) {
 	var index uint64
-	if err := p.db.Get(&index, "SELECT index FROM logs ORDER BY index DESC LIMIT 1"); err != nil {
+	if err := e.db.Get(&index, "SELECT index FROM "+e.table+" ORDER BY index DESC LIMIT 1"); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
@@ -74,19 +105,19 @@ func (p *PostgreSQLStore) LastIndex() (uint64, error) {
 }
 
 // StoreLogs implements the store interface
-func (p *PostgreSQLStore) StoreLogs(logs []*web3.Log) error {
-	lastIndex, err := p.LastIndex()
+func (e *Entry) StoreLogs(logs []*web3.Log) error {
+	lastIndex, err := e.LastIndex()
 	if err != nil {
 		return err
 	}
 
-	tx, err := p.db.Beginx()
+	tx, err := e.db.Beginx()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	query := "INSERT INTO logs (index, tx_index, tx_hash, block_num, block_hash, address, data, topics) VALUES (:index, :tx_index, :tx_hash, :block_num, :block_hash, :address, :data, :topics)"
+	query := "INSERT INTO " + e.table + " (index, tx_index, tx_hash, block_num, block_hash, address, data, topics) VALUES (:index, :tx_index, :tx_hash, :block_num, :block_hash, :address, :data, :topics)"
 
 	for indx, log := range logs {
 		topics := []string{}
@@ -117,17 +148,17 @@ func (p *PostgreSQLStore) StoreLogs(logs []*web3.Log) error {
 }
 
 // RemoveLogs implements the store interface
-func (p *PostgreSQLStore) RemoveLogs(indx uint64) error {
-	if _, err := p.db.Exec("DELETE FROM logs WHERE index >= $1", indx); err != nil {
+func (e *Entry) RemoveLogs(indx uint64) error {
+	if _, err := e.db.Exec("DELETE FROM "+e.table+" WHERE index >= $1", indx); err != nil {
 		return err
 	}
 	return nil
 }
 
 // GetLog implements the store interface
-func (p *PostgreSQLStore) GetLog(indx uint64, log *web3.Log) error {
+func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
 	obj := logObj{}
-	if err := p.db.Get(&obj, "SELECT * FROM logs WHERE index=$1", indx); err != nil {
+	if err := e.db.Get(&obj, "SELECT * FROM "+e.table+" WHERE index=$1", indx); err != nil {
 		return err
 	}
 
@@ -183,20 +214,24 @@ type logObj struct {
 	Data      string `db:"data"`
 }
 
-var sqlSchema = `
-CREATE TABLE kv (
+var kvSQLSchema = `
+CREATE TABLE IF NOT EXISTS kv (
 	key text unique,
 	val text
 );
-
-CREATE TABLE logs (
-	index 		numeric,
-	tx_index 	numeric,
-	tx_hash 	text,
-	block_num 	numeric,
-	block_hash 	text,
-	address 	text,
-	topics 		text,
-	data 		text
-);
 `
+
+func logSQLSchema(name string) string {
+	return `
+	CREATE TABLE IF NOT EXISTS ` + name + ` (
+		index 		numeric,
+		tx_index 	numeric,
+		tx_hash 	text,
+		block_num 	numeric,
+		block_hash 	text,
+		address 	text,
+		topics 		text,
+		data 		text
+	);
+	`
+}

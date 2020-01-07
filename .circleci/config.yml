@@ -5,6 +5,7 @@ jobs:
       - image: circleci/golang:1.11
     
     steps:
+      - setup_remote_docker
       - restore_cache:
           keys:
             - go-mod-v1-{{ checksum "go.sum" }}

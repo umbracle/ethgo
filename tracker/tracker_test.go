@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/big"
 	"math/rand"
 	"reflect"
@@ -26,20 +28,25 @@ func testConfig() *Config {
 	return config
 }
 
-func testTracker(t *testing.T, provider Provider, configFn func(t *Tracker)) *inmem.InmemStore {
-	store := inmem.NewInmemStore()
-
+func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*web3.Log {
 	tt := NewTracker(provider, testConfig())
-	tt.store = store
-
-	if configFn != nil {
-		configFn(tt)
-	}
-
-	if err := tt.Sync(context.Background()); err != nil {
+	tt.SetStore(inmem.NewInmemStore())
+	if err := tt.Start(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	return store
+
+	// we only check the store, we dont need to catch the events
+	filterConfig.Async = true
+
+	filter, err := tt.NewFilter(filterConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	filter.Sync(context.Background())
+	// filter.Wait()
+
+	entry, _ := tt.store.GetEntry(filterConfig.Hash())
+	return entry.(*inmem.Entry).Logs()
 }
 
 func TestPolling(t *testing.T) {
@@ -49,7 +56,7 @@ func TestPolling(t *testing.T) {
 	client, _ := jsonrpc.NewClient(s.HTTPAddr())
 
 	config := DefaultConfig()
-	config.PollInterval = 1 * time.Second
+	// config.PollInterval = 1 * time.Second
 
 	c0 := &testutil.Contract{}
 	c0.AddEvent(testutil.NewEvent("A").Add("uint256", true).Add("uint256", true))
@@ -62,41 +69,48 @@ func TestPolling(t *testing.T) {
 		s.TxnTo(addr0, "setA1")
 	}
 
-	eventCh := make(chan *Event, 1024)
+	// eventCh := make(chan *Event, 1024)
+	// doneCh := make(chan struct{}, 1)
+
+	// custom provider with a short poll interval
+	blocktracker := NewJSONBlockTracker(log.New(ioutil.Discard, "", log.LstdFlags), client.Eth())
+	blocktracker.PollInterval = 1 * time.Second
 
 	tt := NewTracker(client.Eth(), config)
+	tt.blockTracker = blocktracker
 	tt.store = inmem.NewInmemStore()
-	tt.EventCh = eventCh
 
-	if err := tt.Sync(context.Background()); err != nil {
+	if err := tt.Start(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
-	// consume all the events from the sync process
+	f, err := tt.NewFilter(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f.SyncAsync(context.Background())
+
+	// wait for the bulk sync to finish
 	for {
 		select {
-		case <-eventCh:
-		default:
+		case <-f.EventCh:
+		case <-f.DoneCh:
 			goto EXIT
+		case <-time.After(1 * time.Second):
+			t.Fatal("timeout to sync")
 		}
 	}
 EXIT:
-
-	ctx, cancelFn := context.WithCancel(context.Background())
-	defer cancelFn()
-
-	tt.Polling(ctx)
 
 	// send another 5 transactions, we have to have another log each time
 	for i := 0; i < 5; i++ {
 		receipt := s.TxnTo(addr0, "setA1")
 
 		select {
-		case evnt := <-eventCh:
-			if !reflect.DeepEqual(evnt.AddedLogs, receipt.Logs) {
+		case evnt := <-f.EventCh:
+			if !reflect.DeepEqual(evnt.Added, receipt.Logs) {
 				t.Fatal("bad")
 			}
-
 		case <-time.After(2 * time.Second): // wait at least the polling interval
 			t.Fatal("event expected")
 		}
@@ -125,27 +139,23 @@ func TestFilterIntegration(t *testing.T) {
 	}
 
 	// sync all the logs
-	store0 := testTracker(t, client.Eth(), nil)
-	if len(store0.Logs()) != 20 {
+	logs := testFilter(t, client.Eth(), &FilterConfig{})
+	if len(logs) != 20 {
 		t.Fatal("bad")
 	}
 
 	// filter by address
-	store1 := testTracker(t, client.Eth(), func(tt *Tracker) {
-		tt.SetFilterAddress(addr0)
-	})
-	if len(store1.Logs()) != 10 {
+	logs = testFilter(t, client.Eth(), &FilterConfig{Address: []web3.Address{addr0}})
+	if len(logs) != 10 {
 		t.Fatal("bad")
 	}
 
 	// filter by value
-	store2 := testTracker(t, client.Eth(), func(tt *Tracker) {
-		typ, _ := abi.NewType("uint256")
-		topic, _ := abi.EncodeTopic(typ, 1)
+	typ, _ := abi.NewType("uint256")
+	topic, _ := abi.EncodeTopic(typ, 1)
 
-		tt.SetFilterTopics([]*web3.Hash{nil, &topic})
-	})
-	if len(store2.Logs()) != 20 {
+	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: []*web3.Hash{nil, &topic}})
+	if len(logs) != 20 {
 		t.Fatal("bad")
 	}
 }
@@ -178,19 +188,14 @@ func TestFilterIntegrationEventHash(t *testing.T) {
 	}
 
 	eventTopicID := abi0.Events["A"].ID()
-
-	store := testTracker(t, client.Eth(), func(t *Tracker) {
-		t.SetFilterTopics([]*web3.Hash{&eventTopicID})
-	})
-	if len(store.Logs()) != 10 {
+	logs := testFilter(t, client.Eth(), &FilterConfig{Topics: []*web3.Hash{&eventTopicID}})
+	if len(logs) != 10 {
 		t.Fatal("bad")
 	}
 
-	store1 := testTracker(t, client.Eth(), func(t *Tracker) {
-		eventTopicID[1] = 1
-		t.SetFilterTopics([]*web3.Hash{&eventTopicID})
-	})
-	if len(store1.Logs()) != 0 {
+	eventTopicID[1] = 1
+	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: []*web3.Hash{&eventTopicID}})
+	if len(logs) != 0 {
 		t.Fatal("bad")
 	}
 }
@@ -207,7 +212,7 @@ func TestPreflight(t *testing.T) {
 	tt0 := NewTracker(m, testConfig())
 	tt0.store = store
 
-	if err := tt0.preSyncCheck(); err != nil {
+	if err := tt0.preSyncCheckImpl(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -223,7 +228,7 @@ func TestPreflight(t *testing.T) {
 	tt1 := NewTracker(m, testConfig())
 	tt1.store = store
 
-	if err := tt1.preSyncCheck(); err == nil {
+	if err := tt1.preSyncCheckImpl(); err == nil {
 		t.Fatal("it should fail")
 	}
 
@@ -235,8 +240,48 @@ func TestPreflight(t *testing.T) {
 	tt2 := NewTracker(m, testConfig())
 	tt2.store = store
 
-	if err := tt1.preSyncCheck(); err == nil {
+	if err := tt1.preSyncCheckImpl(); err == nil {
 		t.Fatal("it should fail")
+	}
+}
+
+func TestPopulateBlocks(t *testing.T) {
+	// more than maxBackLog blocks
+
+	l := mockList{}
+	l.create(0, 15, func(b *mockBlock) {})
+
+	m := &mockClient{}
+	m.addScenario(l)
+
+	tt0 := NewTracker(m, testConfig())
+	tt0.store = inmem.NewInmemStore()
+
+	blocks, err := tt0.populateBlocks()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !compareBlocks(l.ToBlocks()[5:], blocks) {
+		t.Fatal("bad")
+	}
+
+	// less than maxBackLog
+
+	l0 := mockList{}
+	l0.create(0, 5, func(b *mockBlock) {})
+
+	m1 := &mockClient{}
+	m1.addScenario(l0)
+
+	tt1 := NewTracker(m1, testConfig())
+	tt1.store = inmem.NewInmemStore()
+
+	blocks, err = tt1.populateBlocks()
+	if err != nil {
+		panic(err)
+	}
+	if !compareBlocks(l0.ToBlocks(), blocks) {
+		t.Fatal("bad")
 	}
 }
 
@@ -258,9 +303,27 @@ func TestTrackerSyncerRestarts(t *testing.T) {
 		tt := NewTracker(m, testConfig())
 		tt.store = store
 
-		if err := tt.Sync(context.Background()); err != nil {
+		if err := tt.Start(context.Background()); err != nil {
 			t.Fatal(err)
 		}
+
+		f, err := tt.NewFilter(&FilterConfig{Async: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.SyncAsync(context.Background())
+
+		if err := f.WaitDuration(2 * time.Second); err != nil {
+			t.Fatal(err)
+		}
+
+		/*
+			select {
+			case <-f.DoneCh:
+			case <-time.After(2 * time.Second):
+				t.Fatal("timeout")
+			}
+		*/
 
 		if tt.blocks[0].Number != uint64(last-10) {
 			t.Fatal("bad")
@@ -268,7 +331,7 @@ func TestTrackerSyncerRestarts(t *testing.T) {
 		if tt.blocks[9].Number != uint64(last-1) {
 			t.Fatal("bad")
 		}
-		if !compareLogs(l.GetLogs(), store.Logs()) {
+		if !compareLogs(l.GetLogs(), f.entry.(*inmem.Entry).Logs()) {
 			t.Fatal("bad")
 		}
 	}
@@ -301,9 +364,24 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 	tt0 := NewTracker(m, testConfig())
 	tt0.store = store
 
-	if err := tt0.Sync(context.Background()); err != nil {
+	if err := tt0.Start(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+
+	f0, err := tt0.NewFilter(&FilterConfig{Async: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f0.SyncAsync(context.Background())
+	f0.WaitDuration(2 * time.Second)
+
+	/*
+		select {
+		case <-f0.DoneCh:
+		case <-time.After(2 * time.Second):
+			t.Fatal("timeout")
+		}
+	*/
 
 	// create a fork at 'forkNum' and continue to 'endLen'
 	l1 := mockList{}
@@ -327,10 +405,25 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 	tt1 := NewTracker(m1, testConfig())
 	tt1.store = store
 
-	if err := tt1.Sync(context.Background()); err != nil {
+	if err := tt1.Start(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if !compareLogs(l1.GetLogs(), store.Logs()) {
+
+	f1, err := tt1.NewFilter(&FilterConfig{Async: true})
+	f1.SyncAsync(context.Background())
+	f1.WaitDuration(2 * time.Second)
+
+	/*
+		select {
+		case <-f1.DoneCh:
+		case <-time.After(2 * time.Second):
+			t.Fatal("timeout")
+		}
+	*/
+
+	logs := f1.entry.(*inmem.Entry).Logs()
+
+	if !compareLogs(l1.GetLogs(), logs) {
 		t.Fatal("bad")
 	}
 
@@ -338,17 +431,17 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 
 	// first half
 	for i := 0; i < forkNum; i++ {
-		if store.Logs()[i].Data[0] != 0x1 {
+		if logs[i].Data[0] != 0x1 {
 			t.Fatal("bad")
 		}
 	}
 	// fork point
-	if store.Logs()[forkNum].Data[0] != 0x2 {
+	if logs[forkNum].Data[0] != 0x2 {
 		t.Fatal("bad")
 	}
 	// second half
 	for i := forkNum + 1; i < endLen; i++ {
-		if store.Logs()[i].Data[0] != 0x3 {
+		if logs[i].Data[0] != 0x3 {
 			t.Fatal("bad")
 		}
 	}
@@ -378,6 +471,8 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 	config.MaxBlockBacklog = backlog
 
 	for i := 0; i < n; i++ {
+		// fmt.Println("########################################")
+
 		// create the new batch of blocks
 		var forkSize int
 		if randomInt(0, 10) < 3 && c > 10 {
@@ -386,6 +481,9 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 			c = c - forkSize
 			f++
 		}
+
+		// fmt.Println("-- fork size --")
+		// fmt.Println(forkSize)
 
 		forkID := strconv.Itoa(f)
 
@@ -403,6 +501,9 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 		num := randomInt(start, 20)
 		count := 0
 
+		// fmt.Println("-- num --")
+		// fmt.Println(num)
+
 		for j := c; j < c+num; j++ {
 			bb := mock(j).Extra(forkID)
 			if j != 0 {
@@ -414,24 +515,35 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 
 		m.addScenario(l)
 
-		eventCh := make(chan *Event, 1024)
+		// eventCh := make(chan *Event, 1024)
 
 		tt := NewTracker(m, config)
 		tt.store = store
-		tt.EventCh = eventCh
+		// tt.EventCh = eventCh
 
-		if err := tt.Sync(context.Background()); err != nil {
+		if err := tt.Start(context.Background()); err != nil {
 			t.Fatal(err)
 		}
+
+		filter, err := tt.NewFilter(nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		filter.SyncAsync(context.Background())
 
 		var added, removed []*web3.Log
 		for {
 			select {
-			case evnt := <-eventCh:
-				added = append(added, evnt.AddedLogs...)
-				removed = append(removed, evnt.RemovedLogs...)
+			case evnt := <-filter.EventCh:
 
-			default:
+				// fmt.Println("-- ** evnt ** --")
+				// fmt.Println(evnt)
+
+				added = append(added, evnt.Added...)
+				removed = append(removed, evnt.Removed...)
+
+			case <-filter.DoneCh:
+				// fmt.Println("- done -")
 				// no more events to read
 				goto EXIT
 			}
@@ -440,6 +552,10 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 
 		// validate the included logs
 		if len(added) != count {
+
+			// fmt.Println(added)
+			// fmt.Println(count)
+
 			t.Fatal("bad added logs")
 		}
 		// validate the removed logs
@@ -451,12 +567,16 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 		if blocks := m.getLastBlocks(config.MaxBlockBacklog); !compareBlocks(tt.blocks, blocks) {
 			// tracker does not consider block 0 but getLastBlocks does return it, this is only a problem
 			// with syncs on chains lower than maxBacklog
+
+			// fmt.Println(blocks)
+			// fmt.Println(tt.blocks)
+
 			if !compareBlocks(blocks[1:], tt.blocks) {
 				t.Fatal("bad blocks")
 			}
 		}
 		// validate logs
-		if logs := m.getAllLogs(); !compareLogs(store.Logs(), logs) {
+		if logs := m.getAllLogs(); !compareLogs(filter.entry.(*inmem.Entry).Logs(), logs) {
 			t.Fatal("bad logs")
 		}
 
@@ -620,7 +740,12 @@ func (d *mockClient) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Bloc
 	defer d.lock.Unlock()
 
 	if i < 0 {
-		return nil, fmt.Errorf("not supported")
+		switch i {
+		case web3.Latest:
+			return d.blockByNumberLock(d.num)
+		default:
+			return nil, fmt.Errorf("getBlockByNumber query not supported")
+		}
 	}
 	return d.blockByNumberLock(uint64(i))
 }
@@ -766,14 +891,14 @@ func (m *mockList) ToBlocks() []*web3.Block {
 }
 
 func TestTrackerReconcile(t *testing.T) {
-	type Event struct {
+	type TestEvent struct {
 		Added   mockList
 		Removed mockList
 	}
 
 	type Reconcile struct {
 		block *mockBlock
-		event *Event
+		event *TestEvent
 	}
 
 	cases := []struct {
@@ -788,7 +913,7 @@ func TestTrackerReconcile(t *testing.T) {
 			Reconcile: []Reconcile{
 				{
 					block: mock(0x1).Log("0x1"),
-					event: &Event{
+					event: &TestEvent{
 						Added: mockList{
 							mock(0x1).Log("0x1"),
 						},
@@ -821,7 +946,7 @@ func TestTrackerReconcile(t *testing.T) {
 			Reconcile: []Reconcile{
 				{
 					block: mock(0x2),
-					event: &Event{
+					event: &TestEvent{
 						Added: mockList{
 							mock(0x2),
 						},
@@ -862,7 +987,7 @@ func TestTrackerReconcile(t *testing.T) {
 			Reconcile: []Reconcile{
 				{
 					block: mock(0x30).Parent(0x2).Log("0x30"),
-					event: &Event{
+					event: &TestEvent{
 						Added: mockList{
 							mock(0x30).Parent(0x2).Log("0x30"),
 						},
@@ -892,7 +1017,7 @@ func TestTrackerReconcile(t *testing.T) {
 			Reconcile: []Reconcile{
 				{
 					block: mock(0x5).Log("0x3"),
-					event: &Event{
+					event: &TestEvent{
 						Added: mockList{
 							mock(0x3),
 							mock(0x4).Log("0x2"),
@@ -924,7 +1049,7 @@ func TestTrackerReconcile(t *testing.T) {
 			Reconcile: []Reconcile{
 				{
 					block: mock(0x50).Parent(0x40).Num(5),
-					event: &Event{
+					event: &TestEvent{
 						Added: mockList{
 							mock(0x30).Parent(0x2).Num(3).Log("0x5"),
 							mock(0x40).Parent(0x30).Num(4),
@@ -966,19 +1091,43 @@ func TestTrackerReconcile(t *testing.T) {
 
 			tt := NewTracker(m, DefaultConfig())
 			tt.store = store
+			// tt.done = true // already synced
+
+			// entry, _ := store.GetEntry("1")
+
+			filter, err := tt.NewFilter(nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// important to set a buffer here, otherwise everything is blocked
+			filter.EventCh = make(chan *Event, 1)
+
+			// set the filter as synced since we only want to
+			// try reconciliation
+			filter.synced = 1
+
+			/*
+				filter := &Filter{
+					config:  &FilterConfig{},
+					done:    true,
+					EventCh: make(chan *Event, 1),
+					entry:   entry,
+				}
+				tt.filters = append(tt.filters, filter)
+			*/
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
-				tt.addBlock(b)
+				tt.addBlockLocked(b)
 			}
 			// add the history to the store
 			for _, b := range c.History {
-				tt.store.StoreLogs(b.GetLogs())
+				filter.entry.StoreLogs(b.GetLogs())
 			}
 
 			for _, b := range c.Reconcile {
-				evnt, err := tt.handleReconcile(b.block.Block())
-				if err != nil {
+				if err := tt.handleReconcile(b.block.Block()); err != nil {
 					t.Fatal(err)
 				}
 
@@ -986,25 +1135,39 @@ func TestTrackerReconcile(t *testing.T) {
 					continue
 				}
 
+				var evnt *Event
+				select {
+				case evnt = <-filter.EventCh:
+				case <-time.After(1 * time.Second):
+					t.Fatal("log event timeout")
+				}
+
 				// check logs
-				if !compareLogs(b.event.Added.GetLogs(), evnt.AddedLogs) {
+				if !compareLogs(b.event.Added.GetLogs(), evnt.Added) {
 					t.Fatal("err")
 				}
-				if !compareLogs(b.event.Removed.GetLogs(), evnt.RemovedLogs) {
+				if !compareLogs(b.event.Removed.GetLogs(), evnt.Removed) {
 					t.Fatal("err")
 				}
 
+				var blockEvnt *BlockEvent
+				select {
+				case blockEvnt = <-tt.BlockCh:
+				case <-time.After(1 * time.Second):
+					t.Fatal("block event timeout")
+				}
+
 				// check blocks
-				if !compareBlocks(b.event.Added.ToBlocks(), evnt.Added) {
+				if !compareBlocks(b.event.Added.ToBlocks(), blockEvnt.Added) {
 					t.Fatal("err")
 				}
-				if !compareBlocks(b.event.Removed.ToBlocks(), evnt.Removed) {
+				if !compareBlocks(b.event.Removed.ToBlocks(), blockEvnt.Removed) {
 					t.Fatal("err")
 				}
 			}
 
 			// check the post state (logs and blocks) after all the reconcile events
-			if !compareLogs(store.Logs(), c.Expected.GetLogs()) {
+			if !compareLogs(filter.entry.(*inmem.Entry).Logs(), c.Expected.GetLogs()) {
 				t.Fatal("bad3")
 			}
 			if !compareBlocks(tt.blocks, c.Expected.ToBlocks()) {

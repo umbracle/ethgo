@@ -6,10 +6,15 @@ import (
 	"testing"
 
 	"github.com/ory/dockertest"
+	"github.com/umbracle/go-web3/testutil"
 	"github.com/umbracle/go-web3/tracker/store"
 )
 
 func setupDB(t *testing.T) (store.Store, func()) {
+	if testutil.IsCircleCI() {
+		t.Skip()
+	}
+
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		t.Fatalf("Could not connect to docker: %s", err)
@@ -20,7 +25,7 @@ func setupDB(t *testing.T) (store.Store, func()) {
 		t.Fatalf("Could not start resource: %s", err)
 	}
 
-	endpoint := fmt.Sprintf("postgres://postgres@localhost:%v/postgres?sslmode=disable", resource.GetPort("5432/tcp"))
+	endpoint := fmt.Sprintf("postgres://postgres@localhost:%s/postgres?sslmode=disable", resource.GetPort("5432/tcp"))
 
 	// wait for the db to be running
 	if err := pool.Retry(func() error {
