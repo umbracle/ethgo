@@ -31,6 +31,11 @@ const (
 	dummyAddr = "0x015f68893a39b3ba0681584387670ff8b00f4db2"
 )
 
+// IsCircleCI returns true if running inside circleci
+func IsCircleCI() bool {
+	return os.Getenv("CIRCLECI") == "true"
+}
+
 func getOpenPort() string {
 	rand.Seed(time.Now().UnixNano())
 	min, max := 12000, 15000
