@@ -10,6 +10,9 @@ const (
 	// Ropsten is the POW testnet
 	Ropsten Network = 3
 
+	// Rinkeby is a POW testnet
+	Rinkeby Network = 4
+
 	// Goerli is the Clique testnet
 	Goerli = 5
 )

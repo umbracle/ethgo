@@ -27,6 +27,9 @@ func NewEtherscanFromNetwork(n web3.Network) (*Etherscan, error) {
 	case web3.Ropsten:
 		url = "https://ropsten.etherscan.io"
 
+	case web3.Rinkeby:
+		url = "https://rinkeby.etherscan.io"
+
 	case web3.Goerli:
 		url = "https://goerli.etherscan.io"
 
