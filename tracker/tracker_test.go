@@ -18,6 +18,7 @@ import (
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/go-web3/jsonrpc/codec"
 	"github.com/umbracle/go-web3/testutil"
 	"github.com/umbracle/go-web3/tracker/store/inmem"
 )
@@ -1202,4 +1203,73 @@ func compareBlocks(one, two []*web3.Block) bool {
 		i.Difficulty = big.NewInt(0)
 	}
 	return reflect.DeepEqual(one, two)
+}
+
+type mockClientWithLimit struct {
+	limit uint64
+	mockClient
+}
+
+func (m *mockClientWithLimit) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
+	if filter.BlockHash != nil {
+		return m.mockClient.GetLogs(filter)
+	}
+	from, to := uint64(*filter.From), uint64(*filter.To)
+	if from > to {
+		return nil, fmt.Errorf("from higher than to")
+	}
+	if to-from > m.limit {
+		return nil, &codec.ErrorObject{Message: "query returned more than 10000 results"}
+	}
+	// fallback to the client
+	return m.mockClient.GetLogs(filter)
+}
+
+func TestTooMuchDataRequested(t *testing.T) {
+	count := 0
+
+	// create 100 blocks with 2 (even) or 5 (odd) logs each
+	l := mockList{}
+	l.create(0, 100, func(b *mockBlock) {
+		var numLogs int
+		if b.num%2 == 0 {
+			numLogs = 2
+		} else {
+			numLogs = 5
+		}
+		for i := 0; i < numLogs; i++ {
+			count++
+			b.Log("0x1")
+		}
+	})
+
+	m := &mockClient{}
+	m.addScenario(l)
+
+	mm := &mockClientWithLimit{
+		limit:      3,
+		mockClient: *m,
+	}
+
+	config := DefaultConfig()
+	config.BatchSize = 11
+
+	store := inmem.NewInmemStore()
+
+	tt := NewTracker(mm, config)
+	tt.store = store
+
+	if err := tt.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	filter, err := tt.NewFilter(&FilterConfig{Async: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	filter.Sync(context.Background())
+
+	if count != len(filter.entry.(*inmem.Entry).Logs()) {
+		t.Fatal("not the same count")
+	}
 }
