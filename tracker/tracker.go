@@ -377,12 +377,13 @@ START:
 		return err
 	}
 
+	i += batchSize + 1
+
 	// update the batchSize with additive increase
 	if batchSize < t.config.BatchSize {
 		batchSize = min(t.config.BatchSize, batchSize+additiveFactor)
 	}
 
-	i += batchSize + 1
 	if i <= to {
 		goto START
 	}
