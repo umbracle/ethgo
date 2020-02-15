@@ -25,6 +25,15 @@ func NewABI(s string) (*ABI, error) {
 	return NewABIFromReader(bytes.NewReader([]byte(s)))
 }
 
+// MustNewABI returns a parsed ABI contract or panics if fails
+func MustNewABI(s string) *ABI {
+	a, err := NewABI(s)
+	if err != nil {
+		panic(err)
+	}
+	return a
+}
+
 // NewABIFromReader returns an ABI object from a reader
 func NewABIFromReader(r io.Reader) (*ABI, error) {
 	var abi *ABI

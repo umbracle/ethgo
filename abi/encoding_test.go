@@ -510,3 +510,29 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	}
 	return nil
 }
+
+func TestEncodingStruct(t *testing.T) {
+	typ := MustNewType("tuple(a address, b uint256)")
+
+	type Obj struct {
+		A web3.Address
+		B *big.Int
+	}
+	obj := Obj{
+		A: web3.Address{0x1},
+		B: big.NewInt(1),
+	}
+
+	encoded, err := typ.Encode(&obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var obj2 Obj
+	if err := typ.DecodeStruct(encoded, &obj2); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(obj, obj2) {
+		t.Fatal("bad")
+	}
+}
