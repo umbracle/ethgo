@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/go-web3/testutil"
 )
 
 var (
@@ -14,7 +15,7 @@ var (
 )
 
 func TestERC20Decimals(t *testing.T) {
-	c, _ := jsonrpc.NewClient(url)
+	c, _ := jsonrpc.NewClient(testutil.TestInfuraEndpoint(t))
 	erc20 := NewERC20(zeroX, c)
 
 	decimals, err := erc20.Decimals()
@@ -25,7 +26,7 @@ func TestERC20Decimals(t *testing.T) {
 }
 
 func TestERC20Name(t *testing.T) {
-	c, _ := jsonrpc.NewClient(url)
+	c, _ := jsonrpc.NewClient(testutil.TestInfuraEndpoint(t))
 	erc20 := NewERC20(zeroX, c)
 
 	name, err := erc20.Name()
@@ -34,7 +35,7 @@ func TestERC20Name(t *testing.T) {
 }
 
 func TestERC20Symbol(t *testing.T) {
-	c, _ := jsonrpc.NewClient(url)
+	c, _ := jsonrpc.NewClient(testutil.TestInfuraEndpoint(t))
 	erc20 := NewERC20(zeroX, c)
 
 	symbol, err := erc20.Symbol()
@@ -43,7 +44,7 @@ func TestERC20Symbol(t *testing.T) {
 }
 
 func TestTotalSupply(t *testing.T) {
-	c, _ := jsonrpc.NewClient(url)
+	c, _ := jsonrpc.NewClient(testutil.TestInfuraEndpoint(t))
 	erc20 := NewERC20(zeroX, c)
 
 	supply, err := erc20.TotalSupply()

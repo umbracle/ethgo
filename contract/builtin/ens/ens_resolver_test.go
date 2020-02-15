@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/go-web3/testutil"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 )
 
 func TestResolveAddr(t *testing.T) {
-	c, _ := jsonrpc.NewClient(url)
+	c, _ := jsonrpc.NewClient(testutil.TestInfuraEndpoint(t))
 	r := NewENSResolver(mainnetAddr, c)
 
 	cases := []struct {

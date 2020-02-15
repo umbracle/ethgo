@@ -106,6 +106,21 @@ type Type struct {
 	t     reflect.Type
 }
 
+// Decode decodes an object using this type
+func (t *Type) Decode(input []byte) (interface{}, error) {
+	return Decode(t, input)
+}
+
+// DecodeStruct decodes an object using this type to the out param
+func (t *Type) DecodeStruct(input []byte, out interface{}) error {
+	return DecodeStruct(t, input, out)
+}
+
+// Encode encodes an object using this type
+func (t *Type) Encode(v interface{}) ([]byte, error) {
+	return Encode(v, t)
+}
+
 // String returns the raw representation of the type
 func (t *Type) String() string {
 	return t.raw
@@ -186,6 +201,15 @@ func NewTypeFromArgument(arg *ArgumentStr) (*Type, error) {
 func NewType(s string) (*Type, error) {
 	l := newLexer(s)
 	return readType(l)
+}
+
+// MustNewType parses a type in string format or panics if its invalid
+func MustNewType(s string) *Type {
+	t, err := NewType(s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 func getTypeSize(t *Type) int {

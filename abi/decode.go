@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/umbracle/go-web3"
 )
 
@@ -14,6 +15,18 @@ import (
 func Decode(t *Type, input []byte) (interface{}, error) {
 	val, _, err := decode(t, input)
 	return val, err
+}
+
+// DecodeStruct decodes the input with a type to a struct
+func DecodeStruct(t *Type, input []byte, out interface{}) error {
+	val, err := Decode(t, input)
+	if err != nil {
+		return err
+	}
+	if err := mapstructure.Decode(val, out); err != nil {
+		return err
+	}
+	return nil
 }
 
 func decode(t *Type, input []byte) (interface{}, []byte, error) {

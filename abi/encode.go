@@ -96,6 +96,10 @@ func encodeSliceAndArray(v reflect.Value, t *Type) ([]byte, error) {
 }
 
 func encodeTuple(v reflect.Value, t *Type) ([]byte, error) {
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
 	var err error
 	isList := true
 
@@ -258,7 +262,7 @@ func mapFromStruct(v reflect.Value) (reflect.Value, error) {
 
 		name = strings.ToLower(name)
 		if _, ok := res[name]; !ok {
-			res[name] = v.Field(i)
+			res[name] = v.Field(i).Interface()
 		}
 	}
 	return reflect.ValueOf(res), nil

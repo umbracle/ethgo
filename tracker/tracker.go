@@ -168,6 +168,7 @@ type Config struct {
 	BatchSize          uint64
 	MaxBlockBacklog    uint64
 	EtherscanFastTrack bool
+	EtherscanAPIKey    string
 }
 
 // DefaultConfig returns the default tracker config
@@ -447,7 +448,7 @@ func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*web3.Block, error) {
 		}
 
 		// get the etherscan instance for this chainID
-		e, err := etherscan.NewEtherscanFromNetwork(web3.Network(chainID.Uint64()))
+		e, err := etherscan.NewEtherscanFromNetwork(web3.Network(chainID.Uint64()), t.config.EtherscanAPIKey)
 		if err != nil {
 			// there is no etherscan api for this specific chainid
 			return nil, nil

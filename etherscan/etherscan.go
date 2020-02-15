@@ -15,10 +15,11 @@ import (
 type Etherscan struct {
 	client fasthttp.Client
 	url    string
+	apiKey string
 }
 
 // NewEtherscanFromNetwork creates a new client from the network id
-func NewEtherscanFromNetwork(n web3.Network) (*Etherscan, error) {
+func NewEtherscanFromNetwork(n web3.Network, apiKey string) (*Etherscan, error) {
 	var url string
 	switch n {
 	case web3.Mainnet:
@@ -36,11 +37,11 @@ func NewEtherscanFromNetwork(n web3.Network) (*Etherscan, error) {
 	default:
 		return nil, fmt.Errorf("unknwon network id %d", n)
 	}
-	return NewEtherscan(url), nil
+	return NewEtherscan(url, apiKey), nil
 }
 
 // NewEtherscan creates a new Etherscan service from a url
-func NewEtherscan(url string) *Etherscan {
+func NewEtherscan(url, apiKey string) *Etherscan {
 	return &Etherscan{url: url}
 }
 
@@ -59,6 +60,9 @@ func (e *Etherscan) Query(module, action string, out interface{}, params map[str
 			res = append(res, k+"="+v)
 		}
 		url += "&" + strings.Join(res, "&")
+	}
+	if e.apiKey != "" {
+		url = url + "&apikey=" + e.apiKey
 	}
 
 	req := fasthttp.AcquireRequest()
