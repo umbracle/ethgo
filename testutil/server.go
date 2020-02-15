@@ -389,3 +389,12 @@ func MethodSig(name string) []byte {
 	return b[:4]
 	// return "0x" + hex.EncodeToString(b[:4])
 }
+
+// TestInfuraEndpoint returns the testing infura endpoint to make testing requests
+func TestInfuraEndpoint(t *testing.T) string {
+	url := os.Getenv("INFURA_URL")
+	if url == "" {
+		t.Skip("Infura url not set")
+	}
+	return url
+}
