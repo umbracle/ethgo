@@ -62,18 +62,31 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 
-	// TODO; FIX THIS
-	/*
-		// transactions
-		b.Transactions = b.Transactions[:0]
-		for _, elem := range v.GetArray("transactions") {
-			txn := new(Transaction)
-			if err := txn.unmarshalJSON(elem); err != nil {
-				return err
+	b.TransactionsHashes = b.TransactionsHashes[:0]
+	b.Transactions = b.Transactions[:0]
+
+	elems := v.GetArray("transactions")
+	if len(elems) != 0 {
+		if elems[0].Type() == fastjson.TypeString {
+			// hashes (non full block)
+			for _, elem := range elems {
+				var h Hash
+				if err := h.UnmarshalText(elem.GetStringBytes()); err != nil {
+					return err
+				}
+				b.TransactionsHashes = append(b.TransactionsHashes, h)
 			}
-			b.Transactions = append(b.Transactions, txn)
+		} else {
+			// structs (full block)
+			for _, elem := range elems {
+				txn := new(Transaction)
+				if err := txn.unmarshalJSON(elem); err != nil {
+					return err
+				}
+				b.Transactions = append(b.Transactions, txn)
+			}
 		}
-	*/
+	}
 
 	// uncles
 	b.Uncles = b.Uncles[:0]
@@ -102,6 +115,9 @@ func (t *Transaction) UnmarshalJSON(buf []byte) error {
 
 func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 	var err error
+	if err := decodeHash(&t.Hash, v, "hash"); err != nil {
+		return err
+	}
 	if err = decodeAddr(&t.From, v, "from"); err != nil {
 		return err
 	}

@@ -55,24 +55,26 @@ func (h Hash) String() string {
 }
 
 type Block struct {
-	Number           uint64
-	Hash             Hash
-	ParentHash       Hash
-	Sha3Uncles       Hash
-	TransactionsRoot Hash
-	StateRoot        Hash
-	ReceiptsRoot     Hash
-	Miner            Address
-	Difficulty       *big.Int
-	ExtraData        []byte
-	GasLimit         uint64
-	GasUsed          uint64
-	Timestamp        uint64
-	Transactions     []*Transaction
-	Uncles           []Hash
+	Number             uint64
+	Hash               Hash
+	ParentHash         Hash
+	Sha3Uncles         Hash
+	TransactionsRoot   Hash
+	StateRoot          Hash
+	ReceiptsRoot       Hash
+	Miner              Address
+	Difficulty         *big.Int
+	ExtraData          []byte
+	GasLimit           uint64
+	GasUsed            uint64
+	Timestamp          uint64
+	Transactions       []*Transaction
+	TransactionsHashes []Hash
+	Uncles             []Hash
 }
 
 type Transaction struct {
+	Hash     Hash
 	From     Address
 	To       string
 	Input    []byte

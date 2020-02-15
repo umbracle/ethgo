@@ -238,3 +238,32 @@ func TestEthGetNonce(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, num, uint64(1))
 }
+
+func TestEthTransactionsInBlock(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	c, _ := NewClient(s.HTTPAddr())
+
+	_, err := c.Eth().GetBlockByNumber(0, false)
+	assert.NoError(t, err)
+
+	// Process a block with a transaction
+	assert.NoError(t, s.ProcessBlock())
+
+	// get a non-full block
+	block0, err := c.Eth().GetBlockByNumber(1, false)
+	assert.NoError(t, err)
+
+	assert.Len(t, block0.TransactionsHashes, 1)
+	assert.Len(t, block0.Transactions, 0)
+
+	// get a full block
+	block1, err := c.Eth().GetBlockByNumber(1, true)
+	assert.NoError(t, err)
+
+	assert.Len(t, block1.TransactionsHashes, 0)
+	assert.Len(t, block1.Transactions, 1)
+
+	assert.Equal(t, block0.TransactionsHashes[0], block1.Transactions[0].Hash)
+}
