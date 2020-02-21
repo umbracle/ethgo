@@ -9,10 +9,10 @@ import (
 )
 
 // ParseLog parses an event log
-func ParseLog(args Arguments, log *web3.Log) (map[string]interface{}, error) {
-	var indexed, nonIndexed Arguments
+func ParseLog(args *Type, log *web3.Log) (map[string]interface{}, error) {
+	var indexed, nonIndexed []*TupleElem
 
-	for _, arg := range args {
+	for _, arg := range args.TupleElems() {
 		if arg.Indexed {
 			indexed = append(indexed, arg)
 		} else {
@@ -21,12 +21,12 @@ func ParseLog(args Arguments, log *web3.Log) (map[string]interface{}, error) {
 	}
 
 	// decode indexed fields
-	indexedObjs, err := ParseTopics(indexed, log.Topics[1:])
+	indexedObjs, err := ParseTopics(&Type{kind: KindTuple, tuple: indexed}, log.Topics[1:])
 	if err != nil {
 		return nil, err
 	}
 
-	nonIndexedRaw, err := Decode(nonIndexed.Type(), log.Data)
+	nonIndexedRaw, err := Decode(&Type{kind: KindTuple, tuple: nonIndexed}, log.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func ParseLog(args Arguments, log *web3.Log) (map[string]interface{}, error) {
 	}
 
 	res := map[string]interface{}{}
-	for _, arg := range args {
+	for _, arg := range args.TupleElems() {
 		if arg.Indexed {
 			res[arg.Name] = indexedObjs[0]
 			indexedObjs = indexedObjs[1:]
@@ -49,14 +49,17 @@ func ParseLog(args Arguments, log *web3.Log) (map[string]interface{}, error) {
 }
 
 // ParseTopics parses topics from a log event
-func ParseTopics(args Arguments, topics []web3.Hash) ([]interface{}, error) {
-	if len(args) != len(topics) {
+func ParseTopics(args *Type, topics []web3.Hash) ([]interface{}, error) {
+	if args.kind != KindTuple {
+		return nil, fmt.Errorf("expected a tuple type")
+	}
+	if len(args.TupleElems()) != len(topics) {
 		return nil, fmt.Errorf("bad length")
 	}
 
 	elems := []interface{}{}
-	for indx, arg := range args {
-		elem, err := ParseTopic(arg.Type, topics[indx])
+	for indx, arg := range args.TupleElems() {
+		elem, err := ParseTopic(arg.Elem, topics[indx])
 		if err != nil {
 			return nil, err
 		}

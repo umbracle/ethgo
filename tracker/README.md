@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"encoding/binary"
 	"flag"
 	"fmt"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"syscall"
 
 	web3 "github.com/umbracle/go-web3"
+	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/jsonrpc"
 	"github.com/umbracle/go-web3/tracker"
 
@@ -57,12 +59,24 @@ func main() {
 	handleSignals(cancelFn)
 }
 
+var depositContract = `
+tuple (
+	pubkey bytes,
+	whitdrawalcred bytes,
+	amount bytes,
+	signature bytes,
+	index bytes
+)
+`
+
 func start(ctx context.Context, t *tracker.Tracker, targetAddr web3.Address) error {
 	if err := t.Start(ctx); err != nil {
 		return err
 	}
 
 	fmt.Println("Tracker is ready")
+
+	depositEvent := abi.NewEvent("DepositEvent", abi.MustNewType(depositContract))
 
 	// create the filter
 	fConfig := &tracker.FilterConfig{
@@ -80,7 +94,17 @@ func start(ctx context.Context, t *tracker.Tracker, targetAddr web3.Address) err
 		for {
 			evnt := <-f.EventCh
 			for _, log := range evnt.Added {
-				fmt.Printf("New log at: %d\n", log.BlockNumber)
+				if depositEvent.Match(log) {
+					vals, err := depositEvent.ParseLog(log)
+					if err != nil {
+						panic(err)
+					}
+
+					index := binary.LittleEndian.Uint64(vals["index"].([]byte))
+					amount := binary.LittleEndian.Uint64(vals["amount"].([]byte))
+
+					fmt.Printf("Deposit: Block %d Index %d Amount %d\n", log.BlockNumber, index, amount)
+				}
 			}
 		}
 	}()

@@ -51,8 +51,8 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 		Name      string
 		Constant  bool
 		Anonymous bool
-		Inputs    Arguments
-		Outputs   Arguments
+		Inputs    arguments
+		Outputs   arguments
 	}
 
 	if err := json.Unmarshal(data, &fields); err != nil {
@@ -69,22 +69,22 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 				return fmt.Errorf("multiple constructor declaration")
 			}
 			a.Constructor = &Method{
-				Inputs: field.Inputs,
+				Inputs: field.Inputs.Type(),
 			}
 
 		case "function", "":
 			a.Methods[field.Name] = &Method{
 				Name:    field.Name,
 				Const:   field.Constant,
-				Inputs:  field.Inputs,
-				Outputs: field.Outputs,
+				Inputs:  field.Inputs.Type(),
+				Outputs: field.Outputs.Type(),
 			}
 
 		case "event":
 			a.Events[field.Name] = &Event{
 				Name:      field.Name,
 				Anonymous: field.Anonymous,
-				Inputs:    field.Inputs,
+				Inputs:    field.Inputs.Type(),
 			}
 
 		case "fallback":
@@ -101,8 +101,8 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 type Method struct {
 	Name    string
 	Const   bool
-	Inputs  Arguments
-	Outputs Arguments
+	Inputs  *Type
+	Outputs *Type
 }
 
 // Sig returns the signature of the method
@@ -123,7 +123,7 @@ func (m *Method) ID() []byte {
 type Event struct {
 	Name      string
 	Anonymous bool
-	Inputs    Arguments
+	Inputs    *Type
 }
 
 // Sig returns the signature of the event
@@ -141,31 +141,53 @@ func (e *Event) ID() (res web3.Hash) {
 	return
 }
 
-func buildSignature(name string, args Arguments) string {
-	types := make([]string, len(args))
-	for i, input := range args {
-		types[i] = input.Type.raw
+// NewEvent creates a new solidity event object
+func NewEvent(name string, typ *Type) *Event {
+	return &Event{Name: name, Inputs: typ}
+}
+
+// Match checks wheter the log is from this event
+func (e *Event) Match(log *web3.Log) bool {
+	if len(log.Topics) == 0 {
+		return false
+	}
+	if log.Topics[0] != e.ID() {
+		return false
+	}
+	return true
+}
+
+// ParseLog parses a log with this event
+func (e *Event) ParseLog(log *web3.Log) (map[string]interface{}, error) {
+	if !e.Match(log) {
+		return nil, fmt.Errorf("log does not match this event")
+	}
+	return e.Inputs.ParseLog(log)
+}
+
+func buildSignature(name string, typ *Type) string {
+	types := make([]string, len(typ.tuple))
+	for i, input := range typ.tuple {
+		types[i] = input.Elem.raw
 	}
 	return fmt.Sprintf("%v(%v)", name, strings.Join(types, ","))
 }
 
-// Argument is a solidity argument for functions and events
-type Argument struct {
+type argument struct {
 	Name    string
 	Type    *Type
 	Indexed bool
 }
 
-// Arguments is a list of arguments
-type Arguments []*Argument
+type arguments []*argument
 
-// Type returns the type of the argument in tuple form
-func (a *Arguments) Type() *Type {
+func (a *arguments) Type() *Type {
 	inputs := []*TupleElem{}
 	for _, i := range *a {
 		inputs = append(inputs, &TupleElem{
-			Name: i.Name,
-			Elem: i.Type,
+			Name:    i.Name,
+			Elem:    i.Type,
+			Indexed: i.Indexed,
 		})
 	}
 
@@ -177,8 +199,7 @@ func (a *Arguments) Type() *Type {
 	return tt
 }
 
-// UnmarshalJSON implements the unmarshal interface
-func (a *Argument) UnmarshalJSON(data []byte) error {
+func (a *argument) UnmarshalJSON(data []byte) error {
 	var arg *ArgumentStr
 	if err := json.Unmarshal(data, &arg); err != nil {
 		return fmt.Errorf("argument json err: %v", err)

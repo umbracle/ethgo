@@ -20,7 +20,9 @@ func TestAbi(t *testing.T) {
 			Output: &ABI{
 				Methods: map[string]*Method{
 					"abc": &Method{
-						Name: "abc",
+						Name:    "abc",
+						Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+						Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
 					},
 				},
 				Events: map[string]*Event{},
