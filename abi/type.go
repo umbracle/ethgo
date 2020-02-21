@@ -92,8 +92,9 @@ func (k Kind) String() string {
 
 // TupleElem is an element of a tuple
 type TupleElem struct {
-	Name string
-	Elem *Type
+	Name    string
+	Elem    *Type
+	Indexed bool
 }
 
 // Type is an ABI type
@@ -183,7 +184,11 @@ func parseType(arg *ArgumentStr) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		str = append(str, i.Name+" "+aux)
+		if i.Indexed {
+			str = append(str, i.Name+" indexed "+aux)
+		} else {
+			str = append(str, i.Name+" "+aux)
+		}
 	}
 	return fmt.Sprintf("tuple(%s)%s", strings.Join(str, ","), strings.TrimPrefix(arg.Type, "tuple")), nil
 }
@@ -200,6 +205,8 @@ func NewTypeFromArgument(arg *ArgumentStr) (*Type, error) {
 // NewType parses a type in string format
 func NewType(s string) (*Type, error) {
 	l := newLexer(s)
+	l.nextToken()
+
 	return readType(l)
 }
 
@@ -252,6 +259,8 @@ func readType(l *lexer) (*Type, error) {
 		for {
 
 			name := ""
+			indexed := false
+
 			elem, err := readType(l)
 			if err != nil {
 				// Failed to decode type because its a name
@@ -260,6 +269,11 @@ func readType(l *lexer) (*Type, error) {
 				}
 
 				name = l.current.literal
+				if l.peek.typ == indexedToken {
+					indexed = true
+					l.nextToken()
+				}
+
 				elem, err = readType(l)
 				if err != nil {
 					return nil, err
@@ -267,8 +281,9 @@ func readType(l *lexer) (*Type, error) {
 			}
 
 			elems = append(elems, &TupleElem{
-				Name: name,
-				Elem: elem,
+				Name:    name,
+				Elem:    elem,
+				Indexed: indexed,
 			})
 
 			next = l.nextToken()
@@ -303,7 +318,7 @@ func readType(l *lexer) (*Type, error) {
 
 	// check for arrays at the end of the type
 	for {
-		if l.ch != '[' {
+		if l.peek.typ != lbracketToken {
 			break
 		}
 
@@ -442,6 +457,7 @@ const (
 	lbracketToken
 	rbracketToken
 	commaToken
+	indexedToken
 	invalidToken
 )
 
@@ -456,6 +472,7 @@ func (t tokenType) String() string {
 		"[",
 		"]",
 		",",
+		"indexed",
 		"<invalid>",
 	}
 	return names[t]
@@ -469,6 +486,7 @@ type token struct {
 type lexer struct {
 	input        string
 	current      token
+	peek         token
 	position     int
 	readPosition int
 	ch           byte
@@ -499,9 +517,9 @@ func (l *lexer) peekChar() byte {
 }
 
 func (l *lexer) nextToken() token {
-	tok := l.nextTokenImpl()
-	l.current = tok
-	return tok
+	l.current = l.peek
+	l.peek = l.nextTokenImpl()
+	return l.current
 }
 
 func (l *lexer) nextTokenImpl() token {
@@ -530,6 +548,8 @@ func (l *lexer) nextTokenImpl() token {
 			tok.literal = l.readIdentifier()
 			if tok.literal == "tuple" {
 				tok.typ = tupleToken
+			} else if tok.literal == "indexed" {
+				tok.typ = indexedToken
 			} else {
 				tok.typ = strToken
 			}

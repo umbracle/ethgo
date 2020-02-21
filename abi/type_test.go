@@ -1,6 +1,7 @@
 package abi
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -76,6 +77,7 @@ func TestType(t *testing.T) {
 				},
 			},
 		},
+
 		{
 			s: "string[2][]",
 			a: simpleType("string[2][]"),
@@ -97,13 +99,14 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(arg0 int64)",
+			s: "tuple(arg0 indexed int64)",
 			a: &ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
 					{
-						Name: "arg0",
-						Type: "int64",
+						Name:    "arg0",
+						Type:    "int64",
+						Indexed: true,
 					},
 				},
 			},
@@ -120,6 +123,7 @@ func TestType(t *testing.T) {
 							t:    int64T,
 							raw:  "int64",
 						},
+						Indexed: true,
 					},
 				},
 			},
@@ -192,13 +196,14 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(arg0 int32, b_2 tuple(c int32))",
+			s: "tuple(arg0 indexed int32, b_2 tuple(c int32))",
 			a: &ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
 					{
-						Name: "arg0",
-						Type: "int32",
+						Name:    "arg0",
+						Type:    "int32",
+						Indexed: true,
 					},
 					{
 						Name: "b_2",
@@ -225,6 +230,7 @@ func TestType(t *testing.T) {
 							t:    int32T,
 							raw:  "int32",
 						},
+						Indexed: true,
 					},
 					{
 						Name: "b_2",
@@ -291,6 +297,10 @@ func TestType(t *testing.T) {
 				}
 
 				if !reflect.DeepEqual(c.t, e0) {
+
+					fmt.Println(c.t)
+					fmt.Println(e0)
+
 					t.Fatal("bad new type")
 				}
 				if !reflect.DeepEqual(c.t, e1) {
