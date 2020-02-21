@@ -60,7 +60,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	}
 
 	// Encode input
-	data, err := abi.Encode(args, m.Inputs.Type())
+	data, err := abi.Encode(args, m.Inputs)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	if err != nil {
 		return nil, err
 	}
-	respInterface, err := abi.Decode(m.Outputs.Type(), raw)
+	respInterface, err := abi.Decode(m.Outputs, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (t *Txn) Validate() error {
 		t.data = append(t.data, t.bin...)
 	}
 	if t.method != nil {
-		data, err := abi.Encode(t.args, t.method.Inputs.Type())
+		data, err := abi.Encode(t.args, t.method.Inputs)
 		if err != nil {
 			return fmt.Errorf("failed to encode arguments: %v", err)
 		}

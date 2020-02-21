@@ -107,6 +107,11 @@ type Type struct {
 	t     reflect.Type
 }
 
+// ParseLog parses a log using this type
+func (t *Type) ParseLog(log *web3.Log) (map[string]interface{}, error) {
+	return ParseLog(t, log)
+}
+
 // Decode decodes an object using this type
 func (t *Type) Decode(input []byte) (interface{}, error) {
 	return Decode(t, input)

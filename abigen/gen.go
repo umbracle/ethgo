@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/template"
 
@@ -50,12 +51,12 @@ func funcName(str string) string {
 }
 
 func encodeArg(str interface{}) string {
-	arg, ok := str.(*abi.Argument)
+	arg, ok := str.(*abi.TupleElem)
 	if !ok {
-		panic("bad")
+		panic("bad 1")
 	}
 
-	switch arg.Type.Kind() {
+	switch arg.Elem.Kind() {
 	case abi.KindAddress:
 		return "web3.Address"
 
@@ -66,29 +67,62 @@ func encodeArg(str interface{}) string {
 		return "bool"
 
 	case abi.KindInt:
-		return arg.Type.GoType().String()
+		return arg.Elem.GoType().String()
 
 	case abi.KindUInt:
-		return arg.Type.GoType().String()
+		return arg.Elem.GoType().String()
 
 	case abi.KindFixedBytes:
-		return fmt.Sprintf("[%d]byte", arg.Type.Size())
+		return fmt.Sprintf("[%d]byte", arg.Elem.Size())
 
 	case abi.KindBytes:
 		return "[]byte"
 
 	default:
-		return fmt.Sprintf("input not done for type: %s", arg.Type.String())
+		return fmt.Sprintf("input not done for type: %s", arg.Elem.String())
 	}
+}
+
+func tupleLen(tuple interface{}) interface{} {
+	if isNil(tuple) {
+		return 0
+	}
+	arg, ok := tuple.(*abi.Type)
+	if !ok {
+		panic("bad tuple")
+	}
+	return len(arg.TupleElems())
+}
+
+func tupleElems(tuple interface{}) []interface{} {
+	res := []interface{}{}
+	if isNil(tuple) {
+		return res
+	}
+
+	arg, ok := tuple.(*abi.Type)
+	if !ok {
+		panic("bad tuple")
+	}
+	for _, i := range arg.TupleElems() {
+		res = append(res, i)
+	}
+	return res
+}
+
+func isNil(c interface{}) bool {
+	return c == nil || (reflect.ValueOf(c).Kind() == reflect.Ptr && reflect.ValueOf(c).IsNil())
 }
 
 func gen(artifacts map[string]*compiler.Artifact, config *config) error {
 	funcMap := template.FuncMap{
-		"title":     strings.Title,
-		"clean":     cleanName,
-		"arg":       encodeArg,
-		"outputArg": outputArg,
-		"funcName":  funcName,
+		"title":      strings.Title,
+		"clean":      cleanName,
+		"arg":        encodeArg,
+		"outputArg":  outputArg,
+		"funcName":   funcName,
+		"tupleElems": tupleElems,
+		"tupleLen":   tupleLen,
 	}
 	tmplAbi, err := template.New("eth-abi").Funcs(funcMap).Parse(templateAbiStr)
 	if err != nil {
@@ -172,17 +206,17 @@ func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
 // calls
 {{range $key, $value := .Abi.Methods}}{{if .Const}}
 // {{funcName $key}} calls the {{$key}} method in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElems .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := tupleElems .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
 	var out map[string]interface{}
-	{{ $length := len .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
+	{{ $length := tupleLen .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
 
-	out, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range $index, $val := .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
+	out, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
 	if err != nil {
 		return
 	}
 
 	// decode outputs
-	{{range $index, $val := .Outputs}}val{{$index}}, ok = out["{{if .Name}}{{.Name}}{{else}}{{$index}}{{end}}"].({{arg .}})
+	{{range $index, $val := tupleElems .Outputs}}val{{$index}}, ok = out["{{if .Name}}{{.Name}}{{else}}{{$index}}{{end}}"].({{arg .}})
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index {{$index}}")
 		return
@@ -195,8 +229,8 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := .Inputs}}
 // txns
 {{range $key, $value := .Abi.Methods}}{{if not .Const}}
 // {{funcName $key}} sends a {{$key}} transaction in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
-	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := .Inputs}}, {{clean $elem.Name}}{{end}})
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := tupleElems .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
+	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := tupleElems .Inputs}}, {{clean $elem.Name}}{{end}})
 }
 {{end}}{{end}}`
 

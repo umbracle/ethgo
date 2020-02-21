@@ -490,7 +490,7 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 		return fmt.Errorf("method set not found")
 	}
 
-	tt := method.Inputs.Type()
+	tt := method.Inputs
 	val := generateRandomType(tt)
 
 	data, err := Encode(val, tt)
