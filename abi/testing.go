@@ -74,7 +74,7 @@ PICK:
 		elems := []string{}
 		for i := 0; i < size; i++ {
 			elem := pickRandomType(d + 1)
-			elems = append(elems, fmt.Sprintf("arg%d %s", i, elem))
+			elems = append(elems, fmt.Sprintf("%s arg%d", elem, i))
 		}
 		return fmt.Sprintf("tuple(%s)", strings.Join(elems, ","))
 

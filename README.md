@@ -86,7 +86,7 @@ import (
 )
 
 func main() {
-	typ := abi.MustNewType("tuple(a address, b uint256)")
+	typ := abi.MustNewType("tuple(address a, uint256 b)")
 
 	type Obj struct {
 		A web3.Address

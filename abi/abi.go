@@ -141,8 +141,45 @@ func (e *Event) ID() (res web3.Hash) {
 	return
 }
 
-// NewEvent creates a new solidity event object
-func NewEvent(name string, typ *Type) *Event {
+// MustNewEvent creates a new solidity event object or fails
+func MustNewEvent(name string) *Event {
+	evnt, err := NewEvent(name)
+	if err != nil {
+		panic(err)
+	}
+	return evnt
+}
+
+// NewEvent creates a new solidity event object using the signature
+func NewEvent(name string) (*Event, error) {
+	name, typ, err := parseFunctionSignature(name)
+	if err != nil {
+		return nil, err
+	}
+	return NewEventFromType(name, typ), nil
+}
+
+func parseFunctionSignature(name string) (string, *Type, error) {
+	if !strings.HasSuffix(name, ")") {
+		return "", nil, fmt.Errorf("failed to parse input, expected 'name(types)'")
+	}
+	indx := strings.Index(name, "(")
+	if indx == -1 {
+		return "", nil, fmt.Errorf("failed to parse input, expected 'name(types)'")
+	}
+
+	funcName, signature := name[:indx], name[indx:]
+	signature = "tuple" + signature
+
+	typ, err := NewType(signature)
+	if err != nil {
+		return "", nil, err
+	}
+	return funcName, typ, nil
+}
+
+// NewEventFromType creates a new solidity event object using the name and type
+func NewEventFromType(name string, typ *Type) *Event {
 	return &Event{Name: name, Inputs: typ}
 }
 

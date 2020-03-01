@@ -123,52 +123,52 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			"tuple(a bytes[])",
+			"tuple(bytes[] a)",
 			map[string]interface{}{
 				"a": [][]byte{{0xf0, 0xf0, 0xf0}, {0xf0, 0xf0, 0xf0}},
 			},
 		},
 		{
-			"tuple(a uint32[2][][])",
+			"tuple(uint32[2][][] a)",
 			// `[{"type": "uint32[2][][]"}]`,
 			map[string]interface{}{
 				"a": [][][2]uint32{{{uint32(1), uint32(200)}, {uint32(1), uint32(1000)}}, {{uint32(1), uint32(200)}, {uint32(1), uint32(1000)}}},
 			},
 		},
 		{
-			"tuple(a uint64[2])",
+			"tuple(uint64[2] a)",
 			map[string]interface{}{
 				"a": [2]uint64{1, 2},
 			},
 		},
 		{
-			"tuple(a uint32[2][3][4])",
+			"tuple(uint32[2][3][4] a)",
 			map[string]interface{}{
 				"a": [4][3][2]uint32{{{1, 2}, {3, 4}, {5, 6}}, {{7, 8}, {9, 10}, {11, 12}}, {{13, 14}, {15, 16}, {17, 18}}, {{19, 20}, {21, 22}, {23, 24}}},
 			},
 		},
 		{
-			"tuple(a int32[])",
+			"tuple(int32[] a)",
 			map[string]interface{}{
 				"a": []int32{1, 2},
 			},
 		},
 		{
-			"tuple(a int32, b int32)",
+			"tuple(int32 a, int32 b)",
 			map[string]interface{}{
 				"a": int32(1),
 				"b": int32(2),
 			},
 		},
 		{
-			"tuple(a string, b int32)",
+			"tuple(string a, int32 b)",
 			map[string]interface{}{
 				"a": "Hello Worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 				"b": int32(2),
 			},
 		},
 		{
-			"tuple(a int32[2], b int32[])",
+			"tuple(int32[2] a, int32[] b)",
 			map[string]interface{}{
 				"a": [2]int32{1, 2},
 				"b": []int32{4, 5, 6},
@@ -176,7 +176,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// First dynamic second static
-			"tuple(a int32[], b int32[2])",
+			"tuple(int32[] a, int32[2] b)",
 			map[string]interface{}{
 				"a": []int32{1, 2, 3},
 				"b": [2]int32{4, 5},
@@ -184,14 +184,14 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// Both dynamic
-			"tuple(a int32[], b int32[])",
+			"tuple(int32[] a, int32[] b)",
 			map[string]interface{}{
 				"a": []int32{1, 2, 3},
 				"b": []int32{4, 5, 6},
 			},
 		},
 		{
-			"tuple(a string, b int64)",
+			"tuple(string a, int64 b)",
 			map[string]interface{}{
 				"a": "hello World",
 				"b": int64(266),
@@ -199,7 +199,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// tuple array
-			"tuple(a int32, b int32)[2]",
+			"tuple(int32 a, int32 b)[2]",
 			[2]map[string]interface{}{
 				map[string]interface{}{
 					"a": int32(1),
@@ -214,7 +214,7 @@ func TestEncoding(t *testing.T) {
 
 		{
 			// tuple array with dynamic content
-			"tuple(a int32[])[2]",
+			"tuple(int32[] a)[2]",
 			[2]map[string]interface{}{
 				map[string]interface{}{
 					"a": []int32{1, 2, 3},
@@ -226,7 +226,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// tuple slice
-			"tuple(a int32, b int32[])[]",
+			"tuple(int32 a, int32[] b)[]",
 			[]map[string]interface{}{
 				map[string]interface{}{
 					"a": int32(1),
@@ -240,7 +240,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			// nested tuple
-			"tuple(a tuple(c int32, d int32[]), b int32[])",
+			"tuple(tuple(int32 c, int32[] d) a, int32[] b)",
 			map[string]interface{}{
 				"a": map[string]interface{}{
 					"c": int32(5),
@@ -250,7 +250,7 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			"tuple(a uint8[2], b tuple(e uint8, f uint32)[2], c uint16, d uint64[2][1])",
+			"tuple(uint8[2] a, tuple(uint8 e, uint32 f)[2] b, uint16 c, uint64[2][1] d)",
 			map[string]interface{}{
 				"a": [2]uint8{uint8(1), uint8(2)},
 				"b": [2]map[string]interface{}{
@@ -268,7 +268,7 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			"tuple(a uint16, b uint16)[1][]",
+			"tuple(uint16 a, uint16 b)[1][]",
 			[][1]map[string]interface{}{
 				[1]map[string]interface{}{
 					map[string]interface{}{
@@ -297,7 +297,7 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
-			"tuple(a uint64[][], b tuple(a uint8, b uint32)[1], c uint64)",
+			"tuple(uint64[][] a, tuple(uint8 a, uint32 b)[1] b, uint64 c)",
 			map[string]interface{}{
 				"a": [][]uint64{
 					[]uint64{3, 4},
@@ -512,7 +512,7 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 }
 
 func TestEncodingStruct(t *testing.T) {
-	typ := MustNewType("tuple(a address, b uint256)")
+	typ := MustNewType("tuple(address a, uint256 b)")
 
 	type Obj struct {
 		A web3.Address

@@ -61,11 +61,11 @@ func main() {
 
 var depositContract = `
 tuple (
-	pubkey bytes,
-	whitdrawalcred bytes,
-	amount bytes,
-	signature bytes,
-	index bytes
+	bytes pubkey,
+	bytes whitdrawalcred,
+	bytes amount,
+	bytes signature,
+	bytes index
 )
 `
 
