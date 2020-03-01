@@ -20,7 +20,7 @@ func setupDB(t *testing.T) (store.Store, func()) {
 		t.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	resource, err := pool.Run("postgres", "latest", []string{})
+	resource, err := pool.Run("postgres", "latest", []string{"POSTGRES_HOST_AUTH_METHOD=trust"})
 	if err != nil {
 		t.Fatalf("Could not start resource: %s", err)
 	}

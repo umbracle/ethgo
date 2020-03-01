@@ -190,9 +190,9 @@ func parseType(arg *ArgumentStr) (string, error) {
 			return "", err
 		}
 		if i.Indexed {
-			str = append(str, i.Name+" indexed "+aux)
+			str = append(str, aux+" indexed "+i.Name)
 		} else {
-			str = append(str, i.Name+" "+aux)
+			str = append(str, aux+" "+i.Name)
 		}
 	}
 	return fmt.Sprintf("tuple(%s)%s", strings.Join(str, ","), strings.TrimPrefix(arg.Type, "tuple")), nil
@@ -268,20 +268,20 @@ func readType(l *lexer) (*Type, error) {
 
 			elem, err := readType(l)
 			if err != nil {
-				// Failed to decode type because its a name
-				if l.current.typ != strToken {
-					return nil, expectedToken(strToken)
-				}
+				return nil, fmt.Errorf("failed to decode type: %v", err)
+			}
 
+			switch l.peek.typ {
+			case strToken:
+				l.nextToken()
 				name = l.current.literal
-				if l.peek.typ == indexedToken {
-					indexed = true
-					l.nextToken()
-				}
 
-				elem, err = readType(l)
-				if err != nil {
-					return nil, err
+			case indexedToken:
+				l.nextToken()
+				indexed = true
+				if l.peek.typ == strToken {
+					l.nextToken()
+					name = l.current.literal
 				}
 			}
 

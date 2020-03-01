@@ -99,7 +99,7 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(arg0 indexed int64)",
+			s: "tuple(int64 indexed arg0)",
 			a: &ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
@@ -129,7 +129,7 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(arg_0 int64)[2]",
+			s: "tuple(int64 arg_0)[2]",
 			a: &ArgumentStr{
 				Type: "tuple[2]",
 				Components: []*ArgumentStr{
@@ -163,7 +163,7 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(a int64)[]",
+			s: "tuple(int64 a)[]",
 			a: &ArgumentStr{
 				Type: "tuple[]",
 				Components: []*ArgumentStr{
@@ -196,7 +196,7 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(arg0 indexed int32, b_2 tuple(c int32))",
+			s: "tuple(int32 indexed arg0, tuple(int32 c) b_2)",
 			a: &ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
@@ -335,7 +335,7 @@ func TestSize(t *testing.T) {
 			"string[]", 32,
 		},
 		{
-			"tuple(a uint8, b uint32)[1]",
+			"tuple(uint8 a, uint32 b)[1]",
 			64,
 		},
 	}
