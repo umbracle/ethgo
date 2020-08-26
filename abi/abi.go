@@ -47,12 +47,13 @@ func NewABIFromReader(r io.Reader) (*ABI, error) {
 // UnmarshalJSON implements json.Unmarshaler interface
 func (a *ABI) UnmarshalJSON(data []byte) error {
 	var fields []struct {
-		Type      string
-		Name      string
-		Constant  bool
-		Anonymous bool
-		Inputs    arguments
-		Outputs   arguments
+		Type            string
+		Name            string
+		Constant        bool
+		Anonymous       bool
+		StateMutability string
+		Inputs          arguments
+		Outputs         arguments
 	}
 
 	if err := json.Unmarshal(data, &fields); err != nil {
@@ -73,9 +74,14 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 			}
 
 		case "function", "":
+			c := field.Constant
+			if field.StateMutability == "view" || field.StateMutability == "pure" {
+				c = true
+			}
+
 			a.Methods[field.Name] = &Method{
 				Name:    field.Name,
-				Const:   field.Constant,
+				Const:   c,
 				Inputs:  field.Inputs.Type(),
 				Outputs: field.Outputs.Type(),
 			}
