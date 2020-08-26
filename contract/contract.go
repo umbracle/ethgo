@@ -3,6 +3,7 @@ package contract
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 
 	"github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/abi"
@@ -122,12 +123,19 @@ type Txn struct {
 	bin      []byte
 	gasLimit uint64
 	gasPrice uint64
+	value    *big.Int
 	hash     web3.Hash
 	receipt  *web3.Receipt
 }
 
 func (t *Txn) isContractDeployment() bool {
 	return t.bin != nil
+}
+
+// SetValue sets the value for the txn
+func (t *Txn) SetValue(v *big.Int) *Txn {
+	t.value = new(big.Int).Set(v)
+	return t
 }
 
 // EstimateGas estimates the gas for the call
@@ -144,9 +152,10 @@ func (t *Txn) estimateGas() (uint64, error) {
 	}
 
 	msg := &web3.CallMsg{
-		From: t.from,
-		To:   *t.addr,
-		Data: t.data,
+		From:  t.from,
+		To:    *t.addr,
+		Data:  t.data,
+		Value: t.value,
 	}
 	return t.provider.Eth().EstimateGas(msg)
 }
@@ -179,6 +188,7 @@ func (t *Txn) Do() error {
 		Input:    t.data,
 		GasPrice: t.gasPrice,
 		Gas:      t.gasLimit,
+		Value:    t.value,
 	}
 	if t.addr != nil {
 		txn.To = t.addr.String()
