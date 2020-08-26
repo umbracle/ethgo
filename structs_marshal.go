@@ -98,6 +98,9 @@ func (c *CallMsg) MarshalJSON() ([]byte, error) {
 	if c.GasPrice != 0 {
 		o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", c.GasPrice)))
 	}
+	if c.Value != nil {
+		o.Set("value", a.NewString(fmt.Sprintf("0x%x", c.Value)))
+	}
 
 	res := o.MarshalTo(nil)
 	defaultArena.Put(a)

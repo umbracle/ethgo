@@ -88,6 +88,7 @@ type CallMsg struct {
 	To       Address
 	Data     []byte
 	GasPrice uint64
+	Value    *big.Int
 }
 
 type LogFilter struct {
