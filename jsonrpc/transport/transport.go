@@ -22,11 +22,12 @@ type PubSubTransport interface {
 
 const (
 	wsPrefix = "ws://"
+	wssPrefix = "wss://"
 )
 
 // NewTransport creates a new transport object
 func NewTransport(url string) (Transport, error) {
-	if strings.HasPrefix(url, wsPrefix) {
+	if strings.HasPrefix(url, wsPrefix) || strings.HasPrefix(url, wssPrefix) {
 		return newWebsocket(url)
 	}
 	if _, err := os.Stat(url); !os.IsNotExist(err) {
