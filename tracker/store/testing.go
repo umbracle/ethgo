@@ -1,7 +1,6 @@
 package store
 
 import (
-	"bytes"
 	"reflect"
 	"testing"
 
@@ -67,9 +66,9 @@ func testPrefix(t *testing.T, setup SetupDB) {
 	store, close := setup(t)
 	defer close()
 
-	v1 := []byte("val1")
-	v2 := []byte("val2")
-	v3 := []byte("val3")
+	v1 := "val1"
+	v2 := "val2"
+	v3 := "val3"
 
 	// add same prefix values
 	if err := store.Set(v1, v1); err != nil {
@@ -83,11 +82,11 @@ func testPrefix(t *testing.T, setup SetupDB) {
 	}
 
 	// add distinct value
-	if err := store.Set([]byte("a"), []byte("b")); err != nil {
+	if err := store.Set("a", "b"); err != nil {
 		t.Fatal(err)
 	}
 
-	checkPrefix := func(prefix []byte, expected int) {
+	checkPrefix := func(prefix string, expected int) {
 		res, err := store.ListPrefix(prefix)
 		if err != nil {
 			t.Fatal(err)
@@ -97,18 +96,18 @@ func testPrefix(t *testing.T, setup SetupDB) {
 		}
 	}
 
-	checkPrefix([]byte("val"), 3)
-	checkPrefix([]byte("a"), 1)
-	checkPrefix([]byte("b"), 0)
+	checkPrefix("val", 3)
+	checkPrefix("a", 1)
+	checkPrefix("b", 0)
 }
 
 func testGetSet(t *testing.T, setup SetupDB) {
 	store, close := setup(t)
 	defer close()
 
-	k1 := []byte{0x1}
-	v1 := []byte{0x1}
-	v2 := []byte{0x2}
+	k1 := "k1"
+	v1 := "v1"
+	v2 := "v2"
 
 	res, err := store.Get(k1)
 	if err != nil {
@@ -126,7 +125,7 @@ func testGetSet(t *testing.T, setup SetupDB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(res, v1) {
+	if res != v1 {
 		t.Fatal("bad")
 	}
 
@@ -138,7 +137,7 @@ func testGetSet(t *testing.T, setup SetupDB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(res, v2) {
+	if res != v2 {
 		t.Fatal("bad")
 	}
 }

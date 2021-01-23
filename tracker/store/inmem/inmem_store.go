@@ -1,7 +1,7 @@
 package inmem
 
 import (
-	"bytes"
+	"strings"
 	"sync"
 
 	web3 "github.com/umbracle/go-web3"
@@ -14,14 +14,14 @@ var _ store.Store = (*InmemStore)(nil)
 type InmemStore struct {
 	l       sync.RWMutex
 	entries map[string]*Entry
-	kv      map[string][]byte
+	kv      map[string]string
 }
 
 // NewInmemStore returns a new in-memory store.
 func NewInmemStore() *InmemStore {
 	return &InmemStore{
 		entries: map[string]*Entry{},
-		kv:      map[string][]byte{},
+		kv:      map[string]string{},
 	}
 }
 
@@ -31,20 +31,20 @@ func (i *InmemStore) Close() error {
 }
 
 // Get implements the store interface
-func (i *InmemStore) Get(k []byte) ([]byte, error) {
+func (i *InmemStore) Get(k string) (string, error) {
 	i.l.Lock()
 	defer i.l.Unlock()
 	return i.kv[string(k)], nil
 }
 
 // ListPrefix implements the store interface
-func (i *InmemStore) ListPrefix(prefix []byte) ([][]byte, error) {
+func (i *InmemStore) ListPrefix(prefix string) ([]string, error) {
 	i.l.Lock()
 	defer i.l.Unlock()
 
-	res := [][]byte{}
+	res := []string{}
 	for k, v := range i.kv {
-		if bytes.HasPrefix([]byte(k), prefix) {
+		if strings.HasPrefix(k, prefix) {
 			res = append(res, v)
 		}
 	}
@@ -52,7 +52,7 @@ func (i *InmemStore) ListPrefix(prefix []byte) ([][]byte, error) {
 }
 
 // Set implements the store interface
-func (i *InmemStore) Set(k, v []byte) error {
+func (i *InmemStore) Set(k, v string) error {
 	i.l.Lock()
 	defer i.l.Unlock()
 	i.kv[string(k)] = v

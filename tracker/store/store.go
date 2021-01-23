@@ -5,13 +5,13 @@ import web3 "github.com/umbracle/go-web3"
 // Store is a datastore for the tracker
 type Store interface {
 	// Get gets a value
-	Get(k []byte) ([]byte, error)
+	Get(k string) (string, error)
 
 	// ListPrefix lists values by prefix
-	ListPrefix(prefix []byte) ([][]byte, error)
+	ListPrefix(prefix string) ([]string, error)
 
 	// Set sets a value
-	Set(k, v []byte) error
+	Set(k, v string) error
 
 	// Close closes the store
 	Close() error
