@@ -56,37 +56,37 @@ func (b *BoltStore) Close() error {
 }
 
 // Get implements the store interface
-func (b *BoltStore) Get(k []byte) ([]byte, error) {
+func (b *BoltStore) Get(k string) (string, error) {
 	txn, err := b.conn.Begin(false)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer txn.Rollback()
 
 	bucket := txn.Bucket(dbConf)
-	val := bucket.Get(k)
+	val := bucket.Get([]byte(k))
 
-	return val, nil
+	return string(val), nil
 }
 
 // ListPrefix implements the store interface
-func (b *BoltStore) ListPrefix(prefix []byte) ([][]byte, error) {
+func (b *BoltStore) ListPrefix(prefix string) ([]string, error) {
 	txn, err := b.conn.Begin(false)
 	if err != nil {
 		return nil, err
 	}
 	defer txn.Rollback()
 
-	res := [][]byte{}
+	res := []string{}
 	c := txn.Bucket(dbConf).Cursor()
-	for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
-		res = append(res, v)
+	for k, v := c.Seek([]byte(prefix)); k != nil && bytes.HasPrefix(k, []byte(prefix)); k, v = c.Next() {
+		res = append(res, string(v))
 	}
 	return res, nil
 }
 
 // Set implements the store interface
-func (b *BoltStore) Set(k, v []byte) error {
+func (b *BoltStore) Set(k, v string) error {
 	txn, err := b.conn.Begin(true)
 	if err != nil {
 		return err
@@ -94,7 +94,7 @@ func (b *BoltStore) Set(k, v []byte) error {
 	defer txn.Rollback()
 
 	bucket := txn.Bucket(dbConf)
-	if err := bucket.Put(k, v); err != nil {
+	if err := bucket.Put([]byte(k), []byte(v)); err != nil {
 		return err
 	}
 	return txn.Commit()

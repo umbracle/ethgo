@@ -1,7 +1,6 @@
 package tracker
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -23,10 +22,10 @@ import (
 )
 
 var (
-	dbGenesis   = []byte("genesis")
-	dbChainID   = []byte("chainID")
-	dbLastBlock = []byte("lastBlock")
-	dbFilter    = []byte("filter")
+	dbGenesis   = "genesis"
+	dbChainID   = "chainID"
+	dbLastBlock = "lastBlock"
+	dbFilter    = "filter"
 )
 
 const (
@@ -86,15 +85,19 @@ type Filter struct {
 
 // GetLastBlock returns the last block processed for this filter
 func (f *Filter) GetLastBlock() (*web3.Block, error) {
-	buf, err := f.tracker.store.Get(append(dbLastBlock, []byte(f.config.Hash())...))
+	buf, err := f.tracker.store.Get(dbLastBlock + "_" + f.config.Hash())
 	if err != nil {
 		return nil, err
 	}
 	if len(buf) == 0 {
 		return nil, nil
 	}
+	raw, err := hex.DecodeString(buf)
+	if err != nil {
+		return nil, err
+	}
 	b := &web3.Block{}
-	if err := b.UnmarshalJSON(buf); err != nil {
+	if err := b.UnmarshalJSON(raw); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -108,7 +111,8 @@ func (f *Filter) storeLastBlock(b *web3.Block) error {
 	if err != nil {
 		return err
 	}
-	return f.tracker.store.Set(append(dbLastBlock, []byte(f.config.Hash())...), buf)
+	raw := hex.EncodeToString(buf)
+	return f.tracker.store.Set(dbLastBlock+"_"+f.config.Hash(), raw)
 }
 
 // SyncAsync syncs the filter asynchronously
@@ -258,17 +262,18 @@ func (t *Tracker) NewFilter(config *FilterConfig) (*Filter, error) {
 	}
 
 	// insert the filter config in the db
-	filterKey := append(dbFilter, []byte(config.Hash())...)
+	filterKey := dbFilter + "_" + config.Hash()
 	data, err := t.store.Get(filterKey)
 	if err != nil {
 		return nil, err
 	}
-	if data == nil {
+	if data == "" {
 		raw, err := json.Marshal(config)
 		if err != nil {
 			return nil, err
 		}
-		if err := t.store.Set(filterKey, raw); err != nil {
+		rawStr := hex.EncodeToString(raw)
+		if err := t.store.Set(filterKey, rawStr); err != nil {
 			return nil, err
 		}
 	}
@@ -418,17 +423,17 @@ func (t *Tracker) preSyncCheckImpl() error {
 		return err
 	}
 	if len(genesis) != 0 {
-		if !bytes.Equal(genesis, rGenesis.Hash[:]) {
+		if genesis != rGenesis.Hash.String() {
 			return fmt.Errorf("bad genesis")
 		}
-		if !bytes.Equal(chainID, rChainID.Bytes()) {
+		if chainID != rChainID.String() {
 			return fmt.Errorf("bad genesis")
 		}
 	} else {
-		if err := t.store.Set(dbGenesis, rGenesis.Hash[:]); err != nil {
+		if err := t.store.Set(dbGenesis, rGenesis.Hash.String()); err != nil {
 			return err
 		}
-		if err := t.store.Set(dbChainID, rChainID.Bytes()); err != nil {
+		if err := t.store.Set(dbChainID, rChainID.String()); err != nil {
 			return err
 		}
 	}
@@ -950,8 +955,12 @@ func (t *Tracker) GetSavedFilters() ([]*FilterConfig, error) {
 
 	config := []*FilterConfig{}
 	for _, item := range data {
+		raw, err := hex.DecodeString(item)
+		if err != nil {
+			return nil, err
+		}
 		var res *FilterConfig
-		if err := json.Unmarshal(item, &res); err != nil {
+		if err := json.Unmarshal(raw, &res); err != nil {
 			return nil, err
 		}
 		config = append(config, res)

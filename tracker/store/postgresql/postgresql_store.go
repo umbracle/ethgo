@@ -41,33 +41,29 @@ func (p *PostgreSQLStore) Close() error {
 }
 
 // Get implements the store interface
-func (p *PostgreSQLStore) Get(k []byte) ([]byte, error) {
+func (p *PostgreSQLStore) Get(k string) (string, error) {
 	var out string
 	if err := p.db.Get(&out, "SELECT val FROM kv WHERE key=$1", string(k)); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return "", nil
 		}
-		return nil, err
+		return "", err
 	}
-	return []byte(out), nil
+	return out, nil
 }
 
 // ListPrefix implements the store interface
-func (p *PostgreSQLStore) ListPrefix(prefix []byte) ([][]byte, error) {
+func (p *PostgreSQLStore) ListPrefix(prefix string) ([]string, error) {
 	var out []string
 	if err := p.db.Select(&out, "SELECT val FROM kv WHERE key LIKE $1", string(prefix)+"%"); err != nil {
 		return nil, err
 	}
-	res := [][]byte{}
-	for _, val := range out {
-		res = append(res, []byte(val))
-	}
-	return res, nil
+	return out, nil
 }
 
 // Set implements the store interface
-func (p *PostgreSQLStore) Set(k, v []byte) error {
-	if _, err := p.db.Exec("INSERT INTO kv (key, val) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET val = $2", string(k), string(v)); err != nil {
+func (p *PostgreSQLStore) Set(k, v string) error {
+	if _, err := p.db.Exec("INSERT INTO kv (key, val) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET val = $2", k, v); err != nil {
 		return err
 	}
 	return nil
