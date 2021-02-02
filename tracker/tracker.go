@@ -711,10 +711,8 @@ func (t *Tracker) Start(ctx context.Context) error {
 	t.blocks = blocks
 
 	// start the polling
-	err = t.blockTracker.Track(ctx, func(block *web3.Block) {
-		if err := t.handleReconcile(block); err != nil {
-			panic(err)
-		}
+	err = t.blockTracker.Track(ctx, func(block *web3.Block) error {
+		return t.handleReconcile(block)
 	})
 	if err != nil {
 		return err
@@ -873,7 +871,17 @@ func (t *Tracker) doFilter(filter *Filter, added []*web3.Block, removed []*web3.
 		query := filter.config.getFilterSearch()
 		query.BlockHash = &block.Hash
 
-		logs, err := t.provider.GetLogs(query)
+		// We check the hash, we need to do a retry to let unsynced nodes get the block
+		var logs []*web3.Log
+		var err error
+
+		for i := 0; i < 5; i++ {
+			logs, err = t.provider.GetLogs(query)
+			if err == nil {
+				break
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
 		if err != nil {
 			return nil, err
 		}

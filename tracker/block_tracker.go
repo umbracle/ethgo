@@ -12,7 +12,7 @@ import (
 
 // BlockTracker is an interface to track new blocks on the chain
 type BlockTracker interface {
-	Track(context.Context, func(block *web3.Block)) error
+	Track(context.Context, func(block *web3.Block) error) error
 }
 
 const (
@@ -37,7 +37,7 @@ func NewJSONBlockTracker(logger *log.Logger, provider Provider) *JSONBlockTracke
 }
 
 // Track implements the BlockTracker interface
-func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *web3.Block)) error {
+func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *web3.Block) error) error {
 	go func() {
 		var lastBlock *web3.Block
 
@@ -57,8 +57,11 @@ func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *web3.Bl
 					continue
 				}
 
-				lastBlock = block
-				handle(lastBlock)
+				if err := handle(block); err != nil {
+					k.logger.Printf("[ERROR]: blocktracker: Failed to handle block: %v", err)
+				} else {
+					lastBlock = block
+				}
 			}
 		}
 	}()
@@ -86,7 +89,7 @@ func NewSubscriptionBlockTracker(logger *log.Logger, client *jsonrpc.Client) (*S
 }
 
 // Track implements the BlockTracker interface
-func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *web3.Block)) error {
+func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *web3.Block) error) error {
 	data := make(chan []byte)
 	cancel, err := s.client.Subscribe("newHeads", func(b []byte) {
 		data <- b

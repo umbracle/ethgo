@@ -14,8 +14,9 @@ import (
 
 func testTracker(t *testing.T, server *testutil.TestServer, tracker BlockTracker) {
 	blocks := make(chan *web3.Block)
-	err := tracker.Track(context.Background(), func(block *web3.Block) {
+	err := tracker.Track(context.Background(), func(block *web3.Block) error {
 		blocks <- block
+		return nil
 	})
 	if err != nil {
 		t.Fatal(err)
