@@ -57,7 +57,7 @@ func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *web3.Bl
 					continue
 				}
 
-				if err := handle(lastBlock); err != nil {
+				if err := handle(block); err != nil {
 					k.logger.Printf("[ERROR]: blocktracker: Failed to handle block: %v", err)
 				} else {
 					lastBlock = block
