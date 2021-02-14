@@ -209,6 +209,8 @@ type Tracker struct {
 
 	blockTracker BlockTracker
 	BlockCh      chan *BlockEvent
+
+	ReadyCh chan struct{}
 }
 
 // NewTracker creates a new tracker
@@ -226,6 +228,7 @@ func NewTracker(provider Provider, config *Config) *Tracker {
 		filters:  []*Filter{},
 		BlockCh:  make(chan *BlockEvent, 1),
 		logger:   log.New(ioutil.Discard, "", log.LstdFlags),
+		ReadyCh:  make(chan struct{}),
 	}
 }
 
@@ -709,6 +712,8 @@ func (t *Tracker) Start(ctx context.Context) error {
 		return err
 	}
 	t.blocks = blocks
+
+	close(t.ReadyCh)
 
 	// start the polling
 	err = t.blockTracker.Track(ctx, func(block *web3.Block) error {
