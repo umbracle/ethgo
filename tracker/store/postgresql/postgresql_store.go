@@ -23,16 +23,22 @@ type PostgreSQLStore struct {
 
 // NewPostgreSQLStore creates a new PostgreSQL store
 func NewPostgreSQLStore(endpoint string) (*PostgreSQLStore, error) {
-	db, err := sqlx.Connect("postgres", endpoint)
+	db, err := sql.Open("postgres", endpoint)
 	if err != nil {
 		return nil, err
 	}
+	return NewSQLStore(db, "postgres")
+}
+
+// NewSQLStore creates a new store with an sql driver
+func NewSQLStore(db *sql.DB, driver string) (*PostgreSQLStore, error) {
+	sqlxDB := sqlx.NewDb(db, driver)
 
 	// create the kv database if it does not exists
 	if _, err := db.Exec(kvSQLSchema); err != nil {
 		return nil, err
 	}
-	return &PostgreSQLStore{db: db}, nil
+	return &PostgreSQLStore{db: sqlxDB}, nil
 }
 
 // Close implements the store interface
