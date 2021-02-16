@@ -23,16 +23,22 @@ type PostgreSQLStore struct {
 
 // NewPostgreSQLStore creates a new PostgreSQL store
 func NewPostgreSQLStore(endpoint string) (*PostgreSQLStore, error) {
-	db, err := sqlx.Connect("postgres", endpoint)
+	db, err := sql.Open("postgres", endpoint)
 	if err != nil {
 		return nil, err
 	}
+	return NewSQLStore(db, "postgres")
+}
+
+// NewSQLStore creates a new store with an sql driver
+func NewSQLStore(db *sql.DB, driver string) (*PostgreSQLStore, error) {
+	sqlxDB := sqlx.NewDb(db, driver)
 
 	// create the kv database if it does not exists
 	if _, err := db.Exec(kvSQLSchema); err != nil {
 		return nil, err
 	}
-	return &PostgreSQLStore{db: db}, nil
+	return &PostgreSQLStore{db: sqlxDB}, nil
 }
 
 // Close implements the store interface
@@ -91,7 +97,7 @@ type Entry struct {
 // LastIndex implements the store interface
 func (e *Entry) LastIndex() (uint64, error) {
 	var index uint64
-	if err := e.db.Get(&index, "SELECT index FROM "+e.table+" ORDER BY index DESC LIMIT 1"); err != nil {
+	if err := e.db.Get(&index, "SELECT indx FROM "+e.table+" ORDER BY indx DESC LIMIT 1"); err != nil {
 		if err == sql.ErrNoRows {
 			return 0, nil
 		}
@@ -113,7 +119,7 @@ func (e *Entry) StoreLogs(logs []*web3.Log) error {
 	}
 	defer tx.Rollback()
 
-	query := "INSERT INTO " + e.table + " (index, tx_index, tx_hash, block_num, block_hash, address, data, topics) VALUES (:index, :tx_index, :tx_hash, :block_num, :block_hash, :address, :data, :topics)"
+	query := "INSERT INTO " + e.table + " (indx, tx_index, tx_hash, block_num, block_hash, address, data, topics) VALUES (:indx, :tx_index, :tx_hash, :block_num, :block_hash, :address, :data, :topics)"
 
 	for indx, log := range logs {
 		topics := []string{}
@@ -145,7 +151,7 @@ func (e *Entry) StoreLogs(logs []*web3.Log) error {
 
 // RemoveLogs implements the store interface
 func (e *Entry) RemoveLogs(indx uint64) error {
-	if _, err := e.db.Exec("DELETE FROM "+e.table+" WHERE index >= $1", indx); err != nil {
+	if _, err := e.db.Exec("DELETE FROM "+e.table+" WHERE indx >= $1", indx); err != nil {
 		return err
 	}
 	return nil
@@ -154,7 +160,7 @@ func (e *Entry) RemoveLogs(indx uint64) error {
 // GetLog implements the store interface
 func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
 	obj := logObj{}
-	if err := e.db.Get(&obj, "SELECT * FROM "+e.table+" WHERE index=$1", indx); err != nil {
+	if err := e.db.Get(&obj, "SELECT * FROM "+e.table+" WHERE indx=$1", indx); err != nil {
 		return err
 	}
 
@@ -200,7 +206,7 @@ func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
 }
 
 type logObj struct {
-	Index     uint64 `db:"index"`
+	Index     uint64 `db:"indx"`
 	TxIndex   uint64 `db:"tx_index"`
 	TxHash    string `db:"tx_hash"`
 	BlockNum  uint64 `db:"block_num"`
@@ -220,7 +226,7 @@ CREATE TABLE IF NOT EXISTS kv (
 func logSQLSchema(name string) string {
 	return `
 	CREATE TABLE IF NOT EXISTS ` + name + ` (
-		index 		numeric,
+		indx 		numeric,
 		tx_index 	numeric,
 		tx_hash 	text,
 		block_num 	numeric,
