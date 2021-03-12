@@ -94,6 +94,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 			}
 
 		case "fallback":
+		case "receive":	
 			// do nothing
 
 		default:
