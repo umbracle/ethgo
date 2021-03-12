@@ -40,6 +40,9 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 			return nil, nil, err
 		}
 	} else {
+		if len(input) < 32 {
+			return map[string]interface {}{}, nil, err
+		}
 		data = input[:32]
 	}
 
