@@ -65,7 +65,7 @@ if err != nil {
     panic(err)
 }
 
-decoded, err := typ.Decode(num) // decoded as interface
+decoded, err := typ.Decode(encoded) // decoded as interface
 if err != nil {
     panic(err)
 }
