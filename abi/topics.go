@@ -26,13 +26,17 @@ func ParseLog(args *Type, log *web3.Log) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	nonIndexedRaw, err := Decode(&Type{kind: KindTuple, tuple: nonIndexed}, log.Data)
-	if err != nil {
-		return nil, err
-	}
-	nonIndexedObjs, ok := nonIndexedRaw.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("bad decoding")
+	var nonIndexedObjs map[string]interface{}
+	if len(nonIndexed) > 0 {
+		nonIndexedRaw, err := Decode(&Type{kind: KindTuple, tuple: nonIndexed}, log.Data)
+		if err != nil {
+			return nil, err
+		}
+		raw, ok := nonIndexedRaw.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("bad decoding")
+		}
+		nonIndexedObjs = raw
 	}
 
 	res := map[string]interface{}{}
