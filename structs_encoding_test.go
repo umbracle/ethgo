@@ -54,7 +54,8 @@ func TestJSONEncoding(t *testing.T) {
 					"input": "0x00",
 					"value": "0x0",
 					"gasPrice": "0x0",
-					"gas": "0x0"
+					"gas": "0x0",
+					"nonce": "0x10"
 				}`,
 			build: txn,
 		},

@@ -191,7 +191,7 @@ func (t *Txn) Do() error {
 		Value:    t.value,
 	}
 	if t.addr != nil {
-		txn.To = t.addr.String()
+		txn.To = t.addr
 	}
 	t.hash, err = t.provider.Eth().SendTransaction(txn)
 	if err != nil {

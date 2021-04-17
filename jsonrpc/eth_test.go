@@ -53,7 +53,7 @@ func TestEthGetBalance(t *testing.T) {
 	amount := big.NewInt(10)
 	txn := &web3.Transaction{
 		From:  s.Account(0),
-		To:    "0x015f68893a39b3ba0681584387670ff8b00f4db2",
+		To:    &testutil.DummyAddr,
 		Value: amount,
 	}
 	_, err = s.SendTxn(txn)
@@ -132,7 +132,7 @@ func TestEthSendTransaction(t *testing.T) {
 		From:     s.Account(0),
 		GasPrice: testutil.DefaultGasPrice,
 		Gas:      testutil.DefaultGasLimit,
-		To:       "0x015f68893a39b3ba0681584387670ff8b00f4db2",
+		To:       &testutil.DummyAddr,
 		Value:    big.NewInt(10),
 	}
 	hash, err := c.Eth().SendTransaction(txn)
