@@ -27,8 +27,8 @@ const (
 	DefaultGasLimit = 5242880    // 0x500000
 )
 
-const (
-	dummyAddr = "0x015f68893a39b3ba0681584387670ff8b00f4db2"
+var (
+	DummyAddr = web3.HexToAddress("0x015f68893a39b3ba0681584387670ff8b00f4db2")
 )
 
 // IsCircleCI returns true if running inside circleci
@@ -177,7 +177,7 @@ func (t *TestServer) HTTPAddr() string {
 func (t *TestServer) ProcessBlock() error {
 	_, err := t.SendTxn(&web3.Transaction{
 		From:  t.accounts[0],
-		To:    dummyAddr,
+		To:    &DummyAddr,
 		Value: big.NewInt(10),
 	})
 	return err
@@ -205,7 +205,7 @@ func (t *TestServer) Call(msg *web3.CallMsg) (string, error) {
 func (t *TestServer) TxnTo(address web3.Address, method string) *web3.Receipt {
 	sig := MethodSig(method)
 	receipt, err := t.SendTxn(&web3.Transaction{
-		To:    address.String(),
+		To:    &address,
 		Input: sig,
 	})
 	if err != nil {

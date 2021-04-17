@@ -78,8 +78,8 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	o := a.NewObject()
 	o.Set("hash", a.NewString(t.Hash.String()))
 	o.Set("from", a.NewString(t.From.String()))
-	if t.To != "" {
-		o.Set("to", a.NewString(t.To))
+	if t.To != nil {
+		o.Set("to", a.NewString(t.To.String()))
 	}
 	if len(t.Input) != 0 {
 		o.Set("input", a.NewString("0x"+hex.EncodeToString(t.Input)))
@@ -89,6 +89,7 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	}
 	o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", t.GasPrice)))
 	o.Set("gas", a.NewString(fmt.Sprintf("0x%x", t.Gas)))
+	o.Set("nonce", a.NewString(fmt.Sprintf("0x%x", t.Nonce)))
 
 	res := o.MarshalTo(nil)
 	defaultArena.Put(a)
