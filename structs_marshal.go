@@ -89,7 +89,10 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	}
 	o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", t.GasPrice)))
 	o.Set("gas", a.NewString(fmt.Sprintf("0x%x", t.Gas)))
-	o.Set("nonce", a.NewString(fmt.Sprintf("0x%x", t.Nonce)))
+	if t.Nonce != 0 {
+		// we can remove this once we include support for custom nonces
+		o.Set("nonce", a.NewString(fmt.Sprintf("0x%x", t.Nonce)))
+	}
 
 	res := o.MarshalTo(nil)
 	defaultArena.Put(a)
