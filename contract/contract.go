@@ -121,7 +121,6 @@ type Txn struct {
 	args     []interface{}
 	data     []byte
 	bin      []byte
-	nonce    uint64
 	gasLimit uint64
 	gasPrice uint64
 	value    *big.Int
@@ -168,14 +167,6 @@ func (t *Txn) Do() error {
 		return err
 	}
 
-	// estimate nonce
-	if t.nonce == 0 {
-		t.nonce, err = t.provider.Eth().GetNonce(t.from, web3.Latest)
-		if err != nil {
-			return err
-		}
-	}
-
 	// estimate gas price
 	if t.gasPrice == 0 {
 		t.gasPrice, err = t.provider.Eth().GasPrice()
@@ -198,7 +189,6 @@ func (t *Txn) Do() error {
 		GasPrice: t.gasPrice,
 		Gas:      t.gasLimit,
 		Value:    t.value,
-		Nonce:    t.nonce,
 	}
 	if t.addr != nil {
 		txn.To = t.addr
