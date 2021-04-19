@@ -37,6 +37,7 @@ const (
 type FilterConfig struct {
 	Address []web3.Address `json:"address"`
 	Topics  []*web3.Hash   `json:"topics"`
+	Start   uint64
 	Hash    string
 	Async   bool
 }
@@ -446,6 +447,15 @@ func (t *Tracker) preSyncCheckImpl() error {
 }
 
 func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*web3.Block, error) {
+	// Try to use first the user provided block if any
+	if filterConfig.Start != 0 {
+		bb, err := t.provider.GetBlockByNumber(web3.BlockNumber(filterConfig.Start), false)
+		if err != nil {
+			return nil, err
+		}
+		return bb, nil
+	}
+
 	// Only possible if we filter addresses
 	if len(filterConfig.Address) == 0 {
 		return nil, nil
@@ -937,13 +947,13 @@ func (t *Tracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, int, er
 	count := uint64(0)
 	for {
 		if count > t.config.MaxBlockBacklog {
-			return nil, -1, fmt.Errorf("Cannot reconcile more than max backlog values")
+			return nil, -1, fmt.Errorf("cannot reconcile more than max backlog values")
 		}
 		count++
 
 		parent, err := t.provider.GetBlockByHash(block.ParentHash, false)
 		if err != nil {
-			return nil, -1, fmt.Errorf("Parent with hash %s not found", block.ParentHash)
+			return nil, -1, fmt.Errorf("parent with hash %s not found", block.ParentHash)
 		}
 
 		added = append(added, parent)
