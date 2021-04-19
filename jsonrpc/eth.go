@@ -54,6 +54,14 @@ func (e *Eth) GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, error) {
 	return b, nil
 }
 
+// SendRawTransaction sends a signed transaction in rlp format.
+func (e *Eth) SendRawTransaction(data []byte) (web3.Hash, error) {
+	var hash web3.Hash
+	hexData := "0x" + hex.EncodeToString(data)
+	err := e.c.Call("eth_sendRawTransaction", &hash, hexData)
+	return hash, err
+}
+
 // SendTransaction creates new message call transaction or a contract creation.
 func (e *Eth) SendTransaction(txn *web3.Transaction) (web3.Hash, error) {
 	var hash web3.Hash
