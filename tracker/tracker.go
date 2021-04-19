@@ -37,15 +37,11 @@ const (
 type FilterConfig struct {
 	Address []web3.Address `json:"address"`
 	Topics  []*web3.Hash   `json:"topics"`
-	hash    string
+	Hash    string
 	Async   bool
 }
 
-// Hash returns a hash of the filter
-func (f *FilterConfig) Hash() string {
-	if f.hash != "" {
-		return f.hash
-	}
+func (f *FilterConfig) buildHash() {
 	h := sha256.New()
 	for _, i := range f.Address {
 		h.Write([]byte(i.String()))
@@ -57,8 +53,7 @@ func (f *FilterConfig) Hash() string {
 			h.Write([]byte(i.String()))
 		}
 	}
-	f.hash = hex.EncodeToString(h.Sum(nil))
-	return f.hash
+	f.Hash = hex.EncodeToString(h.Sum(nil))
 }
 
 func (f *FilterConfig) getFilterSearch() *web3.LogFilter {
@@ -89,7 +84,7 @@ func (f *Filter) Entry() store.Entry {
 
 // GetLastBlock returns the last block processed for this filter
 func (f *Filter) GetLastBlock() (*web3.Block, error) {
-	buf, err := f.tracker.store.Get(dbLastBlock + "_" + f.config.Hash())
+	buf, err := f.tracker.store.Get(dbLastBlock + "_" + f.config.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +111,7 @@ func (f *Filter) storeLastBlock(b *web3.Block) error {
 		return err
 	}
 	raw := hex.EncodeToString(buf)
-	return f.tracker.store.Set(dbLastBlock+"_"+f.config.Hash(), raw)
+	return f.tracker.store.Set(dbLastBlock+"_"+f.config.Hash, raw)
 }
 
 // SyncAsync syncs the filter asynchronously
@@ -253,7 +248,10 @@ func (t *Tracker) NewFilter(config *FilterConfig) (*Filter, error) {
 		config = &FilterConfig{}
 	}
 
-	entry, err := t.store.GetEntry(config.Hash())
+	// generate a random hash if not provided
+	config.buildHash()
+
+	entry, err := t.store.GetEntry(config.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +267,7 @@ func (t *Tracker) NewFilter(config *FilterConfig) (*Filter, error) {
 	}
 
 	// insert the filter config in the db
-	filterKey := dbFilter + "_" + config.Hash()
+	filterKey := dbFilter + "_" + config.Hash
 	data, err := t.store.Get(filterKey)
 	if err != nil {
 		return nil, err
