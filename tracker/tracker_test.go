@@ -46,7 +46,7 @@ func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*
 	filter.Sync(context.Background())
 	// filter.Wait()
 
-	entry, _ := tt.store.GetEntry(filterConfig.Hash())
+	entry, _ := tt.store.GetEntry(filterConfig.Hash)
 	return entry.(*inmem.Entry).Logs()
 }
 
