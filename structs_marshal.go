@@ -93,6 +93,9 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 		// we can remove this once we include support for custom nonces
 		o.Set("nonce", a.NewString(fmt.Sprintf("0x%x", t.Nonce)))
 	}
+	o.Set("blockHash", a.NewString(t.BlockHash.String()))
+	o.Set("blockNumber", a.NewString(fmt.Sprintf("0x%x", t.BlockNumber)))
+	o.Set("transactionIndex", a.NewString(fmt.Sprintf("0x%x", t.TxnIndex)))
 
 	res := o.MarshalTo(nil)
 	defaultArena.Put(a)
