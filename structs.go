@@ -74,14 +74,17 @@ type Block struct {
 }
 
 type Transaction struct {
-	Hash     Hash
-	From     Address
-	To       *Address
-	Input    []byte
-	GasPrice uint64
-	Gas      uint64
-	Value    *big.Int
-	Nonce    uint64
+	Hash        Hash
+	From        Address
+	To          *Address
+	Input       []byte
+	GasPrice    uint64
+	Gas         uint64
+	Value       *big.Int
+	Nonce       uint64
+	BlockHash   Hash
+	BlockNumber uint64
+	TxnIndex    uint64
 }
 
 type CallMsg struct {
