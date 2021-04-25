@@ -250,7 +250,9 @@ func (t *Tracker) NewFilter(config *FilterConfig) (*Filter, error) {
 	}
 
 	// generate a random hash if not provided
-	config.buildHash()
+	if config.Hash == "" {
+		config.buildHash()
+	}
 
 	entry, err := t.store.GetEntry(config.Hash)
 	if err != nil {
