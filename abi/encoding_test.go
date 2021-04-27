@@ -499,7 +499,7 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	}
 
 	res, err := server.Call(&web3.CallMsg{
-		To:   receipt.ContractAddress,
+		To:   &receipt.ContractAddress,
 		Data: append(method.ID(), data...),
 	})
 	if err != nil {

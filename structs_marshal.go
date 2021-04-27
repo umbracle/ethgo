@@ -113,7 +113,9 @@ func (c *CallMsg) MarshalJSON() ([]byte, error) {
 
 	o := a.NewObject()
 	o.Set("from", a.NewString(c.From.String()))
-	o.Set("to", a.NewString(c.To.String()))
+	if c.To != nil {
+		o.Set("to", a.NewString(c.To.String()))
+	}
 	if len(c.Data) != 0 {
 		o.Set("data", a.NewString("0x"+hex.EncodeToString(c.Data)))
 	}

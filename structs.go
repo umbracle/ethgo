@@ -92,7 +92,7 @@ type Transaction struct {
 
 type CallMsg struct {
 	From     Address
-	To       Address
+	To       *Address
 	Data     []byte
 	GasPrice uint64
 	Value    *big.Int

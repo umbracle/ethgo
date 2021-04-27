@@ -69,7 +69,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 
 	// Call function
 	msg := &web3.CallMsg{
-		To:   c.addr,
+		To:   &c.addr,
 		Data: data,
 	}
 	if c.from != nil {
@@ -153,7 +153,7 @@ func (t *Txn) estimateGas() (uint64, error) {
 
 	msg := &web3.CallMsg{
 		From:  t.from,
-		To:    *t.addr,
+		To:    t.addr,
 		Data:  t.data,
 		Value: t.value,
 	}
