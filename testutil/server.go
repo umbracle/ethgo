@@ -139,15 +139,10 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 	}
 
 	// wait till the jsonrpc endpoint is running
-	c := 0
 	for {
 		if server.testHTTPEndpoint() {
 			break
 		}
-		if c == 50 {
-			t.Fatal("timeout")
-		}
-		c++
 		time.Sleep(100 * time.Millisecond)
 	}
 
