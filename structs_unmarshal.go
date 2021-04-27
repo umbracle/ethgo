@@ -81,7 +81,7 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 			for _, elem := range elems {
 				txn := new(Transaction)
 				if err := txn.unmarshalJSON(elem); err != nil {
-					return err
+					panic(err)
 				}
 				b.Transactions = append(b.Transactions, txn)
 			}
@@ -138,13 +138,13 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 	}
 
 	if t.V, err = decodeBytes(t.V[:0], v, "v"); err != nil {
-		return err
+		panic(err)
 	}
 	if t.R, err = decodeBytes(t.R[:0], v, "r"); err != nil {
-		return err
+		panic(err)
 	}
 	if t.S, err = decodeBytes(t.S[:0], v, "s"); err != nil {
-		return err
+		panic(err)
 	}
 
 	if err = decodeHash(&t.BlockHash, v, "blockHash"); err != nil {
@@ -311,8 +311,11 @@ func decodeBytes(dst []byte, v *fastjson.Value, key string, bits ...int) ([]byte
 	if !strings.HasPrefix(str, "0x") {
 		return nil, fmt.Errorf("field %s does not have 0x prefix", str)
 	}
-
-	buf, err := hex.DecodeString(str[2:])
+	str = str[2:]
+	if len(str)%2 != 0 {
+		str = "0" + str
+	}
+	buf, err := hex.DecodeString(str)
 	if err != nil {
 		return nil, err
 	}
