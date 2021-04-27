@@ -82,7 +82,7 @@ type Transaction struct {
 	Gas         uint64
 	Value       *big.Int
 	Nonce       uint64
-	V           byte
+	V           []byte
 	R           []byte
 	S           []byte
 	BlockHash   Hash
