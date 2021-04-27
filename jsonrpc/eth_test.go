@@ -2,6 +2,7 @@ package jsonrpc
 
 import (
 	"bytes"
+	"encoding/hex"
 	"math/big"
 	"testing"
 
@@ -160,15 +161,31 @@ func TestEthEstimateGas(t *testing.T) {
 	cc.AddEvent(testutil.NewEvent("A").Add("address", true))
 	cc.EmitEvent("setA", "A", addr0.String())
 
-	_, addr := s.DeployContract(cc)
+	// estimate gas to deploy the contract
+	solcContract, err := cc.Compile()
+	assert.NoError(t, err)
+
+	input, err := hex.DecodeString(solcContract.Bin)
+	assert.NoError(t, err)
 
 	msg := &web3.CallMsg{
 		From: s.Account(0),
-		To:   addr,
+		To:   nil,
+		Data: input,
+	}
+	gas, err := c.Eth().EstimateGas(msg)
+	assert.NoError(t, err)
+	assert.NotEqual(t, gas, 0)
+
+	_, addr := s.DeployContract(cc)
+
+	msg = &web3.CallMsg{
+		From: s.Account(0),
+		To:   &addr,
 		Data: testutil.MethodSig("setA"),
 	}
 
-	gas, err := c.Eth().EstimateGas(msg)
+	gas, err = c.Eth().EstimateGas(msg)
 	assert.NoError(t, err)
 	assert.NotEqual(t, gas, 0)
 }

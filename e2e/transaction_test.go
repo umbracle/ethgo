@@ -42,7 +42,7 @@ func TestSendSignedTransaction(t *testing.T) {
 	{
 		msg := &web3.CallMsg{
 			From:  key.Address(),
-			To:    to,
+			To:    &to,
 			Value: transferVal,
 		}
 		limit, err := c.Eth().EstimateGas(msg)
