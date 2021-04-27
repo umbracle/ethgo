@@ -56,6 +56,9 @@ func TestJSONEncoding(t *testing.T) {
 					"gasPrice": "0x0",
 					"gas": "0x0",
 					"nonce": "0x10",
+					"v":"0x25",
+					"r":"{{.Hash1}}",
+					"s":"{{.Hash1}}",
 					"blockHash": "{{.Hash0}}",
 					"blockNumber": "0x0",
 					"transactionIndex": "0x0"
