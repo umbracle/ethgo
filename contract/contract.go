@@ -86,6 +86,9 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	if err != nil {
 		return nil, err
 	}
+	if len(raw) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
 	respInterface, err := abi.Decode(m.Outputs, raw)
 	if err != nil {
 		return nil, err
