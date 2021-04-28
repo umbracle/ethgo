@@ -17,7 +17,37 @@ var (
 	addr0B = web3.HexToAddress(addr0)
 )
 
-func TestContract(t *testing.T) {
+func TestContractNoInput(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	cc := &testutil.Contract{}
+	cc.AddOutputCaller("set")
+
+	contract, addr := s.DeployContract(cc)
+
+	abi0, err := abi.NewABI(contract.Abi)
+	assert.NoError(t, err)
+
+	p, _ := jsonrpc.NewClient(s.HTTPAddr())
+	c := NewContract(addr, abi0, p)
+
+	vals, err := c.Call("set", web3.Latest)
+	assert.NoError(t, err)
+	assert.Equal(t, vals["0"], big.NewInt(1))
+
+	abi1, err := abi.NewABIFromList([]string{
+		"function set () view returns (uint256)",
+	})
+	assert.NoError(t, err)
+
+	c1 := NewContract(addr, abi1, p)
+	vals, err = c1.Call("set", web3.Latest)
+	assert.NoError(t, err)
+	assert.Equal(t, vals["0"], big.NewInt(1))
+}
+
+func TestContractIO(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
 

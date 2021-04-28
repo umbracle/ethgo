@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash"
 	"io"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -18,6 +19,20 @@ type ABI struct {
 	Constructor *Method
 	Methods     map[string]*Method
 	Events      map[string]*Event
+}
+
+func (a *ABI) addEvent(e *Event) {
+	if len(a.Methods) == 0 {
+		a.Events = map[string]*Event{}
+	}
+	a.Events[e.Name] = e
+}
+
+func (a *ABI) addMethod(m *Method) {
+	if len(a.Methods) == 0 {
+		a.Methods = map[string]*Method{}
+	}
+	a.Methods[m.Name] = m
 }
 
 // NewABI returns a parsed ABI struct
@@ -94,7 +109,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 			}
 
 		case "fallback":
-		case "receive":	
+		case "receive":
 			// do nothing
 
 		default:
@@ -124,6 +139,41 @@ func (m *Method) ID() []byte {
 	dst := k.Sum(nil)[:4]
 	releaseKeccak(k)
 	return dst
+}
+
+func NewMethod(name string) (*Method, error) {
+	name, inputs, outputs, err := parseMethodSignature(name)
+	if err != nil {
+		return nil, err
+	}
+	m := &Method{Name: name, Inputs: inputs, Outputs: outputs}
+	return m, nil
+}
+
+var funcRegexp = regexp.MustCompile("(.*)\\((.*)\\)(.*) returns \\((.*)\\)")
+
+func parseMethodSignature(name string) (string, *Type, *Type, error) {
+	name = strings.TrimPrefix(name, "function ")
+
+	matches := funcRegexp.FindAllStringSubmatch(name, -1)
+	if len(matches) == 0 {
+		return "", nil, nil, fmt.Errorf("no matches found")
+	}
+	match := matches[0]
+
+	funcName := strings.TrimSpace(match[1])
+	inputArgs := strings.TrimSpace(match[2])
+	outputArgs := strings.TrimSpace(match[4])
+
+	input, err := NewType("tuple(" + inputArgs + ")")
+	if err != nil {
+		return "", nil, nil, err
+	}
+	output, err := NewType("tuple(" + outputArgs + ")")
+	if err != nil {
+		return "", nil, nil, err
+	}
+	return funcName, input, output, nil
 }
 
 // Event is a triggered log mechanism
@@ -159,14 +209,15 @@ func MustNewEvent(name string) *Event {
 
 // NewEvent creates a new solidity event object using the signature
 func NewEvent(name string) (*Event, error) {
-	name, typ, err := parseFunctionSignature(name)
+	name, typ, err := parseEventSignature(name)
 	if err != nil {
 		return nil, err
 	}
 	return NewEventFromType(name, typ), nil
 }
 
-func parseFunctionSignature(name string) (string, *Type, error) {
+func parseEventSignature(name string) (string, *Type, error) {
+	name = strings.TrimPrefix(name, "event ")
 	if !strings.HasSuffix(name, ")") {
 		return "", nil, fmt.Errorf("failed to parse input, expected 'name(types)'")
 	}
@@ -281,4 +332,26 @@ func acquireKeccak() hash.Hash {
 func releaseKeccak(k hash.Hash) {
 	k.Reset()
 	keccakPool.Put(k)
+}
+
+func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
+	res := &ABI{}
+	for _, c := range humanReadableAbi {
+		if strings.HasPrefix(c, "function ") {
+			method, err := NewMethod(c)
+			if err != nil {
+				return nil, err
+			}
+			res.addMethod(method)
+		} else if strings.HasPrefix(c, "event ") {
+			evnt, err := NewEvent(c)
+			if err != nil {
+				return nil, err
+			}
+			res.addEvent(evnt)
+		} else {
+			return nil, fmt.Errorf("either event or function expected")
+		}
+	}
+	return res, nil
 }

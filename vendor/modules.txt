@@ -10,6 +10,14 @@ github.com/Nvveen/Gotty
 github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.21.0-beta
 github.com/btcsuite/btcd/btcec
+github.com/btcsuite/btcd/chaincfg
+github.com/btcsuite/btcd/chaincfg/chainhash
+github.com/btcsuite/btcd/wire
+# github.com/btcsuite/btcutil v1.0.2
+github.com/btcsuite/btcutil
+github.com/btcsuite/btcutil/base58
+github.com/btcsuite/btcutil/bech32
+github.com/btcsuite/btcutil/hdkeychain
 # github.com/cenkalti/backoff v2.2.1+incompatible
 github.com/cenkalti/backoff
 # github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b
@@ -80,6 +88,9 @@ github.com/pmezard/go-difflib/difflib
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.4.0
 github.com/stretchr/testify/assert
+# github.com/tyler-smith/go-bip39 v1.1.0
+github.com/tyler-smith/go-bip39
+github.com/tyler-smith/go-bip39/wordlists
 # github.com/umbracle/fastrlp v0.0.0-20210128110402-41364ca56ca8
 github.com/umbracle/fastrlp
 # github.com/valyala/bytebufferpool v1.0.0
@@ -92,6 +103,8 @@ github.com/valyala/fasthttp/stackless
 github.com/valyala/fastjson
 github.com/valyala/fastjson/fastfloat
 # golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/ripemd160
 golang.org/x/crypto/sha3
 # golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7
 golang.org/x/net/context
