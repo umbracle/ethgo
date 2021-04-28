@@ -13,6 +13,9 @@ import (
 
 // Decode decodes the input with a given type
 func Decode(t *Type, input []byte) (interface{}, error) {
+	if len(input) == 0 {
+		return nil, fmt.Errorf("empty input")
+	}
 	val, _, err := decode(t, input)
 	return val, err
 }
