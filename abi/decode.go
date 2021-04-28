@@ -37,6 +37,11 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 	var length int
 	var err error
 
+	// safe check, input should be at least 32 bytes
+	if len(input) < 32 {
+		return nil, nil, fmt.Errorf("incorrect length")
+	}
+
 	if t.isVariableInput() {
 		length, err = readLength(input)
 		if err != nil {
