@@ -1,8 +1,11 @@
 package abi
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAbi(t *testing.T) {
@@ -42,4 +45,15 @@ func TestAbi(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAbi_HumanReadable(t *testing.T) {
+	cases := []string{
+		"event Transfer(address from, address to, uint256 amount)",
+		"function symbol() returns (string)",
+	}
+	vv, err := NewABIFromList(cases)
+	assert.NoError(t, err)
+
+	fmt.Println(vv.Methods["symbol"].Inputs.String())
 }

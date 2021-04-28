@@ -179,7 +179,7 @@ func parseType(arg *ArgumentStr) (string, error) {
 	}
 
 	if len(arg.Components) == 0 {
-		return "", fmt.Errorf("tuple type expects components but none found")
+		return "tuple()", nil
 	}
 
 	// parse the arg components from the tuple
@@ -268,6 +268,10 @@ func readType(l *lexer) (*Type, error) {
 
 			elem, err := readType(l)
 			if err != nil {
+				if l.current.typ == rparenToken && len(elems) == 0 {
+					// empty tuple 'tuple()'
+					break
+				}
 				return nil, fmt.Errorf("failed to decode type: %v", err)
 			}
 

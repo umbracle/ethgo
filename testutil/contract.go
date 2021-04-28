@@ -114,6 +114,15 @@ func (c *Contract) AddDualCaller(funcName string, args ...string) {
 	})
 }
 
+// AddOutputCaller adsd a view function that does not take any input
+func (c *Contract) AddOutputCaller(funcName string) {
+	c.addCallback(func() string {
+		return `function ` + funcName + ` () public view returns (uint256) {
+			return 1;
+		}`
+	})
+}
+
 // EmitEvent emits a specific event
 func (c *Contract) EmitEvent(funcName string, name string, args ...string) {
 	exists := false

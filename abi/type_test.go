@@ -1,7 +1,6 @@
 package abi
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -255,6 +254,19 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
+			s: "tuple()",
+			a: &ArgumentStr{
+				Type:       "tuple",
+				Components: []*ArgumentStr{},
+			},
+			t: &Type{
+				kind:  KindTuple,
+				raw:   "()",
+				t:     tupleT,
+				tuple: []*TupleElem{},
+			},
+		},
+		{
 			s:   "int[[",
 			err: true,
 		},
@@ -298,8 +310,8 @@ func TestType(t *testing.T) {
 
 				if !reflect.DeepEqual(c.t, e0) {
 
-					fmt.Println(c.t)
-					fmt.Println(e0)
+					// fmt.Println(c.t.t)
+					// fmt.Println(e0.t)
 
 					t.Fatal("bad new type")
 				}
