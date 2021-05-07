@@ -50,13 +50,8 @@ func funcName(str string) string {
 	return strings.Title(handleSnakeCase(str))
 }
 
-func encodeArg(str interface{}) string {
-	arg, ok := str.(*abi.TupleElem)
-	if !ok {
-		panic("bad 1")
-	}
-
-	switch arg.Elem.Kind() {
+func encodeSimpleArg(typ *abi.Type) string {
+	switch typ.Kind() {
 	case abi.KindAddress:
 		return "web3.Address"
 
@@ -67,20 +62,31 @@ func encodeArg(str interface{}) string {
 		return "bool"
 
 	case abi.KindInt:
-		return arg.Elem.GoType().String()
+		return typ.GoType().String()
 
 	case abi.KindUInt:
-		return arg.Elem.GoType().String()
+		return typ.GoType().String()
 
 	case abi.KindFixedBytes:
-		return fmt.Sprintf("[%d]byte", arg.Elem.Size())
+		return fmt.Sprintf("[%d]byte", typ.Size())
 
 	case abi.KindBytes:
 		return "[]byte"
 
+	case abi.KindSlice:
+		return "[]" + encodeSimpleArg(typ.Elem())
+
 	default:
-		return fmt.Sprintf("input not done for type: %s", arg.Elem.String())
+		return fmt.Sprintf("input not done for type: %s", typ.String())
 	}
+}
+
+func encodeArg(str interface{}) string {
+	arg, ok := str.(*abi.TupleElem)
+	if !ok {
+		panic("bad 1")
+	}
+	return encodeSimpleArg(arg.Elem)
 }
 
 func tupleLen(tuple interface{}) interface{} {
@@ -206,7 +212,7 @@ func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
 // calls
 {{range $key, $value := .Abi.Methods}}{{if .Const}}
 // {{funcName $key}} calls the {{$key}} method in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElems .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := tupleElems .Outputs}}val{{$index}} {{arg .}}, {{end}}err error) {
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElems .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := tupleElems .Outputs}}retval{{$index}} {{arg .}}, {{end}}err error) {
 	var out map[string]interface{}
 	{{ $length := tupleLen .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
 
@@ -216,7 +222,7 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElem
 	}
 
 	// decode outputs
-	{{range $index, $val := tupleElems .Outputs}}val{{$index}}, ok = out["{{if .Name}}{{.Name}}{{else}}{{$index}}{{end}}"].({{arg .}})
+	{{range $index, $val := tupleElems .Outputs}}retval{{$index}}, ok = out["{{if .Name}}{{.Name}}{{else}}{{$index}}{{end}}"].({{arg .}})
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index {{$index}}")
 		return
