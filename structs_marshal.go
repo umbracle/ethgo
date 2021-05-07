@@ -78,9 +78,6 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	o := a.NewObject()
 	o.Set("hash", a.NewString(t.Hash.String()))
 	o.Set("from", a.NewString(t.From.String()))
-	if t.To != nil {
-		o.Set("to", a.NewString(t.To.String()))
-	}
 	if len(t.Input) != 0 {
 		o.Set("input", a.NewString("0x"+hex.EncodeToString(t.Input)))
 	}
@@ -93,7 +90,11 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 		// we can remove this once we include support for custom nonces
 		o.Set("nonce", a.NewString(fmt.Sprintf("0x%x", t.Nonce)))
 	}
-
+	if t.To == nil {
+		o.Set("to", a.NewNull())
+	} else {
+		o.Set("to", a.NewString(t.To.String()))
+	}
 	o.Set("v", a.NewString("0x"+hex.EncodeToString(t.V)))
 	o.Set("r", a.NewString("0x"+hex.EncodeToString(t.R)))
 	o.Set("s", a.NewString("0x"+hex.EncodeToString(t.R)))

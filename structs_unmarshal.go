@@ -137,6 +137,17 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return err
 	}
 
+	if !v.Exists("to") {
+		return fmt.Errorf("'to' not found")
+	}
+	if v.Get("to").String() != "null" {
+		var to Address
+		if err = decodeAddr(&to, v, "to"); err != nil {
+			return err
+		}
+		t.To = &to
+	}
+
 	if t.V, err = decodeBytes(t.V[:0], v, "v"); err != nil {
 		panic(err)
 	}
