@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -40,21 +41,29 @@ func main() {
 		os.Exit(0)
 	}
 
-	artifacts, err := process(source, config)
+	matches, err := filepath.Glob(source)
 	if err != nil {
-		fmt.Printf("Failed to parse sources: %v", err)
-		os.Exit(0)
+		fmt.Printf("Failed to read files: %v", err)
+		os.Exit(1)
 	}
-	if err := gen(artifacts, config); err != nil {
-		fmt.Printf("Failed to generate sources: %v", err)
-		os.Exit(0)
+	for _, source := range matches {
+		artifacts, err := process(source, config)
+		if err != nil {
+			fmt.Printf("Failed to parse sources: %v", err)
+			os.Exit(1)
+		}
+		if err := gen(artifacts, config); err != nil {
+			fmt.Printf("Failed to generate sources: %v", err)
+			os.Exit(1)
+		}
 	}
 }
 
 const (
-	vyExt  = 0
-	solExt = 1
-	abiExt = 2
+	vyExt   = 0
+	solExt  = 1
+	abiExt  = 2
+	jsonExt = 3
 )
 
 func process(sources string, config *config) (map[string]*compiler.Artifact, error) {
@@ -66,15 +75,17 @@ func process(sources string, config *config) (map[string]*compiler.Artifact, err
 	prev := -1
 	for _, f := range files {
 		var ext int
-		switch filepath.Ext(f) {
+		switch extt := filepath.Ext(f); extt {
 		case ".abi":
 			ext = abiExt
 		case ".sol":
 			ext = solExt
 		case ".vy", ".py":
 			ext = vyExt
+		case ".json":
+			ext = jsonExt
 		default:
-			return nil, fmt.Errorf("file extension not found")
+			return nil, fmt.Errorf("file extension '%s' not found", extt)
 		}
 
 		if prev == -1 {
@@ -91,6 +102,8 @@ func process(sources string, config *config) (map[string]*compiler.Artifact, err
 		return processSolc(files)
 	case vyExt:
 		return processVyper(files)
+	case jsonExt:
+		return processJson(files)
 	}
 
 	return nil, nil
@@ -138,7 +151,7 @@ func processAbi(sources []string, config *config) (map[string]*compiler.Artifact
 	for _, abiPath := range sources {
 		content, err := ioutil.ReadFile(abiPath)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to read abi file (%s): %v", abiPath, err)
+			return nil, fmt.Errorf("failed to read abi file (%s): %v", abiPath, err)
 		}
 
 		// Use the name of the file to name the contract
@@ -158,6 +171,37 @@ func processAbi(sources []string, config *config) (map[string]*compiler.Artifact
 		artifacts[strings.Title(name)] = &compiler.Artifact{
 			Abi: string(content),
 			Bin: string(bin),
+		}
+	}
+	return artifacts, nil
+}
+
+type JSONArtifact struct {
+	Bytecode string          `json:"bytecode"`
+	Abi      json.RawMessage `json:"abi"`
+}
+
+func processJson(sources []string) (map[string]*compiler.Artifact, error) {
+	artifacts := map[string]*compiler.Artifact{}
+
+	for _, jsonPath := range sources {
+		content, err := ioutil.ReadFile(jsonPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read abi file (%s): %v", jsonPath, err)
+		}
+
+		// Use the name of the file to name the contract
+		_, name := filepath.Split(jsonPath)
+		name = strings.TrimSuffix(name, ".json")
+
+		var art *JSONArtifact
+		if err := json.Unmarshal(content, &art); err != nil {
+			return nil, err
+		}
+
+		artifacts[strings.Title(name)] = &compiler.Artifact{
+			Abi: string(art.Abi),
+			Bin: "0x" + art.Bytecode,
 		}
 	}
 	return artifacts, nil
