@@ -19,6 +19,15 @@ func (c *Client) Eth() *Eth {
 	return c.endpoints.e
 }
 
+// GetCode returns the code of a contract
+func (e *Eth) GetCode(addr web3.Address) (string, error) {
+	var res string
+	if err := e.c.Call("eth_getCode", &res, addr, "latest"); err != nil {
+		return "", err
+	}
+	return res, nil
+}
+
 // Accounts returns a list of addresses owned by client.
 func (e *Eth) Accounts() ([]web3.Address, error) {
 	var out []web3.Address
