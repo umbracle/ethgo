@@ -135,6 +135,12 @@ func (t *Txn) isContractDeployment() bool {
 	return t.bin != nil
 }
 
+// AddArgs is used to set the arguments of the transaction
+func (t *Txn) AddArgs(args ...interface{}) *Txn {
+	t.args = args
+	return t
+}
+
 // SetValue sets the value for the txn
 func (t *Txn) SetValue(v *big.Int) *Txn {
 	t.value = new(big.Int).Set(v)
@@ -161,6 +167,18 @@ func (t *Txn) estimateGas() (uint64, error) {
 		Value: t.value,
 	}
 	return t.provider.Eth().EstimateGas(msg)
+}
+
+// DoAndWait is a blocking query that combines
+// both Do and Wait functions
+func (t *Txn) DoAndWait() error {
+	if err := t.Do(); err != nil {
+		return err
+	}
+	if err := t.Wait(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Do sends the transaction to the network
