@@ -13,8 +13,11 @@ import (
 )
 
 func testTracker(t *testing.T, server *testutil.TestServer, tracker BlockTracker) {
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
+
 	blocks := make(chan *web3.Block)
-	err := tracker.Track(context.Background(), func(block *web3.Block) error {
+	err := tracker.Track(ctx, func(block *web3.Block) error {
 		blocks <- block
 		return nil
 	})
@@ -43,9 +46,12 @@ func testTracker(t *testing.T, server *testutil.TestServer, tracker BlockTracker
 	recv()
 }
 
-func TestJSONBlockTracker(t *testing.T) {
+func TestBlockTracker_JSONRPC(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
+
+	//fmt.Println("aaa")
+	//fmt.Println(s.HTTPAddr())
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 	defer c.Close()
@@ -56,9 +62,12 @@ func TestJSONBlockTracker(t *testing.T) {
 	testTracker(t, s, tracker)
 }
 
-func TestSubscriptionBlockTracker(t *testing.T) {
+func TestBlockTracker_Subscription(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
+
+	//fmt.Println("bbb")
+	//fmt.Println(s.WSAddr())
 
 	c, _ := jsonrpc.NewClient(s.WSAddr())
 	defer c.Close()

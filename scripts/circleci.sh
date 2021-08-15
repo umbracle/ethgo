@@ -37,5 +37,5 @@ install_vyper() {
     cp ~/vyper-venv/bin/vyper /usr/local/bin
 }
 
-install_geth
+#install_geth
 install_solidity

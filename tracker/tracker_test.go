@@ -32,7 +32,11 @@ func testConfig() *Config {
 func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*web3.Log {
 	tt := NewTracker(provider, testConfig())
 	tt.SetStore(inmem.NewInmemStore())
-	if err := tt.Start(context.Background()); err != nil {
+
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
+
+	if err := tt.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -43,7 +47,7 @@ func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*
 	if err != nil {
 		t.Fatal(err)
 	}
-	filter.Sync(context.Background())
+	filter.Sync(ctx)
 	// filter.Wait()
 
 	entry, _ := tt.store.GetEntry(filterConfig.Hash)
@@ -81,7 +85,10 @@ func TestPolling(t *testing.T) {
 	tt.blockTracker = blocktracker
 	tt.store = inmem.NewInmemStore()
 
-	if err := tt.Start(context.Background()); err != nil {
+	ctx, cancelFn := context.WithCancel(context.Background())
+	defer cancelFn()
+
+	if err := tt.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -89,7 +96,7 @@ func TestPolling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.SyncAsync(context.Background())
+	f.SyncAsync(ctx)
 
 	// wait for the bulk sync to finish
 	for {
