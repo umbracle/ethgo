@@ -109,7 +109,7 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 	args = append(args, "--ipcpath", "/eth1data/geth.ipc")
 
 	// enable rpc
-	args = append(args, "--http", "--http.addr", "0.0.0.0")
+	args = append(args, "--http", "--http.addr", "0.0.0.0", "--http.api", "eth,net,web3,debug")
 
 	// enable ws
 	args = append(args, "--ws", "--ws.addr", "0.0.0.0")
