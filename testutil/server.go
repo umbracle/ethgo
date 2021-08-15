@@ -281,6 +281,7 @@ func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, web3.Addre
 	if err != nil {
 		panic(err)
 	}
+
 	receipt, err := t.SendTxn(&web3.Transaction{
 		Input: buf,
 	})

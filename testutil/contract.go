@@ -21,8 +21,8 @@ func (c *Contract) AddEvent(e *Event) {
 	if c.events == nil {
 		c.events = []*Event{}
 	}
-	c.addCallback(e.printDecl)
-	c.addCallback(e.printSetter)
+	c.AddCallback(e.printDecl)
+	c.AddCallback(e.printSetter)
 	c.events = append(c.events, e)
 }
 
@@ -51,7 +51,7 @@ func (c *Contract) Print() string {
 	return str
 }
 
-func (c *Contract) addCallback(f func() string) {
+func (c *Contract) AddCallback(f func() string) {
 	if c.callbacks == nil {
 		c.callbacks = []func() string{}
 	}
@@ -74,7 +74,7 @@ func (c *Contract) Compile() (*compiler.Artifact, error) {
 // AddConstructor creates a constructor with args that set contract variables
 func (c *Contract) AddConstructor(args ...string) {
 	// add variables
-	c.addCallback(func() string {
+	c.AddCallback(func() string {
 		str := ""
 
 		input := []string{}
@@ -95,7 +95,7 @@ func (c *Contract) AddConstructor(args ...string) {
 
 // AddDualCaller adds a call function that returns the same values that takes
 func (c *Contract) AddDualCaller(funcName string, args ...string) {
-	c.addCallback(func() string {
+	c.AddCallback(func() string {
 		var params, rets, body []string
 		for indx, i := range args {
 			name := "val_" + strconv.Itoa(indx)
@@ -116,7 +116,7 @@ func (c *Contract) AddDualCaller(funcName string, args ...string) {
 
 // AddOutputCaller adsd a view function that does not take any input
 func (c *Contract) AddOutputCaller(funcName string) {
-	c.addCallback(func() string {
+	c.AddCallback(func() string {
 		return `function ` + funcName + ` () public view returns (uint256) {
 			return 1;
 		}`
@@ -134,7 +134,7 @@ func (c *Contract) EmitEvent(funcName string, name string, args ...string) {
 	if !exists {
 		panic(fmt.Errorf("event %s does not exists", name))
 	}
-	c.addCallback(func() string {
+	c.AddCallback(func() string {
 		str := "function " + funcName + "() public payable {\n"
 		str += fmt.Sprintf("emit %s(%s)", name, strings.Join(args, ", ")) + ";\n"
 		str += "}"
