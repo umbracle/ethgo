@@ -17,7 +17,6 @@ import (
 
 	"github.com/ory/dockertest"
 	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/compiler"
 	"golang.org/x/crypto/sha3"
 )
@@ -272,7 +271,7 @@ func (t *TestServer) WaitForReceipt(hash web3.Hash) (*web3.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract, args ...interface{}) (*compiler.Artifact, web3.Address) {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, web3.Address) {
 	// solcContract := compile(c.Print())
 	solcContract, err := c.Compile()
 	if err != nil {
@@ -281,20 +280,6 @@ func (t *TestServer) DeployContract(c *Contract, args ...interface{}) (*compiler
 	buf, err := hex.DecodeString(solcContract.Bin)
 	if err != nil {
 		panic(err)
-	}
-
-	abiArt, err := abi.NewABI(solcContract.Abi)
-	if err != nil {
-		panic(err)
-	}
-
-	if abiArt.Constructor != nil {
-		// if we are using constructor args
-		data, err := abi.Encode(args, abiArt.Constructor.Inputs)
-		if err != nil {
-			panic(err)
-		}
-		buf = append(buf, data...)
 	}
 
 	receipt, err := t.SendTxn(&web3.Transaction{

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -292,11 +293,23 @@ func TestEthGetStorageAt(t *testing.T) {
 	c, _ := NewClient(s.HTTPAddr())
 
 	cc := &testutil.Contract{}
-	cc.AddConstructor("uint256", "uint256")
 
-	_, addr := s.DeployContract(cc, 1, 1)
+	// add global variables
+	cc.AddCallback(func() string {
+		return "uint256 val;"
+	})
+
+	// add setter method
+	cc.AddCallback(func() string {
+		return `function setValue() public payable {
+			val = 10;
+		}`
+	})
+
+	_, addr := s.DeployContract(cc)
+	s.TxnTo(addr, "setValue")
 
 	res, err := c.Eth().GetStorageAt(addr, web3.Hash{}, web3.Latest)
 	assert.NoError(t, err)
-	assert.NotEqual(t, res, web3.Hash{})
+	assert.True(t, strings.HasSuffix(res.String(), "a"))
 }
