@@ -11,12 +11,11 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/ory/dockertest"
 	"github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/compiler"
 	"golang.org/x/crypto/sha3"
@@ -67,9 +66,7 @@ func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr
 
 // TestServerConfig is the configuration of the server
 type TestServerConfig struct {
-	DataDir  string
-	HTTPPort string
-	WSPort   string
+	Period int
 }
 
 // ServerConfigCallback is the callback to modify the config
@@ -77,8 +74,10 @@ type ServerConfigCallback func(c *TestServerConfig)
 
 // TestServer is a Geth test server
 type TestServer struct {
-	cmd      *exec.Cmd
+	pool     *dockertest.Pool
+	resource *dockertest.Resource
 	config   *TestServerConfig
+	tmpDir   string
 	accounts []web3.Address
 	client   *ethClient
 	t        *testing.T
@@ -86,64 +85,65 @@ type TestServer struct {
 
 // NewTestServer creates a new Geth test server
 func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
-	path := "geth"
-
-	vcmd := exec.Command(path, "version")
-	vcmd.Stdout = nil
-	vcmd.Stderr = nil
-	if err := vcmd.Run(); err != nil {
-		t.Skipf("geth version failed: %v", err)
-	}
-
-	dir, err := ioutil.TempDir("/tmp", "geth-")
+	tmpDir, err := ioutil.TempDir("/tmp", "geth-")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
 
-	config := &TestServerConfig{
-		DataDir:  dir,
-		HTTPPort: getOpenPort(),
-		WSPort:   getOpenPort(),
-	}
+	config := &TestServerConfig{}
 	if cb != nil {
 		cb(config)
 	}
 
-	// Build arguments
 	args := []string{"--dev"}
 
+	// periodic mining
+	if config.Period != 0 {
+		args = append(args, "--dev.period", strconv.Itoa(config.Period))
+	}
+
 	// add data dir
-	args = append(args, "--datadir", filepath.Join(dir, "data"))
+	args = append(args, "--datadir", "/eth1data")
 
 	// add ipcpath
-	args = append(args, "--ipcpath", filepath.Join(dir, "geth.ipc"))
+	args = append(args, "--ipcpath", "/eth1data/geth.ipc")
 
 	// enable rpc
-	args = append(args, "--rpc", "--rpcport", config.HTTPPort)
+	args = append(args, "--http", "--http.addr", "0.0.0.0")
 
 	// enable ws
-	args = append(args, "--ws", "--wsport", config.WSPort)
+	args = append(args, "--ws", "--ws.addr", "0.0.0.0")
 
-	// Start the server
-	cmd := exec.Command(path, args...)
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("err: %s", err)
+	opts := &dockertest.RunOptions{
+		Repository: "ethereum/client-go",
+		Tag:        "v1.9.25",
+		Cmd:        args,
+		Mounts: []string{
+			tmpDir + ":/eth1data",
+		},
+	}
+
+	pool, err := dockertest.NewPool("")
+	if err != nil {
+		t.Fatalf("Could not connect to docker: %s", err)
+	}
+	resource, err := pool.RunWithOptions(opts)
+	if err != nil {
+		t.Fatalf("Could not start go-ethereum: %s", err)
 	}
 
 	server := &TestServer{
-		t:      t,
-		cmd:    cmd,
-		config: config,
+		t:        t,
+		pool:     pool,
+		tmpDir:   tmpDir,
+		resource: resource,
+		config:   config,
 	}
 
-	// wait till the jsonrpc endpoint is running
-	for {
-		if server.testHTTPEndpoint() {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
+	if err := pool.Retry(func() error {
+		return testHTTPEndpoint(server.HTTPAddr())
+	}); err != nil {
+		server.Close()
 	}
 
 	server.client = &ethClient{server.HTTPAddr()}
@@ -161,17 +161,17 @@ func (t *TestServer) Account(i int) web3.Address {
 
 // IPCPath returns the ipc endpoint
 func (t *TestServer) IPCPath() string {
-	return filepath.Join(filepath.Join(t.config.DataDir, "geth.ipc"))
+	return t.tmpDir + "/geth.ipc"
 }
 
 // WSAddr returns the websocket endpoint
 func (t *TestServer) WSAddr() string {
-	return "ws://localhost:" + t.config.WSPort
+	return fmt.Sprintf("http://%s:8546", t.resource.Container.NetworkSettings.IPAddress)
 }
 
 // HTTPAddr returns the http endpoint
 func (t *TestServer) HTTPAddr() string {
-	return "http://localhost:" + t.config.HTTPPort
+	return fmt.Sprintf("http://%s:8545", t.resource.Container.NetworkSettings.IPAddress)
 }
 
 // ProcessBlock processes a new block
@@ -306,12 +306,9 @@ func (t *TestServer) exit(err error) {
 
 // Close closes the server
 func (t *TestServer) Close() {
-	defer os.RemoveAll(t.config.DataDir)
-
-	if err := t.cmd.Process.Kill(); err != nil {
-		t.t.Errorf("err: %s", err)
+	if err := t.pool.Purge(t.resource); err != nil {
+		t.t.Fatalf("Could not purge geth: %s", err)
 	}
-	t.cmd.Wait()
 }
 
 // Simple jsonrpc client to avoid cycle dependencies
@@ -403,9 +400,7 @@ func MethodSig(name string) []byte {
 	h := sha3.NewLegacyKeccak256()
 	h.Write([]byte(name + "()"))
 	b := h.Sum(nil)
-
 	return b[:4]
-	// return "0x" + hex.EncodeToString(b[:4])
 }
 
 // TestInfuraEndpoint returns the testing infura endpoint to make testing requests
@@ -415,4 +410,13 @@ func TestInfuraEndpoint(t *testing.T) string {
 		t.Skip("Infura url not set")
 	}
 	return url
+}
+
+func testHTTPEndpoint(endpoint string) error {
+	resp, err := http.Post(endpoint, "application/json", nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }
