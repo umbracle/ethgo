@@ -6,15 +6,10 @@ import (
 	"testing"
 
 	"github.com/ory/dockertest"
-	"github.com/umbracle/go-web3/testutil"
 	"github.com/umbracle/go-web3/tracker/store"
 )
 
 func setupDB(t *testing.T) (store.Store, func()) {
-	if testutil.IsCircleCI() {
-		t.Skip()
-	}
-
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		t.Fatalf("Could not connect to docker: %s", err)

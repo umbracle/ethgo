@@ -13,15 +13,21 @@ import (
 	"strings"
 )
 
-type solcOutput struct {
-	Contracts map[string]*solcContract
+type Output struct {
+	Contracts map[string]*Artifact
+	Sources   map[string]*Source
 	Version   string
 }
 
-type solcContract struct {
+type Source struct {
+	AST map[string]interface{}
+}
+
+type Artifact struct {
 	BinRuntime string `json:"bin-runtime"`
 	Bin        string
 	Abi        string
+	SrcMap     string `json:"srcmap"`
 }
 
 // Solidity is the solidity compiler
@@ -30,34 +36,34 @@ type Solidity struct {
 }
 
 // NewSolidityCompiler instantiates a new solidity compiler
-func NewSolidityCompiler(path string) Compiler {
+func NewSolidityCompiler(path string) *Solidity {
 	return &Solidity{path}
 }
 
 // CompileCode compiles a solidity code
-func (s *Solidity) CompileCode(code string) (map[string]*Artifact, error) {
+func (s *Solidity) CompileCode(code string) (*Output, error) {
 	if code == "" {
 		return nil, fmt.Errorf("code is empty")
 	}
-	artifacts, err := s.compileImpl(code)
+	output, err := s.compileImpl(code)
 	if err != nil {
 		return nil, err
 	}
-	return artifacts, nil
+	return output, nil
 }
 
 // Compile implements the compiler interface
-func (s *Solidity) Compile(files ...string) (map[string]*Artifact, error) {
+func (s *Solidity) Compile(files ...string) (*Output, error) {
 	if len(files) == 0 {
 		return nil, fmt.Errorf("no input files")
 	}
 	return s.compileImpl("", files...)
 }
 
-func (s *Solidity) compileImpl(code string, files ...string) (map[string]*Artifact, error) {
+func (s *Solidity) compileImpl(code string, files ...string) (*Output, error) {
 	args := []string{
 		"--combined-json",
-		"bin,bin-runtime,abi",
+		"bin,bin-runtime,srcmap-runtime,abi,srcmap,ast",
 	}
 	if code != "" {
 		args = append(args, "-")
@@ -79,20 +85,11 @@ func (s *Solidity) compileImpl(code string, files ...string) (map[string]*Artifa
 		return nil, fmt.Errorf("failed to compile: %s", string(stderr.Bytes()))
 	}
 
-	var output *solcOutput
+	var output *Output
 	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
 		return nil, err
 	}
-
-	artifacts := map[string]*Artifact{}
-	for name, i := range output.Contracts {
-		artifacts[name] = &Artifact{
-			Bin:        i.Bin,
-			BinRuntime: i.BinRuntime,
-			Abi:        i.Abi,
-		}
-	}
-	return artifacts, nil
+	return output, nil
 }
 
 // DownloadSolidity downloads the solidity compiler

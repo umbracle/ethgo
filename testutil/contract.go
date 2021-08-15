@@ -60,11 +60,11 @@ func (c *Contract) AddCallback(f func() string) {
 
 // Compile compiles the contract
 func (c *Contract) Compile() (*compiler.Artifact, error) {
-	output, err := compiler.NewSolidityCompiler("solc").(*compiler.Solidity).CompileCode(c.Print())
+	output, err := compiler.NewSolidityCompiler("solc").CompileCode(c.Print())
 	if err != nil {
 		return nil, err
 	}
-	solcContract, ok := output["<stdin>:Sample"]
+	solcContract, ok := output.Contracts["<stdin>:Sample"]
 	if !ok {
 		return nil, fmt.Errorf("Expected the contract to be called Sample")
 	}

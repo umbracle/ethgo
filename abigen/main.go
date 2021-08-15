@@ -100,8 +100,6 @@ func process(sources string, config *config) (map[string]*compiler.Artifact, err
 		return processAbi(files, config)
 	case solExt:
 		return processSolc(files)
-	case vyExt:
-		return processVyper(files)
 	case jsonExt:
 		return processJson(files)
 	}
@@ -109,36 +107,14 @@ func process(sources string, config *config) (map[string]*compiler.Artifact, err
 	return nil, nil
 }
 
-func processVyper(sources []string) (map[string]*compiler.Artifact, error) {
-	c, err := compiler.NewCompiler("vyper", "vyper")
-	if err != nil {
-		return nil, err
-	}
-	raw, err := c.Compile(sources...)
-	if err != nil {
-		return nil, err
-	}
-	res := map[string]*compiler.Artifact{}
-	for rawName, entry := range raw {
-		_, name := filepath.Split(rawName)
-		name = strings.TrimSuffix(name, ".vy")
-		name = strings.TrimSuffix(name, ".v.py")
-		res[strings.Title(name)] = entry
-	}
-	return res, nil
-}
-
 func processSolc(sources []string) (map[string]*compiler.Artifact, error) {
-	c, err := compiler.NewCompiler("solidity", "solc")
-	if err != nil {
-		return nil, err
-	}
+	c := compiler.NewSolidityCompiler("solc")
 	raw, err := c.Compile(sources...)
 	if err != nil {
 		return nil, err
 	}
 	res := map[string]*compiler.Artifact{}
-	for rawName, entry := range raw {
+	for rawName, entry := range raw.Contracts {
 		name := strings.Split(rawName, ":")[1]
 		res[strings.Title(name)] = entry
 	}
