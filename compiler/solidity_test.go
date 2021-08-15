@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -32,7 +34,7 @@ func init() {
 }
 
 func TestSolidityInline(t *testing.T) {
-	solc := NewSolidityCompiler(solcPath).(*Solidity)
+	solc := NewSolidityCompiler(solcPath)
 
 	cases := []struct {
 		code      string
@@ -68,9 +70,12 @@ func TestSolidityInline(t *testing.T) {
 			}
 
 			result := map[string]struct{}{}
-			for i := range output {
+			for i := range output.Contracts {
 				result[strings.TrimPrefix(i, "<stdin>:")] = struct{}{}
 			}
+
+			// only one source file
+			assert.Len(t, output.Sources, 1)
 
 			expected := map[string]struct{}{}
 			for _, i := range c.contracts {
@@ -95,7 +100,7 @@ func TestSolidity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(output) != 2 {
+	if len(output.Contracts) != 2 {
 		t.Fatal("two expected")
 	}
 }

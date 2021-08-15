@@ -459,11 +459,11 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	g := &generateContractImpl{}
 	source := g.run(typ)
 
-	output, err := compiler.NewSolidityCompiler("solc").(*compiler.Solidity).CompileCode(source)
+	output, err := compiler.NewSolidityCompiler("solc").CompileCode(source)
 	if err != nil {
 		return err
 	}
-	solcContract, ok := output["<stdin>:Sample"]
+	solcContract, ok := output.Contracts["<stdin>:Sample"]
 	if !ok {
 		return fmt.Errorf("Expected the contract to be called Sample")
 	}

@@ -30,11 +30,6 @@ var (
 	DummyAddr = web3.HexToAddress("0x015f68893a39b3ba0681584387670ff8b00f4db2")
 )
 
-// IsCircleCI returns true if running inside circleci
-func IsCircleCI() bool {
-	return os.Getenv("CIRCLECI") == "true"
-}
-
 func getOpenPort() string {
 	rand.Seed(time.Now().UnixNano())
 	min, max := 12000, 15000
@@ -381,20 +376,6 @@ func (e *ethClient) call(method string, out interface{}, params ...interface{}) 
 	}
 	return nil
 }
-
-/*
-func compile(source string) *compiler.Artifact {
-	output, err := compiler.NewSolidityCompiler("solc").(*compiler.Solidity).CompileCode(source)
-	if err != nil {
-		panic(err)
-	}
-	solcContract, ok := output["<stdin>:Sample"]
-	if !ok {
-		panic(fmt.Errorf("Expected the contract to be called Sample"))
-	}
-	return solcContract
-}
-*/
 
 // MethodSig returns the signature of a non-parametrized function
 func MethodSig(name string) []byte {

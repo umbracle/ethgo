@@ -11,6 +11,6 @@ jobs:
         with:
           go-version: '1.15.10'
       - name: "Setup"
-        run: ./scripts/circleci.sh
+        run: ./scripts/setup-ci.sh
       - name: Go test
         run: go test -v ./...
