@@ -59,7 +59,7 @@ func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr
 	c(s, s.WSAddr())
 
 	// ip addr
-	c(s, s.IPCPath())
+	// c(s, s.IPCPath())
 
 	s.Close()
 }
@@ -166,7 +166,7 @@ func (t *TestServer) IPCPath() string {
 
 // WSAddr returns the websocket endpoint
 func (t *TestServer) WSAddr() string {
-	return fmt.Sprintf("http://%s:8546", t.resource.Container.NetworkSettings.IPAddress)
+	return fmt.Sprintf("ws://%s:8546", t.resource.Container.NetworkSettings.IPAddress)
 }
 
 // HTTPAddr returns the http endpoint
