@@ -37,6 +37,13 @@ func (e *Eth) Accounts() ([]web3.Address, error) {
 	return out, nil
 }
 
+// GetStorageAt returns the value from a storage position at a given address.
+func (e *Eth) GetStorageAt(addr web3.Address, slot web3.Hash, block web3.BlockNumber) (web3.Hash, error) {
+	var hash web3.Hash
+	err := e.c.Call("eth_getStorageAt", &hash, addr, slot, block.String())
+	return hash, err
+}
+
 // BlockNumber returns the number of most recent block.
 func (e *Eth) BlockNumber() (uint64, error) {
 	var out string

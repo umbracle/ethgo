@@ -284,3 +284,19 @@ func TestEthTransactionsInBlock(t *testing.T) {
 
 	assert.Equal(t, block0.TransactionsHashes[0], block1.Transactions[0].Hash)
 }
+
+func TestEthGetStorageAt(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	c, _ := NewClient(s.HTTPAddr())
+
+	cc := &testutil.Contract{}
+	cc.AddConstructor("uint256", "uint256")
+
+	_, addr := s.DeployContract(cc, 1, 1)
+
+	res, err := c.Eth().GetStorageAt(addr, web3.Hash{}, web3.Latest)
+	assert.NoError(t, err)
+	assert.NotEqual(t, res, web3.Hash{})
+}
