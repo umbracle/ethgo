@@ -107,6 +107,13 @@ type Type struct {
 	t     reflect.Type
 }
 
+func NewTupleType(inputs []*TupleElem) *Type {
+	return &Type{
+		kind:  KindTuple,
+		tuple: inputs,
+	}
+}
+
 // ParseLog parses a log using this type
 func (t *Type) ParseLog(log *web3.Log) (map[string]interface{}, error) {
 	return ParseLog(t, log)
