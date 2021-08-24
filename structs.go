@@ -54,6 +54,10 @@ func (h Hash) String() string {
 	return "0x" + hex.EncodeToString(h[:])
 }
 
+func (h Hash) Location() string {
+	return h.String()
+}
+
 type Block struct {
 	Number             uint64
 	Hash               Hash
@@ -153,6 +157,10 @@ const (
 	Pending              = -3
 )
 
+func (b BlockNumber) Location() string {
+	return b.String()
+}
+
 func (b BlockNumber) String() string {
 	switch b {
 	case Latest:
@@ -173,4 +181,8 @@ func EncodeBlock(block ...BlockNumber) BlockNumber {
 		return Latest
 	}
 	return block[0]
+}
+
+type BlockNumberOrHash interface {
+	Location() string
 }

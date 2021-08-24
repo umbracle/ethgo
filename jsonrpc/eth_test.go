@@ -43,6 +43,31 @@ func TestEthBlockNumber(t *testing.T) {
 	})
 }
 
+func TestEthGetCode(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	c, _ := NewClient(s.HTTPAddr())
+
+	cc := &testutil.Contract{}
+	cc.AddEvent(testutil.NewEvent("A").
+		Add("address", true).
+		Add("address", true))
+
+	cc.EmitEvent("setA1", "A", addr0.String(), addr1.String())
+	cc.EmitEvent("setA2", "A", addr1.String(), addr0.String())
+
+	_, addr := s.DeployContract(cc)
+
+	code, err := c.Eth().GetCode(addr, web3.Latest)
+	assert.NoError(t, err)
+	assert.NotEqual(t, code, "0x")
+
+	code2, err := c.Eth().GetCode(addr, web3.BlockNumber(0))
+	assert.NoError(t, err)
+	assert.Equal(t, code2, "0x")
+}
+
 func TestEthGetBalance(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
 	defer s.Close()
@@ -58,19 +83,33 @@ func TestEthGetBalance(t *testing.T) {
 		To:    &testutil.DummyAddr,
 		Value: amount,
 	}
-	_, err = s.SendTxn(txn)
+	receipt, err := s.SendTxn(txn)
 	assert.NoError(t, err)
 
 	after, err := c.Eth().GetBalance(s.Account(0), web3.Latest)
 	assert.NoError(t, err)
 
 	// the balance in 'after' must be 'before' - 'amount'
-	assert.Equal(t, after.Add(after, amount).Cmp(before), 0)
+	assert.Equal(t, new(big.Int).Add(after, amount).Cmp(before), 0)
 
 	// get balance at block 0
-	before2, err := c.Eth().GetBalance(s.Account(0), 0)
+	before2, err := c.Eth().GetBalance(s.Account(0), web3.BlockNumber(0))
 	assert.NoError(t, err)
 	assert.Equal(t, before, before2)
+
+	{
+		// query the balance with different options
+		cases := []web3.BlockNumberOrHash{
+			web3.Latest,
+			receipt.BlockHash,
+			web3.BlockNumber(receipt.BlockNumber),
+		}
+		for _, ca := range cases {
+			res, err := c.Eth().GetBalance(s.Account(0), ca)
+			assert.NoError(t, err)
+			assert.Equal(t, res, after)
+		}
+	}
 }
 
 func TestEthGetBlockByNumber(t *testing.T) {
@@ -250,11 +289,20 @@ func TestEthGetNonce(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, num, uint64(0))
 
-	assert.NoError(t, s.ProcessBlock())
-
-	num, err = c.Eth().GetNonce(s.Account(0), web3.Latest)
+	receipt, err := s.ProcessBlockWithReceipt()
 	assert.NoError(t, err)
-	assert.Equal(t, num, uint64(1))
+
+	// query the balance with different options
+	cases := []web3.BlockNumberOrHash{
+		web3.Latest,
+		receipt.BlockHash,
+		web3.BlockNumber(receipt.BlockNumber),
+	}
+	for _, ca := range cases {
+		num, err = c.Eth().GetNonce(s.Account(0), ca)
+		assert.NoError(t, err)
+		assert.Equal(t, num, uint64(1))
+	}
 }
 
 func TestEthTransactionsInBlock(t *testing.T) {
@@ -307,9 +355,16 @@ func TestEthGetStorageAt(t *testing.T) {
 	})
 
 	_, addr := s.DeployContract(cc)
-	s.TxnTo(addr, "setValue")
+	receipt := s.TxnTo(addr, "setValue")
 
-	res, err := c.Eth().GetStorageAt(addr, web3.Hash{}, web3.Latest)
-	assert.NoError(t, err)
-	assert.True(t, strings.HasSuffix(res.String(), "a"))
+	cases := []web3.BlockNumberOrHash{
+		web3.Latest,
+		receipt.BlockHash,
+		web3.BlockNumber(receipt.BlockNumber),
+	}
+	for _, ca := range cases {
+		res, err := c.Eth().GetStorageAt(addr, web3.Hash{}, ca)
+		assert.NoError(t, err)
+		assert.True(t, strings.HasSuffix(res.String(), "a"))
+	}
 }
