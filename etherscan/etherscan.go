@@ -126,6 +126,26 @@ func (e *Etherscan) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block
 	return b, nil
 }
 
+type ContractCode struct {
+	SourceCode      string
+	Runs            string
+	CompilerVersion string
+}
+
+func (e *Etherscan) GetContractCode(addr web3.Address) (*ContractCode, error) {
+	var out []*ContractCode
+	err := e.Query("contract", "getsourcecode", &out, map[string]string{
+		"address": addr.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(out) != 1 {
+		return nil, fmt.Errorf("incorrect values")
+	}
+	return out[0], nil
+}
+
 func parseUint64orHex(str string) (uint64, error) {
 	base := 10
 	if strings.HasPrefix(str, "0x") {
