@@ -170,12 +170,17 @@ func (t *TestServer) HTTPAddr() string {
 }
 
 // ProcessBlock processes a new block
-func (t *TestServer) ProcessBlock() error {
-	_, err := t.SendTxn(&web3.Transaction{
+func (t *TestServer) ProcessBlockWithReceipt() (*web3.Receipt, error) {
+	receipt, err := t.SendTxn(&web3.Transaction{
 		From:  t.accounts[0],
 		To:    &DummyAddr,
 		Value: big.NewInt(10),
 	})
+	return receipt, err
+}
+
+func (t *TestServer) ProcessBlock() error {
+	_, err := t.ProcessBlockWithReceipt()
 	return err
 }
 
