@@ -24,10 +24,11 @@ type Source struct {
 }
 
 type Artifact struct {
-	BinRuntime string `json:"bin-runtime"`
-	Bin        string
-	Abi        string
-	SrcMap     string `json:"srcmap"`
+	Abi           string
+	Bin           string
+	BinRuntime    string `json:"bin-runtime"`
+	SrcMap        string `json:"srcmap"`
+	SrcMapRuntime string `json:"srcmap-runtime"`
 }
 
 // Solidity is the solidity compiler
