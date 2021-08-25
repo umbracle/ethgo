@@ -127,9 +127,11 @@ func (e *Etherscan) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block
 }
 
 type ContractCode struct {
-	SourceCode      string
-	Runs            string
-	CompilerVersion string
+	SourceCode           string
+	ContractName         string
+	Runs                 string
+	CompilerVersion      string
+	ConstructorArguments string
 }
 
 func (e *Etherscan) GetContractCode(addr web3.Address) (*ContractCode, error) {
