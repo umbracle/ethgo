@@ -34,7 +34,7 @@ func NewTransport(url string) (Transport, error) {
 		}
 		return t, nil
 	}
-	if _, err := os.Stat(url); !os.IsNotExist(err) {
+	if _, err := os.Stat(url); err == nil {
 		// path exists, it could be an ipc path
 		t, err := newIPC(url)
 		if err != nil {
