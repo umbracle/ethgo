@@ -46,6 +46,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	t := tracker.NewTracker(
+		WithProvider(provider.Eth()),
+		WithStore(store),
+		WithFilter(filter),
+		WithBlockTracker(tracker),
+	)
+
 	t := tracker.NewTracker(provider.Eth(), tConfig)
 	t.SetStore(store)
 
