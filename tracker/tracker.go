@@ -70,84 +70,6 @@ func (f *FilterConfig) getFilterSearch() *web3.LogFilter {
 	return filter
 }
 
-func (t *Tracker) Entry() store.Entry {
-	return t.entry
-}
-
-// GetLastBlock returns the last block processed for this filter
-func (t *Tracker) GetLastBlock() (*web3.Block, error) {
-	buf, err := t.store.Get(dbLastBlock + "_" + t.config.Filter.Hash)
-	if err != nil {
-		return nil, err
-	}
-	if len(buf) == 0 {
-		return nil, nil
-	}
-	raw, err := hex.DecodeString(buf)
-	if err != nil {
-		return nil, err
-	}
-	b := &web3.Block{}
-	if err := b.UnmarshalJSON(raw); err != nil {
-		return nil, err
-	}
-	return b, nil
-}
-
-func (t *Tracker) storeLastBlock(b *web3.Block) error {
-	if b.Difficulty == nil {
-		b.Difficulty = big.NewInt(0)
-	}
-	buf, err := b.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	raw := hex.EncodeToString(buf)
-	return t.store.Set(dbLastBlock+"_"+t.config.Filter.Hash, raw)
-}
-
-func (t *Tracker) emitEvent(evnt *Event) {
-	if evnt == nil {
-		return
-	}
-	if t.config.Filter.Async {
-		select {
-		case t.filter.EventCh <- evnt:
-		default:
-		}
-	} else {
-		t.filter.EventCh <- evnt
-	}
-}
-
-// IsSynced returns true if the filter is synced to head
-func (t *Tracker) IsSynced() bool {
-	return atomic.LoadInt32(&t.filter.synced) != 0
-}
-
-// Wait waits the filter to finish
-func (t *Tracker) Wait() {
-	t.WaitDuration(0)
-}
-
-// WaitDuration waits for the filter to finish up to duration
-func (t *Tracker) WaitDuration(dur time.Duration) error {
-	if t.IsSynced() {
-		return nil
-	}
-
-	var waitCh <-chan time.Time
-	if dur == 0 {
-		waitCh = time.After(dur)
-	}
-	select {
-	case <-waitCh:
-		return fmt.Errorf("timeout")
-	case <-t.filter.DoneCh:
-	}
-	return nil
-}
-
 // Config is the configuration of the tracker
 type Config struct {
 	BatchSize       uint64
@@ -208,17 +130,6 @@ type Provider interface {
 	ChainID() (*big.Int, error)
 }
 
-// Filter is a specific filter
-type Filter struct {
-	synced int32
-	// config  *FilterConfig
-	SyncCh  chan uint64
-	EventCh chan *Event
-	DoneCh  chan struct{}
-	// entry   store.Entry
-	tracker *Tracker
-}
-
 // Tracker is a contract event tracker
 type Tracker struct {
 	logger       *log.Logger
@@ -227,11 +138,13 @@ type Tracker struct {
 	store        store.Store
 	entry        store.Entry
 	preSyncOnce  sync.Once
-	filterLock   sync.Mutex
-	filter       *Filter
 	blockTracker *blocktracker.BlockTracker
+	synced       int32
 	BlockCh      chan *blocktracker.BlockEvent
 	ReadyCh      chan struct{}
+	SyncCh       chan uint64
+	EventCh      chan *Event
+	DoneCh       chan struct{}
 }
 
 // NewTracker creates a new tracker
@@ -249,77 +162,130 @@ func NewTracker(provider Provider, opts ...ConfigOption) (*Tracker, error) {
 		ReadyCh:      make(chan struct{}),
 		store:        config.Store,
 		blockTracker: config.BlockTracker,
+		DoneCh:       make(chan struct{}, 1),
+		EventCh:      make(chan *Event),
+		SyncCh:       make(chan uint64, 1),
+		synced:       0,
 	}
-	if _, err := t.newFilter(config.Filter); err != nil {
+	if err := t.setupFilter(); err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-/*
-// SetLogger sets a logger
-func (t *Tracker) SetLogger(logger *log.Logger) {
-	t.logger = logger
-}
-*/
-
-/*
-// SetStore sets the store
-func (t *Tracker) SetStore(store store.Store) {
-	t.store = store
-}
-*/
-
 // NewFilter creates a new log filter
-func (t *Tracker) newFilter(config *FilterConfig) (*Filter, error) {
-	if config == nil {
+func (t *Tracker) setupFilter() error {
+	if t.config.Filter == nil {
 		// generic config
-		config = &FilterConfig{}
+		t.config.Filter = &FilterConfig{}
 	}
 
 	// generate a random hash if not provided
-	if config.Hash == "" {
-		config.buildHash()
+	if t.config.Filter.Hash == "" {
+		t.config.Filter.buildHash()
 	}
 
-	entry, err := t.store.GetEntry(config.Hash)
+	entry, err := t.store.GetEntry(t.config.Filter.Hash)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	t.entry = entry
 
-	f := &Filter{
-		//config:  config,
-		DoneCh:  make(chan struct{}, 1),
-		EventCh: make(chan *Event),
-		SyncCh:  make(chan uint64, 1),
-		// entry:   entry,
-		synced:  0,
-		tracker: t,
-	}
-
 	// insert the filter config in the db
-	filterKey := dbFilter + "_" + config.Hash
+	filterKey := dbFilter + "_" + t.config.Filter.Hash
 	data, err := t.store.Get(filterKey)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if data == "" {
-		raw, err := json.Marshal(config)
+		raw, err := json.Marshal(t.config.Filter)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		rawStr := hex.EncodeToString(raw)
 		if err := t.store.Set(filterKey, rawStr); err != nil {
-			return nil, err
+			return err
 		}
 	}
+	return nil
+}
 
-	t.filterLock.Lock()
-	t.filter = f
-	t.filterLock.Unlock()
+func (t *Tracker) Entry() store.Entry {
+	return t.entry
+}
 
-	return f, nil
+// GetLastBlock returns the last block processed for this filter
+func (t *Tracker) GetLastBlock() (*web3.Block, error) {
+	buf, err := t.store.Get(dbLastBlock + "_" + t.config.Filter.Hash)
+	if err != nil {
+		return nil, err
+	}
+	if len(buf) == 0 {
+		return nil, nil
+	}
+	raw, err := hex.DecodeString(buf)
+	if err != nil {
+		return nil, err
+	}
+	b := &web3.Block{}
+	if err := b.UnmarshalJSON(raw); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (t *Tracker) storeLastBlock(b *web3.Block) error {
+	if b.Difficulty == nil {
+		b.Difficulty = big.NewInt(0)
+	}
+	buf, err := b.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	raw := hex.EncodeToString(buf)
+	return t.store.Set(dbLastBlock+"_"+t.config.Filter.Hash, raw)
+}
+
+func (t *Tracker) emitEvent(evnt *Event) {
+	if evnt == nil {
+		return
+	}
+	if t.config.Filter.Async {
+		select {
+		case t.EventCh <- evnt:
+		default:
+		}
+	} else {
+		t.EventCh <- evnt
+	}
+}
+
+// IsSynced returns true if the filter is synced to head
+func (t *Tracker) IsSynced() bool {
+	return atomic.LoadInt32(&t.synced) != 0
+}
+
+// Wait waits the filter to finish
+func (t *Tracker) Wait() {
+	t.WaitDuration(0)
+}
+
+// WaitDuration waits for the filter to finish up to duration
+func (t *Tracker) WaitDuration(dur time.Duration) error {
+	if t.IsSynced() {
+		return nil
+	}
+
+	var waitCh <-chan time.Time
+	if dur == 0 {
+		waitCh = time.After(dur)
+	}
+	select {
+	case <-waitCh:
+		return fmt.Errorf("timeout")
+	case <-t.DoneCh:
+	}
+	return nil
 }
 
 func (t *Tracker) findAncestor(block, pivot *web3.Block) (uint64, error) {
@@ -393,9 +359,9 @@ START:
 		return err
 	}
 
-	if t.filter.SyncCh != nil {
+	if t.SyncCh != nil {
 		select {
-		case t.filter.SyncCh <- dst:
+		case t.SyncCh <- dst:
 		default:
 		}
 	}
@@ -552,38 +518,6 @@ func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*web3.Block, error) {
 	return nil, nil
 }
 
-/*
-func (t *Tracker) populateBlocks() ([]*web3.Block, error) {
-	block, err := t.provider.GetBlockByNumber(web3.Latest, false)
-	if err != nil {
-		return nil, err
-	}
-	if block.Number == 0 {
-		return []*web3.Block{}, nil
-	}
-
-	blocks := make([]*web3.Block, t.config.MaxBlockBacklog)
-
-	var i uint64
-	for i = 0; i < t.config.MaxBlockBacklog; i++ {
-		blocks[t.config.MaxBlockBacklog-i-1] = block
-		if block.Number == 0 {
-			break
-		}
-		block, err = t.provider.GetBlockByHash(block.ParentHash, false)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if i != t.config.MaxBlockBacklog {
-		// less than maxBacklog elements
-		blocks = blocks[t.config.MaxBlockBacklog-i-1:]
-	}
-	return blocks, nil
-}
-*/
-
 func (t *Tracker) BatchSync(ctx context.Context) error {
 	if err := t.preSyncCheck(); err != nil {
 		return err
@@ -615,20 +549,13 @@ func (t *Tracker) BatchSync(ctx context.Context) error {
 	}
 
 	select {
-	case t.filter.DoneCh <- struct{}{}:
+	case t.DoneCh <- struct{}{}:
 	default:
 	}
 
-	atomic.StoreInt32(&t.filter.synced, 1)
+	atomic.StoreInt32(&t.synced, 1)
 	return nil
 }
-
-/*
-// SyncAsync syncs a specific filter asynchronously
-func (t *Tracker) SyncAsync(ctx context.Context) {
-	go t.Sync(ctx)
-}
-*/
 
 // Sync syncs a specific filter
 func (t *Tracker) Sync(ctx context.Context) error {
@@ -792,59 +719,6 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 	return nil
 }
 
-/*
-// Start starts the syncing
-func (t *Tracker) Start(ctx context.Context) error {
-	if err := t.preSyncCheck(); err != nil {
-		return err
-	}
-	if err := t.blockTracker.Init(); err != nil {
-		return err
-	}
-
-	close(t.ReadyCh)
-
-	sub := t.blockTracker.Subscribe()
-	go func() {
-		for {
-			select {
-			case evnt := <-sub:
-				t.handleBlockEvnt(evnt)
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-	return nil
-}
-*/
-
-/*
-func (t *Tracker) addBlockLocked(block *web3.Block) error {
-	if uint64(len(t.blocks)) == t.config.MaxBlockBacklog {
-		// remove past blocks if there are more than maxReconcileBlocks
-		t.blocks = t.blocks[1:]
-	}
-	if len(t.blocks) != 0 {
-		lastNum := t.blocks[len(t.blocks)-1].Number
-		if lastNum+1 != block.Number {
-			return fmt.Errorf("bad number sequence. %d and %d", lastNum, block.Number)
-		}
-	}
-	t.blocks = append(t.blocks, block)
-	return nil
-}
-
-func (t *Tracker) blockAtIndex(hash web3.Hash) int {
-	for indx, b := range t.blocks {
-		if b.Hash == hash {
-			return indx
-		}
-	}
-	return -1
-}
-*/
-
 func (t *Tracker) removeLogs(number uint64, hash *web3.Hash) ([]*web3.Log, error) {
 	index, err := t.entry.LastIndex()
 	if err != nil {
@@ -891,40 +765,6 @@ func revertLogs(in []*web3.Log) (out []*web3.Log) {
 	return
 }
 
-/*
-func (t *Tracker) handleBlockEvent(block *web3.Block) (*BlockEvent, error) {
-	t.blocksLock.Lock()
-	defer t.blocksLock.Unlock()
-
-	blocks, indx, err := t.handleReconcileImpl(block)
-	if err != nil {
-		return nil, err
-	}
-	if len(blocks) == 0 {
-		return nil, nil
-	}
-
-	blockEvnt := &BlockEvent{}
-
-	// there are some blocks to remove
-	if indx != -1 {
-		for i := indx + 1; i < len(t.blocks); i++ {
-			blockEvnt.Removed = append(blockEvnt.Removed, t.blocks[i])
-		}
-		t.blocks = t.blocks[:indx+1]
-	}
-
-	// include the new blocks
-	for _, block := range blocks {
-		blockEvnt.Added = append(blockEvnt.Added, block)
-		if err := t.addBlockLocked(block); err != nil {
-			return nil, err
-		}
-	}
-	return blockEvnt, nil
-}
-*/
-
 func (t *Tracker) handleBlockEvnt(blockEvnt *blocktracker.BlockEvent) error {
 	if blockEvnt == nil {
 		return nil
@@ -935,9 +775,6 @@ func (t *Tracker) handleBlockEvnt(blockEvnt *blocktracker.BlockEvent) error {
 	case t.BlockCh <- blockEvnt:
 	default:
 	}
-
-	t.filterLock.Lock()
-	defer t.filterLock.Unlock()
 
 	if t.IsSynced() {
 		evnt, err := t.doFilter(blockEvnt.Added, blockEvnt.Removed)
@@ -996,86 +833,6 @@ func (t *Tracker) doFilter(added []*web3.Block, removed []*web3.Block) (*Event, 
 	return evnt, nil
 }
 
-/*
-func (t *Tracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, int, error) {
-	// The block already exists
-	if t.blockAtIndex(block.Hash) != -1 {
-		return nil, -1, nil
-	}
-
-	// The state is empty
-	if len(t.blocks) == 0 {
-		return []*web3.Block{block}, -1, nil
-	}
-
-	// Append to the head of the chain
-	if t.blocks[len(t.blocks)-1].Hash == block.ParentHash {
-		return []*web3.Block{block}, -1, nil
-	}
-
-	// Fork in the middle of the chain
-	if indx := t.blockAtIndex(block.ParentHash); indx != -1 {
-		return []*web3.Block{block}, indx, nil
-	}
-
-	// Backfill. We dont know the parent of the block.
-	// Need to query the chain untill we find a known block
-
-	added := []*web3.Block{block}
-	var indx int
-
-	count := uint64(0)
-	for {
-		if count > t.config.MaxBlockBacklog {
-			return nil, -1, fmt.Errorf("cannot reconcile more than max backlog values")
-		}
-		count++
-
-		parent, err := t.provider.GetBlockByHash(block.ParentHash, false)
-		if err != nil {
-			return nil, -1, fmt.Errorf("parent with hash %s not found", block.ParentHash)
-		}
-
-		added = append(added, parent)
-		if indx = t.blockAtIndex(parent.ParentHash); indx != -1 {
-			break
-		}
-		block = parent
-	}
-
-	// need the blocks in reverse order
-	blocks := []*web3.Block{}
-	for i := len(added) - 1; i >= 0; i-- {
-		blocks = append(blocks, added[i])
-	}
-	return blocks, indx, nil
-}
-*/
-
-/*
-// GetSavedFilters returns the filters stored in the store
-func (t *Tracker) GetSavedFilters() ([]*FilterConfig, error) {
-	data, err := t.store.ListPrefix(dbFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	config := []*FilterConfig{}
-	for _, item := range data {
-		raw, err := hex.DecodeString(item)
-		if err != nil {
-			return nil, err
-		}
-		var res *FilterConfig
-		if err := json.Unmarshal(raw, &res); err != nil {
-			return nil, err
-		}
-		config = append(config, res)
-	}
-	return config, nil
-}
-*/
-
 // EventType is the type of the event
 type EventType int
 
@@ -1115,20 +872,3 @@ func parseUint64orHex(str string) (uint64, error) {
 	}
 	return strconv.ParseUint(str, base, 64)
 }
-
-/*
-type lock struct {
-	Locked bool
-	lock   *sync.Mutex
-}
-
-func (l *lock) Lock() {
-	l.Locked = true
-	l.lock.Lock()
-}
-
-func (l *lock) Unlock() {
-	l.Locked = false
-	l.lock.Unlock()
-}
-*/

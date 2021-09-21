@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/blocktracker"
@@ -36,13 +37,6 @@ func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*
 		t.Fatal(err)
 	}
 
-	/*
-		// we only check the store, we dont need to catch the events
-		filterConfig.Async = true
-		filter.Sync(ctx)
-		// filter.Wait()
-	*/
-
 	return tt.entry.(*inmem.Entry).Logs()
 }
 
@@ -51,9 +45,6 @@ func TestPolling(t *testing.T) {
 	defer s.Close()
 
 	client, _ := jsonrpc.NewClient(s.HTTPAddr())
-
-	// config := DefaultConfig()
-	// config.PollInterval = 1 * time.Second
 
 	c0 := &testutil.Contract{}
 	c0.AddEvent(testutil.NewEvent("A").Add("uint256", true).Add("uint256", true))
@@ -66,18 +57,8 @@ func TestPolling(t *testing.T) {
 		s.TxnTo(addr0, "setA1")
 	}
 
-	// eventCh := make(chan *Event, 1024)
-	// doneCh := make(chan struct{}, 1)
-
-	// custom provider with a short poll interval
-	//blocktracker := NewJSONBlockTracker(log.New(ioutil.Discard, "", log.LstdFlags), client.Eth())
-	//blocktracker.PollInterval = 1 * time.Second
-
-	tt, _ := NewTracker(client.Eth())
-	//tt.blockTracker = &BlockTracker{
-	//	impl: blocktracker,
-	//}
-	// tt.store = inmem.NewInmemStore()
+	tt, err := NewTracker(client.Eth())
+	assert.NoError(t, err)
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
@@ -88,19 +69,11 @@ func TestPolling(t *testing.T) {
 		}
 	}()
 
-	/*
-		f, err := tt.NewFilter(nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		f.SyncAsync(ctx)
-	*/
-
 	// wait for the bulk sync to finish
 	for {
 		select {
-		case <-tt.filter.EventCh:
-		case <-tt.filter.DoneCh:
+		case <-tt.EventCh:
+		case <-tt.DoneCh:
 			goto EXIT
 		case <-time.After(1 * time.Second):
 			t.Fatal("timeout to sync")
@@ -113,7 +86,7 @@ EXIT:
 		receipt := s.TxnTo(addr0, "setA1")
 
 		select {
-		case evnt := <-tt.filter.EventCh:
+		case evnt := <-tt.EventCh:
 			if !reflect.DeepEqual(evnt.Added, receipt.Logs) {
 				t.Fatal("bad")
 			}
@@ -260,11 +233,13 @@ func TestTrackerSyncerRestarts(t *testing.T) {
 			m.AddScenario(l)
 		}
 
-		tt, _ := NewTracker(m,
+		tt, err := NewTracker(m,
 			testConfig(),
 			WithStore(store),
 			WithFilter(&FilterConfig{Async: true}),
 		)
+		assert.NoError(t, err)
+
 		go func() {
 			if err := tt.Sync(context.Background()); err != nil {
 				panic(err)
@@ -274,14 +249,6 @@ func TestTrackerSyncerRestarts(t *testing.T) {
 		if err := tt.WaitDuration(2 * time.Second); err != nil {
 			t.Fatal(err)
 		}
-
-		/*
-			select {
-			case <-f.DoneCh:
-			case <-time.After(2 * time.Second):
-				t.Fatal("timeout")
-			}
-		*/
 
 		if tt.blockTracker.BlocksBlocked()[0].Number != uint64(last-10) {
 			t.Fatal("bad")
@@ -319,25 +286,19 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 
 	store := inmem.NewInmemStore()
 
-	tt0, _ := NewTracker(m,
+	tt0, err := NewTracker(m,
 		testConfig(),
 		WithStore(store),
 		WithFilter(&FilterConfig{Async: true}),
 	)
+	assert.NoError(t, err)
+
 	go func() {
 		if err := tt0.Sync(context.Background()); err != nil {
 			panic(err)
 		}
 	}()
 	tt0.WaitDuration(2 * time.Second)
-
-	/*
-		select {
-		case <-f0.DoneCh:
-		case <-time.After(2 * time.Second):
-			t.Fatal("timeout")
-		}
-	*/
 
 	// create a fork at 'forkNum' and continue to 'endLen'
 	l1 := testutil.MockList{}
@@ -369,14 +330,6 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 		}
 	}()
 	tt1.WaitDuration(2 * time.Second)
-
-	/*
-		select {
-		case <-f1.DoneCh:
-		case <-time.After(2 * time.Second):
-			t.Fatal("timeout")
-		}
-	*/
 
 	logs := tt1.entry.(*inmem.Entry).Logs()
 
@@ -424,9 +377,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 
 	store := inmem.NewInmemStore()
 
-	//config :=
-	//config.MaxBlockBacklog = backlog
-
 	for i := 0; i < n; i++ {
 		// fmt.Println("########################################")
 
@@ -438,9 +388,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 			c = c - forkSize
 			f++
 		}
-
-		// fmt.Println("-- fork size --")
-		// fmt.Println(forkSize)
 
 		forkID := strconv.Itoa(f)
 
@@ -458,9 +405,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 		num := randomInt(start, 20)
 		count := 0
 
-		// fmt.Println("-- num --")
-		// fmt.Println(num)
-
 		for j := c; j < c+num; j++ {
 			bb := testutil.Mock(j).Extra(forkID)
 			if j != 0 {
@@ -471,8 +415,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 		}
 
 		m.AddScenario(l)
-
-		// eventCh := make(chan *Event, 1024)
 
 		// use a custom block tracker to add specific backlog
 		tracker := blocktracker.NewBlockTracker(m, blocktracker.WithBlockMaxBacklog(backlog))
@@ -489,35 +431,14 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 			}
 		}()
 
-		filter := tt.filter
-
-		//tt.store = store
-		// tt.EventCh = eventCh
-		/*
-			if err := tt.Start(context.Background()); err != nil {
-				t.Fatal(err)
-			}
-
-			filter, err := tt.NewFilter(nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			filter.SyncAsync(context.Background())
-		*/
-
 		var added, removed []*web3.Log
 		for {
 			select {
-			case evnt := <-filter.EventCh:
-
-				// fmt.Println("-- ** evnt ** --")
-				// fmt.Println(evnt)
-
+			case evnt := <-tt.EventCh:
 				added = append(added, evnt.Added...)
 				removed = append(removed, evnt.Removed...)
 
-			case <-filter.DoneCh:
-				// fmt.Println("- done -")
+			case <-tt.DoneCh:
 				// no more events to read
 				goto EXIT
 			}
@@ -526,10 +447,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 
 		// validate the included logs
 		if len(added) != count {
-
-			// fmt.Println(added)
-			// fmt.Println(count)
-
 			t.Fatal("bad added logs")
 		}
 		// validate the removed logs
@@ -541,10 +458,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 		if blocks := m.GetLastBlocks(backlog); !testutil.CompareBlocks(tt.blockTracker.BlocksBlocked(), blocks) {
 			// tracker does not consider block 0 but getLastBlocks does return it, this is only a problem
 			// with syncs on chains lower than maxBacklog
-
-			// fmt.Println(blocks)
-			// fmt.Println(tt.blocks)
-
 			if !testutil.CompareBlocks(blocks[1:], tt.blockTracker.BlocksBlocked()) {
 				t.Fatal("bad blocks")
 			}
@@ -768,44 +681,18 @@ func TestTrackerReconcile(t *testing.T) {
 			store := inmem.NewInmemStore()
 
 			btracker := blocktracker.NewBlockTracker(m)
-			//if err := btracker.Init(); err != nil {
-			//		t.Fatal(err)
-			//}
 
 			tt, err := NewTracker(m, WithStore(store), WithBlockTracker(btracker))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			// tt.done = true // already synced
-
-			// entry, _ := store.GetEntry("1")
-
-			/*
-				filter, err := tt.NewFilter(nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-			*/
-
-			filter := tt.filter
-
 			// important to set a buffer here, otherwise everything is blocked
-			filter.EventCh = make(chan *Event, 1)
+			tt.EventCh = make(chan *Event, 1)
 
 			// set the filter as synced since we only want to
 			// try reconciliation
-			filter.synced = 1
-
-			/*
-				filter := &Filter{
-					config:  &FilterConfig{},
-					done:    true,
-					EventCh: make(chan *Event, 1),
-					entry:   entry,
-				}
-				tt.filters = append(tt.filters, filter)
-			*/
+			tt.synced = 1
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
@@ -830,7 +717,7 @@ func TestTrackerReconcile(t *testing.T) {
 
 				var evnt *Event
 				select {
-				case evnt = <-filter.EventCh:
+				case evnt = <-tt.EventCh:
 				case <-time.After(1 * time.Second):
 					t.Fatal("log event timeout")
 				}

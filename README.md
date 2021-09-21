@@ -181,7 +181,38 @@ func main() {
 ## Block tracker
 
 ```
+import (
+    "fmt"
 
+    web3 "github.com/umbracle/go-web3"
+    "github.com/umbracle/go-web3/jsonrpc"
+    "github.com/umbracle/go-web3/contract/builtin/ens"
+)
+
+func main() {
+	client, err := jsonrpc.NewClient("https://mainnet.infura.io")
+    if err != nil {
+        panic(err)
+    }
+
+	tracker = blocktracker.NewBlockTracker(client, WithBlockMaxBacklog(1000))
+	if err := tracker.Init(); err != nil {
+		panic(err)
+	}
+	go tracker.Start()
+
+	sub := tracker.Subscribe()
+	go func() {
+		for {
+			select {
+			case evnt := <-sub:
+				fmt.Println(evnt)
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
 ```
 
 ## Tracker
