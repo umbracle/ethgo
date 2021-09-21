@@ -106,7 +106,7 @@ func TestBlockTracker_PopulateBlocks(t *testing.T) {
 		m := &testutil.MockClient{}
 		m.AddScenario(l)
 
-		tt0 := NewBlockTracker(m, nil)
+		tt0 := NewBlockTracker(m)
 
 		err := tt0.Init()
 		if err != nil {
@@ -124,7 +124,7 @@ func TestBlockTracker_PopulateBlocks(t *testing.T) {
 		m1 := &testutil.MockClient{}
 		m1.AddScenario(l0)
 
-		tt1 := NewBlockTracker(m1, nil)
+		tt1 := NewBlockTracker(m1)
 		tt1.provider = m1
 
 		err := tt1.Init()
@@ -332,7 +332,7 @@ func TestBlockTracker_Events(t *testing.T) {
 			// add the full scenario with the logs
 			m.AddScenario(c.Scenario)
 
-			tt := NewBlockTracker(m, nil)
+			tt := NewBlockTracker(m)
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
