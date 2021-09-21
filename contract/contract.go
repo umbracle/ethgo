@@ -38,6 +38,11 @@ func NewContract(addr web3.Address, abi *abi.ABI, provider *jsonrpc.Client) *Con
 	}
 }
 
+// ABI returns the abi of the contract
+func (c *Contract) ABI() *abi.ABI {
+	return c.abi
+}
+
 // Addr returns the address of the contract
 func (c *Contract) Addr() web3.Address {
 	return c.addr

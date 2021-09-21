@@ -18,12 +18,12 @@ const (
 )
 
 func main() {
-	var source string
+	var sources string
 	var pckg string
 	var output string
 	var name string
 
-	flag.StringVar(&source, "source", "", "List of abi files")
+	flag.StringVar(&sources, "source", "", "List of abi files")
 	flag.StringVar(&pckg, "package", "main", "Name of the package")
 	flag.StringVar(&output, "output", "", "Output directory")
 	flag.StringVar(&name, "name", "", "name of the contract")
@@ -36,25 +36,27 @@ func main() {
 		Name:    name,
 	}
 
-	if source == "" {
+	if sources == "" {
 		fmt.Println(version)
 		os.Exit(0)
 	}
 
-	matches, err := filepath.Glob(source)
-	if err != nil {
-		fmt.Printf("Failed to read files: %v", err)
-		os.Exit(1)
-	}
-	for _, source := range matches {
-		artifacts, err := process(source, config)
+	for _, source := range strings.Split(sources, ",") {
+		matches, err := filepath.Glob(source)
 		if err != nil {
-			fmt.Printf("Failed to parse sources: %v", err)
+			fmt.Printf("Failed to read files: %v", err)
 			os.Exit(1)
 		}
-		if err := gen(artifacts, config); err != nil {
-			fmt.Printf("Failed to generate sources: %v", err)
-			os.Exit(1)
+		for _, source := range matches {
+			artifacts, err := process(source, config)
+			if err != nil {
+				fmt.Printf("Failed to parse sources: %v", err)
+				os.Exit(1)
+			}
+			if err := gen(artifacts, config); err != nil {
+				fmt.Printf("Failed to generate sources: %v", err)
+				os.Exit(1)
+			}
 		}
 	}
 }

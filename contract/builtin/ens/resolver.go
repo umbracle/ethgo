@@ -36,7 +36,7 @@ func (a *Resolver) Contract() *contract.Contract {
 // calls
 
 // ABI calls the ABI method in the solidity contract
-func (a *Resolver) ABI(node [32]byte, contentTypes *big.Int, block ...web3.BlockNumber) (val0 *big.Int, val1 []byte, err error) {
+func (a *Resolver) ABI(node [32]byte, contentTypes *big.Int, block ...web3.BlockNumber) (retval0 *big.Int, retval1 []byte, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -46,12 +46,12 @@ func (a *Resolver) ABI(node [32]byte, contentTypes *big.Int, block ...web3.Block
 	}
 
 	// decode outputs
-	val0, ok = out["contentType"].(*big.Int)
+	retval0, ok = out["contentType"].(*big.Int)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	val1, ok = out["data"].([]byte)
+	retval1, ok = out["data"].([]byte)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
@@ -61,7 +61,7 @@ func (a *Resolver) ABI(node [32]byte, contentTypes *big.Int, block ...web3.Block
 }
 
 // Addr calls the addr method in the solidity contract
-func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address, err error) {
+func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (retval0 web3.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -71,7 +71,7 @@ func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (val0 web3.Add
 	}
 
 	// decode outputs
-	val0, ok = out["ret"].(web3.Address)
+	retval0, ok = out["ret"].(web3.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
@@ -81,7 +81,7 @@ func (a *Resolver) Addr(node [32]byte, block ...web3.BlockNumber) (val0 web3.Add
 }
 
 // Content calls the content method in the solidity contract
-func (a *Resolver) Content(node [32]byte, block ...web3.BlockNumber) (val0 [32]byte, err error) {
+func (a *Resolver) Content(node [32]byte, block ...web3.BlockNumber) (retval0 [32]byte, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -91,7 +91,7 @@ func (a *Resolver) Content(node [32]byte, block ...web3.BlockNumber) (val0 [32]b
 	}
 
 	// decode outputs
-	val0, ok = out["ret"].([32]byte)
+	retval0, ok = out["ret"].([32]byte)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
@@ -101,7 +101,7 @@ func (a *Resolver) Content(node [32]byte, block ...web3.BlockNumber) (val0 [32]b
 }
 
 // Name calls the name method in the solidity contract
-func (a *Resolver) Name(node [32]byte, block ...web3.BlockNumber) (val0 string, err error) {
+func (a *Resolver) Name(node [32]byte, block ...web3.BlockNumber) (retval0 string, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -111,7 +111,7 @@ func (a *Resolver) Name(node [32]byte, block ...web3.BlockNumber) (val0 string, 
 	}
 
 	// decode outputs
-	val0, ok = out["ret"].(string)
+	retval0, ok = out["ret"].(string)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
@@ -121,7 +121,7 @@ func (a *Resolver) Name(node [32]byte, block ...web3.BlockNumber) (val0 string, 
 }
 
 // Pubkey calls the pubkey method in the solidity contract
-func (a *Resolver) Pubkey(node [32]byte, block ...web3.BlockNumber) (val0 [32]byte, val1 [32]byte, err error) {
+func (a *Resolver) Pubkey(node [32]byte, block ...web3.BlockNumber) (retval0 [32]byte, retval1 [32]byte, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -131,12 +131,12 @@ func (a *Resolver) Pubkey(node [32]byte, block ...web3.BlockNumber) (val0 [32]by
 	}
 
 	// decode outputs
-	val0, ok = out["x"].([32]byte)
+	retval0, ok = out["x"].([32]byte)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	val1, ok = out["y"].([32]byte)
+	retval1, ok = out["y"].([32]byte)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
@@ -146,7 +146,7 @@ func (a *Resolver) Pubkey(node [32]byte, block ...web3.BlockNumber) (val0 [32]by
 }
 
 // SupportsInterface calls the supportsInterface method in the solidity contract
-func (a *Resolver) SupportsInterface(interfaceID [4]byte, block ...web3.BlockNumber) (val0 bool, err error) {
+func (a *Resolver) SupportsInterface(interfaceID [4]byte, block ...web3.BlockNumber) (retval0 bool, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -156,7 +156,7 @@ func (a *Resolver) SupportsInterface(interfaceID [4]byte, block ...web3.BlockNum
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(bool)
+	retval0, ok = out["0"].(bool)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
@@ -164,7 +164,6 @@ func (a *Resolver) SupportsInterface(interfaceID [4]byte, block ...web3.BlockNum
 	
 	return
 }
-
 
 // txns
 
@@ -191,4 +190,26 @@ func (a *Resolver) SetName(node [32]byte, name string) *contract.Txn {
 // SetPubkey sends a setPubkey transaction in the solidity contract
 func (a *Resolver) SetPubkey(node [32]byte, x [32]byte, y [32]byte) *contract.Txn {
 	return a.c.Txn("setPubkey", node, x, y)
+}
+
+// events
+
+func (a *Resolver) ABIChangedEventSig() web3.Hash {
+	return a.c.ABI().Events["ABIChanged"].ID()
+}
+
+func (a *Resolver) AddrChangedEventSig() web3.Hash {
+	return a.c.ABI().Events["AddrChanged"].ID()
+}
+
+func (a *Resolver) ContentChangedEventSig() web3.Hash {
+	return a.c.ABI().Events["ContentChanged"].ID()
+}
+
+func (a *Resolver) NameChangedEventSig() web3.Hash {
+	return a.c.ABI().Events["NameChanged"].ID()
+}
+
+func (a *Resolver) PubkeyChangedEventSig() web3.Hash {
+	return a.c.ABI().Events["PubkeyChanged"].ID()
 }
