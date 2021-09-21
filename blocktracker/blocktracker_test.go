@@ -2,12 +2,12 @@ package blocktracker
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	web3 "github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/jsonrpc"
 	"github.com/umbracle/go-web3/testutil"
@@ -76,14 +76,25 @@ func TestBlockTracker_Listener_Websocket(t *testing.T) {
 }
 
 func TestBlockTracker_Lifecycle(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
+	s := testutil.NewTestServer(t, func(c *testutil.TestServerConfig) {
+		c.Period = 1
+	})
 	defer s.Close()
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
-	tr := NewBlockTracker(c.Eth(), nil)
+	tr := NewBlockTracker(c.Eth())
+	assert.NoError(t, tr.Init())
+
+	go tr.Start()
 
 	sub := tr.Subscribe()
-	fmt.Println(sub)
+	for i := 0; i < 10; i++ {
+		select {
+		case <-sub:
+		case <-time.After(2 * time.Second):
+			t.Fatal("bad")
+		}
+	}
 }
 
 func TestBlockTracker_PopulateBlocks(t *testing.T) {
