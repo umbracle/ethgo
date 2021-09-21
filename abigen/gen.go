@@ -24,9 +24,6 @@ func cleanName(str string) string {
 }
 
 func outputArg(str string) string {
-	if str == "" {
-
-	}
 	return str
 }
 
@@ -231,14 +228,19 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElem
 	return
 }
 {{end}}{{end}}
-
 // txns
 {{range $key, $value := .Abi.Methods}}{{if not .Const}}
 // {{funcName $key}} sends a {{$key}} transaction in the solidity contract
 func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := tupleElems .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
 	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := tupleElems .Inputs}}, {{clean $elem.Name}}{{end}})
 }
-{{end}}{{end}}`
+{{end}}{{end}}
+// events
+{{range $key, $value := .Abi.Events}}
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}EventSig() web3.Hash {
+	return a.c.ABI().Events["{{funcName $key}}"].ID()
+}
+{{end}}`
 
 var templateBinStr = `package {{.Config.Package}}
 

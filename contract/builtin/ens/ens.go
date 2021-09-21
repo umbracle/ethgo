@@ -36,7 +36,7 @@ func (a *ENS) Contract() *contract.Contract {
 // calls
 
 // Owner calls the owner method in the solidity contract
-func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address, err error) {
+func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (retval0 web3.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -46,17 +46,17 @@ func (a *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(web3.Address)
+	retval0, ok = out["0"].(web3.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
 // Resolver calls the resolver method in the solidity contract
-func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (val0 web3.Address, err error) {
+func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (retval0 web3.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -66,17 +66,17 @@ func (a *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (val0 web3.Addr
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(web3.Address)
+	retval0, ok = out["0"].(web3.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
 
 // Ttl calls the ttl method in the solidity contract
-func (a *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (val0 uint64, err error) {
+func (a *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (retval0 uint64, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -86,15 +86,14 @@ func (a *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (val0 uint64, err er
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(uint64)
+	retval0, ok = out["0"].(uint64)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-	
+
 	return
 }
-
 
 // txns
 
@@ -116,4 +115,22 @@ func (a *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner web3.Address)
 // SetTTL sends a setTTL transaction in the solidity contract
 func (a *ENS) SetTTL(node [32]byte, ttl uint64) *contract.Txn {
 	return a.c.Txn("setTTL", node, ttl)
+}
+
+// events
+
+func (a *ENS) NewOwnerEventSig() web3.Hash {
+	return a.c.ABI().Events["NewOwner"].ID()
+}
+
+func (a *ENS) NewResolverEventSig() web3.Hash {
+	return a.c.ABI().Events["NewResolver"].ID()
+}
+
+func (a *ENS) NewTTLEventSig() web3.Hash {
+	return a.c.ABI().Events["NewTTL"].ID()
+}
+
+func (a *ENS) TransferEventSig() web3.Hash {
+	return a.c.ABI().Events["Transfer"].ID()
 }

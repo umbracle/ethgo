@@ -31,7 +31,7 @@ func (a *ERC20) Contract() *contract.Contract {
 // calls
 
 // Allowance calls the allowance method in the solidity contract
-func (a *ERC20) Allowance(owner web3.Address, spender web3.Address, block ...web3.BlockNumber) (val0 *big.Int, err error) {
+func (a *ERC20) Allowance(owner web3.Address, spender web3.Address, block ...web3.BlockNumber) (retval0 *big.Int, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -41,17 +41,17 @@ func (a *ERC20) Allowance(owner web3.Address, spender web3.Address, block ...web
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(*big.Int)
+	retval0, ok = out["0"].(*big.Int)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
 // BalanceOf calls the balanceOf method in the solidity contract
-func (a *ERC20) BalanceOf(owner web3.Address, block ...web3.BlockNumber) (val0 *big.Int, err error) {
+func (a *ERC20) BalanceOf(owner web3.Address, block ...web3.BlockNumber) (retval0 *big.Int, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -61,17 +61,17 @@ func (a *ERC20) BalanceOf(owner web3.Address, block ...web3.BlockNumber) (val0 *
 	}
 
 	// decode outputs
-	val0, ok = out["balance"].(*big.Int)
+	retval0, ok = out["balance"].(*big.Int)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
 // Decimals calls the decimals method in the solidity contract
-func (a *ERC20) Decimals(block ...web3.BlockNumber) (val0 uint8, err error) {
+func (a *ERC20) Decimals(block ...web3.BlockNumber) (retval0 uint8, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -81,17 +81,17 @@ func (a *ERC20) Decimals(block ...web3.BlockNumber) (val0 uint8, err error) {
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(uint8)
+	retval0, ok = out["0"].(uint8)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
 // Name calls the name method in the solidity contract
-func (a *ERC20) Name(block ...web3.BlockNumber) (val0 string, err error) {
+func (a *ERC20) Name(block ...web3.BlockNumber) (retval0 string, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -101,17 +101,17 @@ func (a *ERC20) Name(block ...web3.BlockNumber) (val0 string, err error) {
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(string)
+	retval0, ok = out["0"].(string)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
 // Symbol calls the symbol method in the solidity contract
-func (a *ERC20) Symbol(block ...web3.BlockNumber) (val0 string, err error) {
+func (a *ERC20) Symbol(block ...web3.BlockNumber) (retval0 string, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -121,17 +121,17 @@ func (a *ERC20) Symbol(block ...web3.BlockNumber) (val0 string, err error) {
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(string)
+	retval0, ok = out["0"].(string)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
 // TotalSupply calls the totalSupply method in the solidity contract
-func (a *ERC20) TotalSupply(block ...web3.BlockNumber) (val0 *big.Int, err error) {
+func (a *ERC20) TotalSupply(block ...web3.BlockNumber) (retval0 *big.Int, err error) {
 	var out map[string]interface{}
 	var ok bool
 
@@ -141,12 +141,12 @@ func (a *ERC20) TotalSupply(block ...web3.BlockNumber) (val0 *big.Int, err error
 	}
 
 	// decode outputs
-	val0, ok = out["0"].(*big.Int)
+	retval0, ok = out["0"].(*big.Int)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -165,4 +165,14 @@ func (a *ERC20) Transfer(to web3.Address, value *big.Int) *contract.Txn {
 // TransferFrom sends a transferFrom transaction in the solidity contract
 func (a *ERC20) TransferFrom(from web3.Address, to web3.Address, value *big.Int) *contract.Txn {
 	return a.c.Txn("transferFrom", from, to, value)
+}
+
+// events
+
+func (a *ERC20) ApprovalEventSig() web3.Hash {
+	return a.c.ABI().Events["Approval"].ID()
+}
+
+func (a *ERC20) TransferEventSig() web3.Hash {
+	return a.c.ABI().Events["Transfer"].ID()
 }
