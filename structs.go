@@ -186,3 +186,9 @@ func EncodeBlock(block ...BlockNumber) BlockNumber {
 type BlockNumberOrHash interface {
 	Location() string
 }
+
+func (b *Block) Copy() *Block {
+	bb := new(Block)
+	*bb = *b
+	return bb
+}
