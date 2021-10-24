@@ -24,6 +24,17 @@ func HexToAddress(str string) Address {
 	return a
 }
 
+// BytesToAddress converts bytes to an address object
+func BytesToAddress(b []byte) Address {
+	var a Address
+
+	size := len(b)
+	min := min(size, 20)
+
+	copy(a[20-min:], b[len(b)-min:])
+	return a
+}
+
 // UnmarshalText implements the unmarshal interface
 func (a *Address) UnmarshalText(b []byte) error {
 	return unmarshalTextByte(a[:], b, 20)
@@ -45,6 +56,17 @@ type Hash [32]byte
 func HexToHash(str string) Hash {
 	h := Hash{}
 	h.UnmarshalText([]byte(str))
+	return h
+}
+
+// BytesToHash converts bytes to a hash object
+func BytesToHash(b []byte) Hash {
+	var h Hash
+
+	size := len(b)
+	min := min(size, 32)
+
+	copy(h[32-min:], b[len(b)-min:])
 	return h
 }
 
@@ -199,4 +221,11 @@ func (b *Block) Copy() *Block {
 	bb := new(Block)
 	*bb = *b
 	return bb
+}
+
+func min(i, j int) int {
+	if i < j {
+		return i
+	}
+	return j
 }
