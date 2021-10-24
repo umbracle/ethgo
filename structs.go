@@ -6,6 +6,14 @@ import (
 	"math/big"
 )
 
+var (
+	// ZeroAddress is an address of all zeros
+	ZeroAddress = Address{}
+
+	// ZeroHash is a hash of all zeros
+	ZeroHash = Hash{}
+)
+
 // Address is an Ethereum address
 type Address [20]byte
 
