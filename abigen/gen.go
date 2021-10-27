@@ -69,12 +69,13 @@ func encodeSimpleArg(typ *abi.Type) string {
 
 	case abi.KindBytes:
 		return "[]byte"
-
+	case abi.KindArray:
+		return fmt.Sprintf("[%d]%s", typ.Elem().Size(), encodeSimpleArg(typ.Elem()))
 	case abi.KindSlice:
 		return "[]" + encodeSimpleArg(typ.Elem())
-
 	default:
-		return fmt.Sprintf("input not done for type: %s", typ.String())
+		return typ.Elem().String()
+		//return fmt.Sprintf("input not done for type: %s", typ.String())
 	}
 }
 
@@ -210,14 +211,12 @@ func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
 {{range $key, $value := .Abi.Methods}}{{if .Const}}
 // {{funcName $key}} calls the {{$key}} method in the solidity contract
 func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElems .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := tupleElems .Outputs}}retval{{$index}} {{arg .}}, {{end}}err error) {
-	var out map[string]interface{}
-	{{ $length := tupleLen .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
-
+ 	{{ $length := tupleLen .Outputs }}{{ if ne $length 0 }}var out map[string]interface{}
+	var ok bool
 	out, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
 	if err != nil {
 		return
 	}
-
 	// decode outputs
 	{{range $index, $val := tupleElems .Outputs}}retval{{$index}}, ok = out["{{if .Name}}{{.Name}}{{else}}{{$index}}{{end}}"].({{arg .}})
 	if !ok {
@@ -225,7 +224,11 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElem
 		return
 	}
 	{{end}}
-	return
+	{{else}}_, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
+	if err != nil {
+		return
+	}
+	{{ end }}return
 }
 {{end}}{{end}}
 // txns
