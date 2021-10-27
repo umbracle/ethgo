@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -47,13 +49,22 @@ func main() {
 			fmt.Printf("Failed to read files: %v", err)
 			os.Exit(1)
 		}
+		if len(matches) == 0 {
+			fmt.Printf("No match for source: %s\n", source)
+			continue
+		}
 		for _, source := range matches {
 			artifacts, err := process(source, config)
 			if err != nil {
 				fmt.Printf("Failed to parse sources: %v", err)
 				os.Exit(1)
 			}
-			if err := gen(artifacts, config); err != nil {
+
+			// hash the source file
+			raw := sha256.Sum256([]byte(source))
+			hash := hex.EncodeToString(raw[:])
+
+			if err := gen(artifacts, config, hash); err != nil {
 				fmt.Printf("Failed to generate sources: %v", err)
 				os.Exit(1)
 			}

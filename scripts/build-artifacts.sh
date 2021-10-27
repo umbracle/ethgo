@@ -11,3 +11,6 @@ echo "--> Build ERC20"
 
 ERC20_ARTIFACTS=./contract/builtin/erc20/artifacts
 go run abigen/*.go --source ${ERC20_ARTIFACTS}/ERC20.abi --output ./contract/builtin/erc20 --package erc20
+
+echo "--> Build Testdata"
+go run abigen/*.go --source ./abigen/testdata/testdata.abi --output ./abigen/testdata --package testdata
