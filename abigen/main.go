@@ -49,6 +49,10 @@ func main() {
 			fmt.Printf("Failed to read files: %v", err)
 			os.Exit(1)
 		}
+		if len(matches) == 0 {
+			fmt.Printf("No match for source: %s\n", source)
+			continue
+		}
 		for _, source := range matches {
 			artifacts, err := process(source, config)
 			if err != nil {
