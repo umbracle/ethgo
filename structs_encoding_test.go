@@ -15,6 +15,17 @@ type jsonEncoder interface {
 	json.Unmarshaler
 }
 
+func TestJSONEncodingStd(t *testing.T) {
+	// use standard library to encode/decode
+	b := new(Block)
+	res, err := json.Marshal(b)
+	assert.NoError(t, err)
+
+	b1 := new(Block)
+	assert.NoError(t, json.Unmarshal(res, b1))
+	assert.Equal(t, b, b1)
+}
+
 func TestJSONEncoding(t *testing.T) {
 	var (
 		block = func() jsonEncoder { return new(Block) }

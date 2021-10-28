@@ -297,7 +297,7 @@ func decodeBigInt(b *big.Int, v *fastjson.Value, key string) (*big.Int, error) {
 	str = strings.Trim(str, "\"")
 
 	if !strings.HasPrefix(str, "0x") {
-		return nil, fmt.Errorf("field %s does not have 0x prefix", str)
+		return nil, fmt.Errorf("field '%s' does not have 0x prefix: '%s'", key, str)
 	}
 	if b == nil {
 		b = new(big.Int)
@@ -306,7 +306,7 @@ func decodeBigInt(b *big.Int, v *fastjson.Value, key string) (*big.Int, error) {
 	var ok bool
 	b, ok = b.SetString(str[2:], 16)
 	if !ok {
-		return nil, fmt.Errorf("failed to decode big int")
+		return nil, fmt.Errorf("field '%s' failed to decode big int: '%s'", key, str)
 	}
 	return b, nil
 }
@@ -320,7 +320,7 @@ func decodeBytes(dst []byte, v *fastjson.Value, key string, bits ...int) ([]byte
 	str = strings.Trim(str, "\"")
 
 	if !strings.HasPrefix(str, "0x") {
-		return nil, fmt.Errorf("field %s does not have 0x prefix", str)
+		return nil, fmt.Errorf("field '%s' does not have 0x prefix: '%s'", key, str)
 	}
 	str = str[2:]
 	if len(str)%2 != 0 {
@@ -331,7 +331,7 @@ func decodeBytes(dst []byte, v *fastjson.Value, key string, bits ...int) ([]byte
 		return nil, err
 	}
 	if len(bits) > 0 && bits[0] != len(buf) {
-		return nil, fmt.Errorf("field %s invalid length, expected %d but found %d", str, bits[0], len(buf))
+		return nil, fmt.Errorf("field '%s' invalid length, expected %d but found %d: %s", key, bits[0], len(buf), str)
 	}
 	dst = append(dst, buf...)
 	return dst, nil
@@ -346,7 +346,7 @@ func decodeUint(v *fastjson.Value, key string) (uint64, error) {
 	str = strings.Trim(str, "\"")
 
 	if !strings.HasPrefix(str, "0x") {
-		return 0, fmt.Errorf("field %s does not have 0x prefix", str)
+		return 0, fmt.Errorf("field '%s' does not have 0x prefix: '%s'", key, str)
 	}
 	return strconv.ParseUint(str[2:], 16, 64)
 }
