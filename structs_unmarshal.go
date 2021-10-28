@@ -149,13 +149,13 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 	}
 
 	if t.V, err = decodeBytes(t.V[:0], v, "v"); err != nil {
-		panic(err)
+		return err
 	}
 	if t.R, err = decodeBytes(t.R[:0], v, "r"); err != nil {
-		panic(err)
+		return err
 	}
 	if t.S, err = decodeBytes(t.S[:0], v, "s"); err != nil {
-		panic(err)
+		return err
 	}
 
 	if err = decodeHash(&t.BlockHash, v, "blockHash"); err != nil {

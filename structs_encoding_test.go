@@ -16,14 +16,28 @@ type jsonEncoder interface {
 }
 
 func TestJSONEncodingStd(t *testing.T) {
-	// use standard library to encode/decode
-	b := new(Block)
-	res, err := json.Marshal(b)
-	assert.NoError(t, err)
+	/*
+		t.Run("block", func(t *testing.T) {
+			b := new(Block)
+			res, err := json.Marshal(b)
+			assert.NoError(t, err)
 
-	b1 := new(Block)
-	assert.NoError(t, json.Unmarshal(res, b1))
-	assert.Equal(t, b, b1)
+			b1 := new(Block)
+			assert.NoError(t, json.Unmarshal(res, b1))
+			assert.Equal(t, b, b1)
+		})
+	*/
+
+	t.Run("transaction", func(t *testing.T) {
+		tt := new(Transaction)
+		res, err := json.Marshal(tt)
+		assert.NoError(t, err)
+
+		fmt.Println(string(res))
+		tt1 := new(Transaction)
+		assert.NoError(t, json.Unmarshal(res, tt1))
+
+	})
 }
 
 func TestJSONEncoding(t *testing.T) {
