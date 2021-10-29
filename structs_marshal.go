@@ -3,6 +3,7 @@ package web3
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 
 	"github.com/valyala/fastjson"
 )
@@ -40,6 +41,10 @@ func (l *Log) MarshalJSON() ([]byte, error) {
 
 // MarshalJSON implements the marshal interface
 func (t *Block) MarshalJSON() ([]byte, error) {
+	if t.Difficulty == nil {
+		t.Difficulty = new(big.Int)
+	}
+
 	a := defaultArena.Get()
 
 	o := a.NewObject()
