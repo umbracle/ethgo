@@ -3,7 +3,7 @@
 
 ## JsonRPC
 
-```
+```golang
 package main
 
 import (
@@ -45,19 +45,19 @@ To use the library import:
 
 Declare basic objects:
 
-```
+```golang
 typ, err := abi.NewType("uint256")
 ```
 
 or 
 
-```
+```golang
 typ = abi.MustNewType("uint256")
 ```
 
 and use it to encode/decode the data:
 
-```
+```golang
 num := big.NewInt(1)
 
 encoded, err := typ.Encode(num)
@@ -76,7 +76,7 @@ fmt.Println(num.Cmp(num2) == 0) // num == num2
 
 You can also codify structs as Solidity tuples:
 
-```
+```golang
 import (
 	"fmt"
     
@@ -124,7 +124,7 @@ func main() {
 
 As for now the library only provides primitive abstractions to send signed abstractions. The intended goal is to abstract the next steps inside the contract package.
 
-```
+```golang
 // Generate a random wallet
 key, _ := wallet.GenerateKey()
 
@@ -151,7 +151,7 @@ hash, _ := c.Eth().SendRawTransaction(data)
 
 Resolve names on the Ethereum Name Service registrar.
 
-```
+```golang
 import (
     "fmt"
 
@@ -180,7 +180,7 @@ func main() {
 
 ## Block tracker
 
-```
+```golang
 import (
     "fmt"
 
