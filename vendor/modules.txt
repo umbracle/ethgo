@@ -6,8 +6,6 @@ github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/pkg/guid
 # github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5
 github.com/Nvveen/Gotty
-# github.com/boltdb/bolt v1.3.1
-github.com/boltdb/bolt
 # github.com/btcsuite/btcd v0.21.0-beta
 github.com/btcsuite/btcd/btcec
 github.com/btcsuite/btcd/chaincfg
@@ -30,9 +28,6 @@ github.com/docker/go-connections/nat
 github.com/docker/go-units
 # github.com/gorilla/websocket v1.4.1
 github.com/gorilla/websocket
-# github.com/jmoiron/sqlx v1.2.0
-github.com/jmoiron/sqlx
-github.com/jmoiron/sqlx/reflectx
 # github.com/klauspost/compress v1.4.1
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/gzip
@@ -41,10 +36,6 @@ github.com/klauspost/compress/zlib
 github.com/klauspost/cpuid
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
-# github.com/lib/pq v1.2.0
-github.com/lib/pq
-github.com/lib/pq/oid
-github.com/lib/pq/scram
 # github.com/mitchellh/mapstructure v1.1.2
 github.com/mitchellh/mapstructure
 # github.com/opencontainers/go-digest v1.0.0-rc1
