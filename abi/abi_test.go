@@ -57,3 +57,54 @@ func TestAbi_HumanReadable(t *testing.T) {
 
 	fmt.Println(vv.Methods["symbol"].Inputs.String())
 }
+
+func TestAbi_ParseMethodSignature(t *testing.T) {
+	cases := []struct {
+		signature string
+		name      string
+		input     string
+		output    string
+	}{
+		{
+			// both input and output
+			signature: "function approve(address to) returns (address)",
+			name:      "approve",
+			input:     "(address)",
+			output:    "(address)",
+		},
+		{
+			// no input
+			signature: "function approve() returns (address)",
+			name:      "approve",
+			input:     "()",
+			output:    "(address)",
+		},
+		{
+			// no output
+			signature: "function approve(address)",
+			name:      "approve",
+			input:     "(address)",
+			output:    "()",
+		},
+	}
+
+	for _, c := range cases {
+		name, input, output, err := parseMethodSignature(c.signature)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, name, c.name)
+
+		if input != nil {
+			assert.Equal(t, c.input, input.String())
+		} else {
+			assert.Equal(t, c.input, "")
+		}
+
+		if input != nil {
+			assert.Equal(t, c.output, output.String())
+		} else {
+			assert.Equal(t, c.output, "")
+		}
+	}
+}

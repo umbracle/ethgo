@@ -150,20 +150,33 @@ func NewMethod(name string) (*Method, error) {
 	return m, nil
 }
 
-var funcRegexp = regexp.MustCompile("(.*)\\((.*)\\)(.*) returns \\((.*)\\)")
+var (
+	funcRegexpWithReturn    = regexp.MustCompile(`(.*)\((.*)\)(.*) returns \((.*)\)`)
+	funcRegexpWithoutReturn = regexp.MustCompile(`(.*)\((.*)\)(.*)`)
+)
 
 func parseMethodSignature(name string) (string, *Type, *Type, error) {
 	name = strings.TrimPrefix(name, "function ")
+	name = strings.TrimSpace(name)
 
-	matches := funcRegexp.FindAllStringSubmatch(name, -1)
-	if len(matches) == 0 {
-		return "", nil, nil, fmt.Errorf("no matches found")
+	var funcName, inputArgs, outputArgs string
+
+	if strings.Contains(name, "returns") {
+		matches := funcRegexpWithReturn.FindAllStringSubmatch(name, -1)
+		if len(matches) == 0 {
+			return "", nil, nil, fmt.Errorf("no matches found")
+		}
+		funcName = strings.TrimSpace(matches[0][1])
+		inputArgs = strings.TrimSpace(matches[0][2])
+		outputArgs = strings.TrimSpace(matches[0][4])
+	} else {
+		matches := funcRegexpWithoutReturn.FindAllStringSubmatch(name, -1)
+		if len(matches) == 0 {
+			return "", nil, nil, fmt.Errorf("no matches found")
+		}
+		funcName = strings.TrimSpace(matches[0][1])
+		inputArgs = strings.TrimSpace(matches[0][2])
 	}
-	match := matches[0]
-
-	funcName := strings.TrimSpace(match[1])
-	inputArgs := strings.TrimSpace(match[2])
-	outputArgs := strings.TrimSpace(match[4])
 
 	input, err := NewType("tuple(" + inputArgs + ")")
 	if err != nil {
