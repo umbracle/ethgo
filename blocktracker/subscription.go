@@ -4,6 +4,30 @@ import (
 	"sync"
 )
 
+type MockSubscription struct {
+	eventCh chan *BlockEvent
+}
+
+func NewMockSubscription() *MockSubscription {
+	return &MockSubscription{eventCh: make(chan *BlockEvent)}
+}
+
+func (m *MockSubscription) Push(e *BlockEvent) {
+	m.eventCh <- e
+}
+
+func (m *MockSubscription) GetEventCh() chan *BlockEvent {
+	return m.eventCh
+}
+
+func (m *MockSubscription) GetEvent() *BlockEvent {
+	evnt := <-m.eventCh
+	return evnt
+}
+
+func (m *MockSubscription) Close() {
+}
+
 // subscription is the Blockchain event subscription object
 type subscription struct {
 	updateCh chan struct{} // Channel for update information
