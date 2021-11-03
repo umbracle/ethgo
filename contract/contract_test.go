@@ -90,9 +90,10 @@ func TestDeployContract(t *testing.T) {
 
 	txn := DeployContract(p, s.Account(0), abi, bin, web3.Address{0x1}, 1000)
 
-	if err := txn.Do(); err != nil {
-		t.Fatal(err)
-	}
+	// if err := txn.SignAndSend(); err != nil {
+	// 	t.Fatal(err)
+	// }
+
 	if err := txn.Wait(); err != nil {
 		t.Fatal(err)
 	}

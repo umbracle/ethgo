@@ -8,6 +8,7 @@ import (
 	"github.com/umbracle/go-web3"
 	"github.com/umbracle/go-web3/abi"
 	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/go-web3/wallet"
 )
 
 // Contract is an Ethereum contract
@@ -174,10 +175,10 @@ func (t *Txn) estimateGas() (uint64, error) {
 	return t.provider.Eth().EstimateGas(msg)
 }
 
-// DoAndWait is a blocking query that combines
-// both Do and Wait functions
-func (t *Txn) DoAndWait() error {
-	if err := t.Do(); err != nil {
+// SignSendAndWait is a blocking query that combines
+// both SignAndSend and Wait functions
+func (t *Txn) SignSendAndWait(key *wallet.Key, chainID uint64) error {
+	if err := t.SignAndSend(key, chainID); err != nil {
 		return err
 	}
 	if err := t.Wait(); err != nil {
@@ -186,8 +187,8 @@ func (t *Txn) DoAndWait() error {
 	return nil
 }
 
-// Do sends the transaction to the network
-func (t *Txn) Do() error {
+// Signs and sends the transaction to the network
+func (t *Txn) SignAndSend(key *wallet.Key, chainID uint64) error {
 	err := t.Validate()
 	if err != nil {
 		return err
@@ -219,7 +220,15 @@ func (t *Txn) Do() error {
 	if t.addr != nil {
 		txn.To = t.addr
 	}
-	t.hash, err = t.provider.Eth().SendTransaction(txn)
+
+	// Create the signer object and sign the transaction
+	signer := wallet.NewEIP155Signer(chainID)
+	signedTxn, err := signer.SignTx(txn, key)
+	if err != nil {
+		return err
+	}
+	//send the transaction and return the transacation hash
+	t.hash, err = t.provider.Eth().SendTransaction(signedTxn)
 	if err != nil {
 		return err
 	}
