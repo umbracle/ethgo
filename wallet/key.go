@@ -43,7 +43,7 @@ func (k *Key) Sign(hash []byte) ([]byte, error) {
 	return append(sig, term)[1:], nil
 }
 
-func newKey(priv *ecdsa.PrivateKey) *Key {
+func NewKey(priv *ecdsa.PrivateKey) *Key {
 	return &Key{
 		priv: priv,
 		pub:  &priv.PublicKey,
@@ -63,7 +63,7 @@ func GenerateKey() (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newKey(priv), nil
+	return NewKey(priv), nil
 }
 
 func EcrecoverMsg(msg, signature []byte) (web3.Address, error) {
