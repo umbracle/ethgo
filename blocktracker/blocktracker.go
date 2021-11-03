@@ -24,15 +24,20 @@ const (
 
 // BlockTracker is an interface to track new blocks on the chain
 type BlockTracker struct {
-	config       *Config
-	blocks       []*web3.Block
-	blocksLock   sync.Mutex
-	subscriber   BlockTrackerInterface
-	blockChs     []chan *BlockEvent
-	blockChsLock sync.Mutex
-	provider     BlockProvider
-	once         sync.Once
-	closeCh      chan struct{}
+	config *Config
+
+	blocks   []*web3.Block
+	lock     sync.Mutex
+	tracker  BlockTrackerInterface
+	provider BlockProvider
+
+	//blockChs     []chan *BlockEvent
+	//blockChsLock sync.Mutex
+	//once         sync.Once
+
+	closeCh chan struct{}
+
+	stream *eventStream
 }
 
 type Config struct {
@@ -69,85 +74,22 @@ func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) *BlockTracker
 	if tracker == nil {
 		tracker = NewJSONBlockTracker(log.New(os.Stderr, "", log.LstdFlags), provider)
 	}
+
+	stream := &eventStream{}
+	stream.push(&BlockEvent{})
+
 	return &BlockTracker{
-		blocks:     []*web3.Block{},
-		blockChs:   []chan *BlockEvent{},
-		config:     config,
-		subscriber: tracker,
-		provider:   provider,
-		closeCh:    make(chan struct{}),
+		blocks:   []*web3.Block{},
+		config:   config,
+		tracker:  tracker,
+		provider: provider,
+		closeCh:  make(chan struct{}),
+		stream:   stream,
 	}
 }
 
-func (b *BlockTracker) Subscribe() chan *BlockEvent {
-	b.blockChsLock.Lock()
-	defer b.blockChsLock.Unlock()
-
-	ch := make(chan *BlockEvent, 1)
-	b.blockChs = append(b.blockChs, ch)
-	return ch
-}
-
-func (b *BlockTracker) AcquireLock() Lock {
-	return Lock{lock: &b.blocksLock}
-}
-
-func (t *BlockTracker) Init() (err error) {
-	var block *web3.Block
-	t.once.Do(func() {
-		block, err = t.provider.GetBlockByNumber(web3.Latest, false)
-		if err != nil {
-			return
-		}
-		if block.Number == 0 {
-			return
-		}
-
-		blocks := make([]*web3.Block, t.config.MaxBlockBacklog)
-
-		var i uint64
-		for i = 0; i < t.config.MaxBlockBacklog; i++ {
-			blocks[t.config.MaxBlockBacklog-i-1] = block
-			if block.Number == 0 {
-				break
-			}
-			block, err = t.provider.GetBlockByHash(block.ParentHash, false)
-			if err != nil {
-				return
-			}
-		}
-
-		if i != t.config.MaxBlockBacklog {
-			// less than maxBacklog elements
-			blocks = blocks[t.config.MaxBlockBacklog-i-1:]
-		}
-		t.blocks = blocks
-	})
-	return err
-}
-
-func (b *BlockTracker) MaxBlockBacklog() uint64 {
-	return b.config.MaxBlockBacklog
-}
-
-func (b *BlockTracker) LastBlocked() *web3.Block {
-	target := b.blocks[len(b.blocks)-1]
-	if target == nil {
-		return nil
-	}
-	return target.Copy()
-}
-
-func (b *BlockTracker) BlocksBlocked() []*web3.Block {
-	res := []*web3.Block{}
-	for _, i := range b.blocks {
-		res = append(res, i.Copy())
-	}
-	return res
-}
-
-func (b *BlockTracker) Len() int {
-	return len(b.blocks)
+func (b *BlockTracker) Subscribe() Subscription {
+	return b.stream.subscribe()
 }
 
 func (b *BlockTracker) Close() error {
@@ -162,7 +104,7 @@ func (b *BlockTracker) Start() error {
 		cancelFn()
 	}()
 	// start the polling
-	err := b.subscriber.Track(ctx, func(block *web3.Block) error {
+	err := b.tracker.Track(ctx, func(block *web3.Block) error {
 		return b.HandleReconcile(block)
 	})
 	if err != nil {
@@ -171,7 +113,7 @@ func (b *BlockTracker) Start() error {
 	return err
 }
 
-func (t *BlockTracker) AddBlockLocked(block *web3.Block) error {
+func (t *BlockTracker) addBlocks(block *web3.Block) error {
 	if uint64(len(t.blocks)) == t.config.MaxBlockBacklog {
 		// remove past blocks if there are more than maxReconcileBlocks
 		t.blocks = t.blocks[1:]
@@ -225,7 +167,7 @@ func (t *BlockTracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, in
 	count := uint64(0)
 	for {
 		if count > t.config.MaxBlockBacklog {
-			return nil, -1, fmt.Errorf("cannot reconcile more than max backlog values")
+			return nil, -1, fmt.Errorf("cannot reconcile more than '%d' max backlog values", t.config.MaxBlockBacklog)
 		}
 		count++
 
@@ -250,8 +192,8 @@ func (t *BlockTracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, in
 }
 
 func (t *BlockTracker) HandleBlockEvent(block *web3.Block) (*BlockEvent, error) {
-	t.blocksLock.Lock()
-	defer t.blocksLock.Unlock()
+	t.lock.Lock()
+	defer t.lock.Unlock()
 
 	blocks, indx, err := t.handleReconcileImpl(block)
 	if err != nil {
@@ -274,7 +216,7 @@ func (t *BlockTracker) HandleBlockEvent(block *web3.Block) (*BlockEvent, error) 
 	// include the new blocks
 	for _, block := range blocks {
 		blockEvnt.Added = append(blockEvnt.Added, block)
-		if err := t.AddBlockLocked(block); err != nil {
+		if err := t.addBlocks(block); err != nil {
 			return nil, err
 		}
 	}
@@ -290,15 +232,7 @@ func (t *BlockTracker) HandleReconcile(block *web3.Block) error {
 		return nil
 	}
 
-	t.blockChsLock.Lock()
-	for _, ch := range t.blockChs {
-		select {
-		case ch <- blockEvnt:
-		default:
-		}
-	}
-	t.blockChsLock.Unlock()
-
+	t.stream.push(blockEvnt)
 	return nil
 }
 
@@ -409,21 +343,6 @@ func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block 
 	return nil
 }
 
-type Lock struct {
-	Locked bool
-	lock   *sync.Mutex
-}
-
-func (l *Lock) Lock() {
-	l.Locked = true
-	l.lock.Lock()
-}
-
-func (l *Lock) Unlock() {
-	l.Locked = false
-	l.lock.Unlock()
-}
-
 // EventType is the type of the event
 type EventType int
 
@@ -433,13 +352,6 @@ const (
 	// EventDel may happen when there is a reorg and a past event is deleted
 	EventDel
 )
-
-// Event is an event emitted when a new log is included
-type Event struct {
-	Type    EventType
-	Added   []*web3.Log
-	Removed []*web3.Log
-}
 
 // BlockEvent is an event emitted when a new block is included
 type BlockEvent struct {
