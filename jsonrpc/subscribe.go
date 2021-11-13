@@ -6,15 +6,15 @@ import (
 	"github.com/panyanyany/go-web3/jsonrpc/transport"
 )
 
-// SubscriptionEnabled returns true if the subscription endpoints are enabled
+// SubscriptionEnabled returns true if the subscription Endpoints are enabled
 func (c *Client) SubscriptionEnabled() bool {
-	_, ok := c.transport.(transport.PubSubTransport)
+	_, ok := c.Transport.(transport.PubSubTransport)
 	return ok
 }
 
 // Subscribe starts a new subscription
 func (c *Client) Subscribe(method string, callback func(b []byte)) (func() error, error) {
-	pub, ok := c.transport.(transport.PubSubTransport)
+	pub, ok := c.Transport.(transport.PubSubTransport)
 	if !ok {
 		return nil, fmt.Errorf("Transport does not support the subscribe method")
 	}

@@ -6,8 +6,8 @@ import (
 
 // Client is the jsonrpc client
 type Client struct {
-	transport transport.Transport
-	endpoints endpoints
+	Transport transport.Transport
+	Endpoints *Endpoints
 }
 
 type IClient interface {
@@ -16,35 +16,36 @@ type IClient interface {
 	Close() error
 }
 
-type endpoints struct {
-	w *Web3
-	e *Eth
-	n *Net
-	d *Debug
+type Endpoints struct {
+	Web3  *Web3
+	Eth   *Eth
+	Net   *Net
+	Debug *Debug
 }
 
 // NewClient creates a new client
 func NewClient(addr string) (*Client, error) {
 	c := &Client{}
-	c.endpoints.w = &Web3{c}
-	c.endpoints.e = &Eth{c}
-	c.endpoints.n = &Net{c}
-	c.endpoints.d = &Debug{c}
+	c.Endpoints = new(Endpoints)
+	c.Endpoints.Web3 = &Web3{c}
+	c.Endpoints.Eth = &Eth{c}
+	c.Endpoints.Net = &Net{c}
+	c.Endpoints.Debug = &Debug{c}
 
 	t, err := transport.NewTransport(addr)
 	if err != nil {
 		return nil, err
 	}
-	c.transport = t
+	c.Transport = t
 	return c, nil
 }
 
 // Close closes the tranport
 func (c *Client) Close() error {
-	return c.transport.Close()
+	return c.Transport.Close()
 }
 
 // Call makes a jsonrpc call
 func (c *Client) Call(method string, out interface{}, params ...interface{}) error {
-	return c.transport.Call(method, out, params...)
+	return c.Transport.Call(method, out, params...)
 }

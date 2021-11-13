@@ -7,7 +7,7 @@ type Net struct {
 
 // Net returns the reference to the net namespace
 func (c *Client) Net() *Net {
-	return c.endpoints.n
+	return c.Endpoints.Net
 }
 
 // Version returns the current network id

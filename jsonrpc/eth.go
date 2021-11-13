@@ -16,7 +16,7 @@ type Eth struct {
 
 // Eth returns the reference to the eth namespace
 func (c *Client) Eth() *Eth {
-	return c.endpoints.e
+	return c.Endpoints.Eth
 }
 
 // GetCode returns the code of a contract

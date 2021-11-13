@@ -8,7 +8,7 @@ type Debug struct {
 
 // Eth returns the reference to the eth namespace
 func (c *Client) Debug() *Debug {
-	return c.endpoints.d
+	return c.Endpoints.Debug
 }
 
 type TransactionTrace struct {

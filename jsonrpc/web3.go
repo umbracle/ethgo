@@ -7,7 +7,7 @@ type Web3 struct {
 
 // Web3 returns the reference to the web3 namespace
 func (c *Client) Web3() *Web3 {
-	return c.endpoints.w
+	return c.Endpoints.Web3
 }
 
 // ClientVersion returns the current client version
