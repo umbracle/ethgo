@@ -1,6 +1,6 @@
 package web3
 
-import "github.com/panyanyany/fastrlp"
+import "github.com/umbracle/fastrlp"
 
 func (t *Transaction) MarshalRLP() []byte {
 	ar := fastrlp.DefaultArenaPool.Get()

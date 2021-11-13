@@ -1,4 +1,4 @@
-module github.com/umbracle/go-web3
+module github.com/panyanyany/go-web3
 
 go 1.12
 

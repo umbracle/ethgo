@@ -3,7 +3,7 @@ package wallet
 import (
 	"math/big"
 
-	"github.com/panyanyany/fastrlp"
+	"github.com/umbracle/fastrlp"
 	"github.com/panyanyany/go-web3"
 )
 
