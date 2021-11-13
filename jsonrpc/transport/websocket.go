@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/umbracle/go-web3/jsonrpc/codec"
+	"github.com/panyanyany/go-web3/jsonrpc/codec"
 )
 
 func newWebsocket(url string) (Transport, error) {

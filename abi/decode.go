@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/umbracle/go-web3"
+	"github.com/panyanyany/go-web3"
 )
 
 // Decode decodes the input with a given type

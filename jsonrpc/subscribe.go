@@ -3,7 +3,7 @@ package jsonrpc
 import (
 	"fmt"
 
-	"github.com/umbracle/go-web3/jsonrpc/transport"
+	"github.com/panyanyany/go-web3/jsonrpc/transport"
 )
 
 // SubscriptionEnabled returns true if the subscription endpoints are enabled

@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/umbracle/go-web3"
+	"github.com/panyanyany/go-web3"
 	"golang.org/x/crypto/sha3"
 )
 

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/umbracle/go-web3"
+	"github.com/panyanyany/go-web3"
 )
 
 // batch of predefined reflect types

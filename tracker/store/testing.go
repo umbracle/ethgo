@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	web3 "github.com/umbracle/go-web3"
+	web3 "github.com/panyanyany/go-web3"
 )
 
 // SetupDB is a function that creates a backend

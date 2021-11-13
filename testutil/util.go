@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/umbracle/go-web3"
+	"github.com/panyanyany/go-web3"
 )
 
 func CompareLogs(one, two []*web3.Log) bool {

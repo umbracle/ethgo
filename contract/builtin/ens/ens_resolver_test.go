@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/testutil"
+	web3 "github.com/panyanyany/go-web3"
+	"github.com/panyanyany/go-web3/jsonrpc"
+	"github.com/panyanyany/go-web3/testutil"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/umbracle/go-web3"
+	"github.com/panyanyany/go-web3"
 )
 
 type mockCall int

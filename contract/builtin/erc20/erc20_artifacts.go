@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/umbracle/go-web3/abi"
+	"github.com/panyanyany/go-web3/abi"
 )
 
 var abiERC20 *abi.ABI

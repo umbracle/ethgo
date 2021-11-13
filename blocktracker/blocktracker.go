@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
+	web3 "github.com/panyanyany/go-web3"
+	"github.com/panyanyany/go-web3/jsonrpc"
 )
 
 // BlockProvider are the eth1x methods required by the block tracker

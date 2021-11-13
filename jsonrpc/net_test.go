@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/panyanyany/go-web3/testutil"
 )
 
 func TestNetVersion(t *testing.T) {

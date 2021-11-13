@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/panyanyany/go-web3"
+	"github.com/panyanyany/go-web3/testutil"
 )
 
 var (

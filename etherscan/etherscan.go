@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc/codec"
+	"github.com/panyanyany/go-web3"
+	"github.com/panyanyany/go-web3/jsonrpc/codec"
 	"github.com/valyala/fasthttp"
 )
 
