@@ -9,14 +9,9 @@ import (
 	"github.com/panyanyany/go-web3"
 )
 
-// Eth is the eth namespace
+// EthClient is the eth namespace
 type Eth struct {
 	c IClient
-}
-
-// Eth returns the reference to the eth namespace
-func (c *Client) Eth() *Eth {
-	return c.Endpoints.Eth
 }
 
 // GetCode returns the code of a contract
