@@ -11,7 +11,7 @@ import (
 
 // Eth is the eth namespace
 type Eth struct {
-	c *Client
+	c IClient
 }
 
 // Eth returns the reference to the eth namespace

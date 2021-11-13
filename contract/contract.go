@@ -15,11 +15,11 @@ type Contract struct {
 	addr     web3.Address
 	from     *web3.Address
 	abi      *abi.ABI
-	provider *jsonrpc.Client
+	provider jsonrpc.IClient
 }
 
 // DeployContract deploys a contract
-func DeployContract(provider *jsonrpc.Client, from web3.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
+func DeployContract(provider jsonrpc.IClient, from web3.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
 	return &Txn{
 		from:     from,
 		provider: provider,
@@ -30,7 +30,7 @@ func DeployContract(provider *jsonrpc.Client, from web3.Address, abi *abi.ABI, b
 }
 
 // NewContract creates a new contract instance
-func NewContract(addr web3.Address, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
+func NewContract(addr web3.Address, abi *abi.ABI, provider jsonrpc.IClient) *Contract {
 	return &Contract{
 		addr:     addr,
 		abi:      abi,
@@ -124,7 +124,7 @@ func (c *Contract) Txn(method string, args ...interface{}) *Txn {
 type Txn struct {
 	from     web3.Address
 	addr     *web3.Address
-	provider *jsonrpc.Client
+	provider jsonrpc.IClient
 	method   *abi.Method
 	args     []interface{}
 	data     []byte

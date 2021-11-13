@@ -10,6 +10,12 @@ type Client struct {
 	endpoints endpoints
 }
 
+type IClient interface {
+	Eth() *Eth
+	Call(method string, out interface{}, params ...interface{}) error
+	Close() error
+}
+
 type endpoints struct {
 	w *Web3
 	e *Eth
