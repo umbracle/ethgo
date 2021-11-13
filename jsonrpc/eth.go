@@ -179,6 +179,7 @@ func (e *Eth) GasPrice() (uint64, error) {
 func (e *Eth) Call(msg *web3.CallMsg, block web3.BlockNumber) (string, error) {
 	var out string
 	if err := e.Client.Call("eth_call", &out, msg, block.String()); err != nil {
+		err = fmt.Errorf("Eth.Call: %w", err)
 		return "", err
 	}
 	return out, nil

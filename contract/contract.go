@@ -62,12 +62,13 @@ func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, erro
 func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
 	m, ok := c.abi.Methods[method]
 	if !ok {
-		return nil, fmt.Errorf("method %s not found", method)
+		return nil, fmt.Errorf("method %s not found in Contract.abi.Methods[method]", method)
 	}
 
 	// Encode input
 	data, err := abi.Encode(args, m.Inputs)
 	if err != nil {
+		err = fmt.Errorf("aib.Encode(): %w", err)
 		return nil, err
 	}
 	data = append(m.ID(), data...)
@@ -83,12 +84,14 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 
 	rawStr, err := c.provider.Call(msg, block)
 	if err != nil {
+		err = fmt.Errorf("Contract.provider.Call(): %w", err)
 		return nil, err
 	}
 
 	// Decode output
 	raw, err := hex.DecodeString(rawStr[2:])
 	if err != nil {
+		err = fmt.Errorf("hex.DecodeString: %w", err)
 		return nil, err
 	}
 	if len(raw) == 0 {
@@ -96,6 +99,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	}
 	respInterface, err := abi.Decode(m.Outputs, raw)
 	if err != nil {
+		err = fmt.Errorf("abi.Decode: %w", err)
 		return nil, err
 	}
 

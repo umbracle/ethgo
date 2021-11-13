@@ -1,6 +1,8 @@
 package jsonrpc
 
 import (
+	"fmt"
+
 	"github.com/panyanyany/go-web3/jsonrpc/transport"
 )
 
@@ -38,8 +40,13 @@ func (c *Client) Close() error {
 }
 
 // Call makes a jsonrpc call
-func (c *Client) Call(method string, out interface{}, params ...interface{}) error {
-	return c.Transport.Call(method, out, params...)
+func (c *Client) Call(method string, out interface{}, params ...interface{}) (err error) {
+	err = c.Transport.Call(method, out, params...)
+	if err != nil {
+	    err = fmt.Errorf("Client.Transport.Call: %w", err)
+	    return
+	}
+	return
 }
 
 // EthClient returns the reference to the eth namespace
