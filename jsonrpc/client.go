@@ -11,7 +11,6 @@ type Client struct {
 }
 
 type IClient interface {
-	Eth() *Eth
 	Call(method string, out interface{}, params ...interface{}) error
 	Close() error
 }
