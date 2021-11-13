@@ -15,11 +15,11 @@ type Contract struct {
 	addr     web3.Address
 	from     *web3.Address
 	abi      *abi.ABI
-	provider jsonrpc.IEndpoints
+	provider jsonrpc.IEth
 }
 
 // DeployContract deploys a contract
-func DeployContract(provider jsonrpc.IEndpoints, from web3.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
+func DeployContract(provider jsonrpc.IEth, from web3.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
 	return &Txn{
 		from:     from,
 		provider: provider,
@@ -30,7 +30,7 @@ func DeployContract(provider jsonrpc.IEndpoints, from web3.Address, abi *abi.ABI
 }
 
 // NewContract creates a new contract instance
-func NewContract(addr web3.Address, abi *abi.ABI, provider jsonrpc.IEndpoints) *Contract {
+func NewContract(addr web3.Address, abi *abi.ABI, provider jsonrpc.IEth) *Contract {
 	return &Contract{
 		addr:     addr,
 		abi:      abi,
@@ -81,7 +81,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 		msg.From = *c.from
 	}
 
-	rawStr, err := c.provider.Eth().Call(msg, block)
+	rawStr, err := c.provider.Call(msg, block)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (c *Contract) Txn(method string, args ...interface{}) *Txn {
 type Txn struct {
 	from     web3.Address
 	addr     *web3.Address
-	provider jsonrpc.IEndpoints
+	provider jsonrpc.IEth
 	method   *abi.Method
 	args     []interface{}
 	data     []byte
@@ -162,7 +162,7 @@ func (t *Txn) EstimateGas() (uint64, error) {
 
 func (t *Txn) estimateGas() (uint64, error) {
 	if t.isContractDeployment() {
-		return t.provider.Eth().EstimateGasContract(t.data)
+		return t.provider.EstimateGasContract(t.data)
 	}
 
 	msg := &web3.CallMsg{
@@ -171,7 +171,7 @@ func (t *Txn) estimateGas() (uint64, error) {
 		Data:  t.data,
 		Value: t.value,
 	}
-	return t.provider.Eth().EstimateGas(msg)
+	return t.provider.EstimateGas(msg)
 }
 
 // DoAndWait is a blocking query that combines
@@ -195,7 +195,7 @@ func (t *Txn) Do() error {
 
 	// estimate gas price
 	if t.gasPrice == 0 {
-		t.gasPrice, err = t.provider.Eth().GasPrice()
+		t.gasPrice, err = t.provider.GasPrice()
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func (t *Txn) Do() error {
 	if t.addr != nil {
 		txn.To = t.addr
 	}
-	t.hash, err = t.provider.Eth().SendTransaction(txn)
+	t.hash, err = t.provider.SendTransaction(txn)
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func (t *Txn) Wait() error {
 
 	var err error
 	for {
-		t.receipt, err = t.provider.Eth().GetTransactionReceipt(t.hash)
+		t.receipt, err = t.provider.GetTransactionReceipt(t.hash)
 		if err != nil {
 			if err.Error() != "not found" {
 				return err
