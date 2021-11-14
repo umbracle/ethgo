@@ -12,10 +12,10 @@ import (
 
 // Contract is an Ethereum contract
 type Contract struct {
-	addr     web3.Address
-	from     *web3.Address
-	abi      *abi.ABI
-	provider jsonrpc.IEth
+	Address  web3.Address
+	From     *web3.Address
+	Abi      *abi.ABI
+	Provider jsonrpc.IEth
 }
 
 // DeployContract deploys a contract
@@ -32,25 +32,25 @@ func DeployContract(provider jsonrpc.IEth, from web3.Address, abi *abi.ABI, bin 
 // NewContract creates a new contract instance
 func NewContract(addr web3.Address, abi *abi.ABI, provider jsonrpc.IEth) *Contract {
 	return &Contract{
-		addr:     addr,
-		abi:      abi,
-		provider: provider,
+		Address:  addr,
+		Abi:      abi,
+		Provider: provider,
 	}
 }
 
-// ABI returns the abi of the contract
+// ABI returns the Abi of the contract
 func (c *Contract) ABI() *abi.ABI {
-	return c.abi
+	return c.Abi
 }
 
 // Addr returns the address of the contract
 func (c *Contract) Addr() web3.Address {
-	return c.addr
+	return c.Address
 }
 
 // SetFrom sets the origin of the calls
 func (c *Contract) SetFrom(addr web3.Address) {
-	c.from = &addr
+	c.From = &addr
 }
 
 // EstimateGas estimates the gas for a contract call
@@ -60,9 +60,9 @@ func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, erro
 
 // Call calls a method in the contract
 func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
-	m, ok := c.abi.Methods[method]
+	m, ok := c.Abi.Methods[method]
 	if !ok {
-		return nil, fmt.Errorf("method %s not found in Contract.abi.Methods[method]", method)
+		return nil, fmt.Errorf("method %s not found in Contract.Abi.Methods[method]", method)
 	}
 
 	// Encode input
@@ -75,16 +75,16 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 
 	// Call function
 	msg := &web3.CallMsg{
-		To:   &c.addr,
+		To:   &c.Address,
 		Data: data,
 	}
-	if c.from != nil {
-		msg.From = *c.from
+	if c.From != nil {
+		msg.From = *c.From
 	}
 
-	rawStr, err := c.provider.Call(msg, block)
+	rawStr, err := c.Provider.Call(msg, block)
 	if err != nil {
-		err = fmt.Errorf("Contract.provider.Call(): %w", err)
+		err = fmt.Errorf("Contract.Provider.Call(): %w", err)
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	}
 	respInterface, err := abi.Decode(m.Outputs, raw)
 	if err != nil {
-		err = fmt.Errorf("abi.Decode: %w", err)
+		err = fmt.Errorf("Abi.Decode: %w", err)
 		return nil, err
 	}
 
@@ -109,16 +109,16 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 
 // Txn creates a new transaction object
 func (c *Contract) Txn(method string, args ...interface{}) *Txn {
-	m, ok := c.abi.Methods[method]
+	m, ok := c.Abi.Methods[method]
 	if !ok {
 		// TODO, return error
 		panic(fmt.Errorf("method %s not found", method))
 	}
 
 	return &Txn{
-		from:     *c.from,
-		addr:     &c.addr,
-		provider: c.provider,
+		from:     *c.From,
+		addr:     &c.Address,
+		provider: c.Provider,
 		method:   m,
 		args:     args,
 	}
@@ -308,7 +308,7 @@ func (e *Event) ParseLog(log *web3.Log) (map[string]interface{}, error) {
 
 // Event returns a specific event
 func (c *Contract) Event(name string) (*Event, bool) {
-	event, ok := c.abi.Events[name]
+	event, ok := c.Abi.Events[name]
 	if !ok {
 		return nil, false
 	}
