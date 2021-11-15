@@ -123,6 +123,16 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
+			"tuple(uint256[] a)",
+			map[string]interface{}{
+				"a": []*big.Int{
+					big.NewInt(1),
+					big.NewInt(2),
+					big.NewInt(3),
+				},
+			},
+		},
+		{
 			"tuple(bytes[] a)",
 			map[string]interface{}{
 				"a": [][]byte{{0xf0, 0xf0, 0xf0}, {0xf0, 0xf0, 0xf0}},
