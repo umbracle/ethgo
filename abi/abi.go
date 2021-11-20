@@ -147,7 +147,7 @@ func (m *Method) ID() []byte {
 }
 
 // Encode encodes the inputs with this function
-func (m *Method) Encode(args ...interface{}) ([]byte, error) {
+func (m *Method) Encode(args interface{}) ([]byte, error) {
 	data, err := Encode(args, m.Inputs)
 	if err != nil {
 		return nil, err

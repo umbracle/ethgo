@@ -76,8 +76,8 @@ func TestEncoding(t *testing.T) {
 		{
 			"bytes10[]",
 			[][10]byte{
-				[10]byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x10},
-				[10]byte{0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x10},
+				{0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x10},
+				{0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x10},
 			},
 		},
 		{
@@ -201,11 +201,11 @@ func TestEncoding(t *testing.T) {
 			// tuple array
 			"tuple(int32 a, int32 b)[2]",
 			[2]map[string]interface{}{
-				map[string]interface{}{
+				{
 					"a": int32(1),
 					"b": int32(2),
 				},
-				map[string]interface{}{
+				{
 					"a": int32(3),
 					"b": int32(4),
 				},
@@ -216,10 +216,10 @@ func TestEncoding(t *testing.T) {
 			// tuple array with dynamic content
 			"tuple(int32[] a)[2]",
 			[2]map[string]interface{}{
-				map[string]interface{}{
+				{
 					"a": []int32{1, 2, 3},
 				},
-				map[string]interface{}{
+				{
 					"a": []int32{4, 5, 6},
 				},
 			},
@@ -228,11 +228,11 @@ func TestEncoding(t *testing.T) {
 			// tuple slice
 			"tuple(int32 a, int32[] b)[]",
 			[]map[string]interface{}{
-				map[string]interface{}{
+				{
 					"a": int32(1),
 					"b": []int32{2, 3},
 				},
-				map[string]interface{}{
+				{
 					"a": int32(4),
 					"b": []int32{5, 6},
 				},
@@ -254,11 +254,11 @@ func TestEncoding(t *testing.T) {
 			map[string]interface{}{
 				"a": [2]uint8{uint8(1), uint8(2)},
 				"b": [2]map[string]interface{}{
-					map[string]interface{}{
+					{
 						"e": uint8(10),
 						"f": uint32(11),
 					},
-					map[string]interface{}{
+					{
 						"e": uint8(20),
 						"f": uint32(21),
 					},
@@ -270,26 +270,26 @@ func TestEncoding(t *testing.T) {
 		{
 			"tuple(uint16 a, uint16 b)[1][]",
 			[][1]map[string]interface{}{
-				[1]map[string]interface{}{
-					map[string]interface{}{
+				{
+					{
 						"a": uint16(1),
 						"b": uint16(2),
 					},
 				},
-				[1]map[string]interface{}{
-					map[string]interface{}{
+				{
+					{
 						"a": uint16(3),
 						"b": uint16(4),
 					},
 				},
-				[1]map[string]interface{}{
-					map[string]interface{}{
+				{
+					{
 						"a": uint16(5),
 						"b": uint16(6),
 					},
 				},
-				[1]map[string]interface{}{
-					map[string]interface{}{
+				{
+					{
 						"a": uint16(7),
 						"b": uint16(8),
 					},
@@ -300,10 +300,10 @@ func TestEncoding(t *testing.T) {
 			"tuple(uint64[][] a, tuple(uint8 a, uint32 b)[1] b, uint64 c)",
 			map[string]interface{}{
 				"a": [][]uint64{
-					[]uint64{3, 4},
+					{3, 4},
 				},
 				"b": [1]map[string]interface{}{
-					map[string]interface{}{
+					{
 						"a": uint8(1),
 						"b": uint32(2),
 					},
@@ -339,11 +339,11 @@ func TestEncodingArguments(t *testing.T) {
 			&ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
-					&ArgumentStr{
+					{
 						Name: "",
 						Type: "int32",
 					},
-					&ArgumentStr{
+					{
 						Name: "",
 						Type: "int32",
 					},
@@ -358,11 +358,11 @@ func TestEncodingArguments(t *testing.T) {
 			&ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
-					&ArgumentStr{
+					{
 						Name: "a",
 						Type: "int32",
 					},
-					&ArgumentStr{
+					{
 						Name: "",
 						Type: "int32",
 					},
@@ -493,19 +493,19 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	tt := method.Inputs
 	val := generateRandomType(tt)
 
-	data, err := Encode(val, tt)
+	data, err := method.Encode(val)
 	if err != nil {
 		return err
 	}
 
 	res, err := server.Call(&web3.CallMsg{
 		To:   &receipt.ContractAddress,
-		Data: append(method.ID(), data...),
+		Data: data,
 	})
 	if err != nil {
 		return err
 	}
-	if res != encodeHex(data) {
+	if res != encodeHex(data[4:]) { // remove funct signature in data
 		return fmt.Errorf("bad")
 	}
 	return nil

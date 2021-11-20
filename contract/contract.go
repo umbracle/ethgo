@@ -65,7 +65,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 		return nil, fmt.Errorf("method %s not found", method)
 	}
 
-	data, err := m.Encode(args...)
+	data, err := m.Encode(args)
 	if err != nil {
 		return nil, err
 	}
