@@ -150,9 +150,8 @@ func (b *BlockTracker) Len() int {
 	return len(b.blocks)
 }
 
-func (b *BlockTracker) Close() error {
+func (b *BlockTracker) Close() {
 	close(b.closeCh)
-	return nil
 }
 
 func (b *BlockTracker) Start() error {
