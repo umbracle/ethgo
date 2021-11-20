@@ -60,17 +60,15 @@ func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, erro
 
 // Call calls a method in the contract
 func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
-	m, ok := c.abi.Methods[method]
-	if !ok {
+	m := c.abi.GetMethod(method)
+	if m == nil {
 		return nil, fmt.Errorf("method %s not found", method)
 	}
 
-	// Encode input
-	data, err := abi.Encode(args, m.Inputs)
+	data, err := m.Encode(args...)
 	if err != nil {
 		return nil, err
 	}
-	data = append(m.ID(), data...)
 
 	// Call function
 	msg := &web3.CallMsg{
@@ -91,15 +89,10 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	if err != nil {
 		return nil, err
 	}
-	if len(raw) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	respInterface, err := abi.Decode(m.Outputs, raw)
+	resp, err := m.Decode(raw)
 	if err != nil {
 		return nil, err
 	}
-
-	resp := respInterface.(map[string]interface{})
 	return resp, nil
 }
 

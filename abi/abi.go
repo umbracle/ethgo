@@ -21,6 +21,11 @@ type ABI struct {
 	Events      map[string]*Event
 }
 
+func (a *ABI) GetMethod(name string) *Method {
+	m := a.Methods[name]
+	return m
+}
+
 func (a *ABI) addEvent(e *Event) {
 	if len(a.Methods) == 0 {
 		a.Events = map[string]*Event{}
@@ -139,6 +144,29 @@ func (m *Method) ID() []byte {
 	dst := k.Sum(nil)[:4]
 	releaseKeccak(k)
 	return dst
+}
+
+// Encode encodes the inputs with this function
+func (m *Method) Encode(args ...interface{}) ([]byte, error) {
+	data, err := Encode(args, m.Inputs)
+	if err != nil {
+		return nil, err
+	}
+	data = append(m.ID(), data...)
+	return data, nil
+}
+
+// Decode decodes the output with this function
+func (m *Method) Decode(data []byte) (map[string]interface{}, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	respInterface, err := Decode(m.Outputs, data)
+	if err != nil {
+		return nil, err
+	}
+	resp := respInterface.(map[string]interface{})
+	return resp, nil
 }
 
 func NewMethod(name string) (*Method, error) {
