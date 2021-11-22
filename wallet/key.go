@@ -93,9 +93,11 @@ func RecoverPubkey(signature, hash []byte) (*ecdsa.PublicKey, error) {
 	return pub.ToECDSA(), nil
 }
 
-func keccak256(buf []byte) []byte {
+func keccak256(buf ...[]byte) []byte {
 	h := sha3.NewLegacyKeccak256()
-	h.Write(buf)
+	for _, i := range buf {
+		h.Write(i)
+	}
 	b := h.Sum(nil)
 	return b
 }
