@@ -53,6 +53,9 @@ func TestJSONEncoding(t *testing.T) {
 				"uncles": [
 					"{{.Hash1}}",
 					"{{.Hash2}}"
+				],
+				"transactions": [
+					"{{.Hash1}}"
 				]
 			}`,
 			build: block,
@@ -73,7 +76,7 @@ func TestJSONEncoding(t *testing.T) {
 				"blockHash": "{{.Hash0}}",
 				"blockNumber": "0x0",
 				"transactionIndex": "0x0"
-			}`,
+				}`,
 			build: txn,
 		},
 		{
@@ -92,7 +95,7 @@ func TestJSONEncoding(t *testing.T) {
 				"blockHash": "{{.Hash0}}",
 				"blockNumber": "0x0",
 				"transactionIndex": "0x0"
-			}`,
+				}`,
 			build: txn,
 		},
 	}
