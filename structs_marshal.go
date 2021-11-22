@@ -71,6 +71,15 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 		o.Set("uncles", uncles)
 	}
 
+	// transactions
+	if len(t.TransactionsHashes) != 0 {
+		txns := a.NewArray()
+		for indx, txn := range t.TransactionsHashes {
+			txns.SetArrayItem(indx, a.NewString(txn.String()))
+		}
+		o.Set("transactions", txns)
+	}
+
 	res := o.MarshalTo(nil)
 	defaultArena.Put(a)
 	return res, nil
