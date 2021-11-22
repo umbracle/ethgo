@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"
 )
@@ -69,10 +68,10 @@ type cryptoEncoding struct {
 	CipherParams struct {
 		IV hexString
 	} `json:"cipherparams"`
-	CipherText hexString              `json:"ciphertext"`
-	KDF        string                 `json:"kdf"`
-	KDFParams  map[string]interface{} `json:"kdfparams"`
-	Mac        hexString              `json:"mac"`
+	CipherText hexString       `json:"ciphertext"`
+	KDF        string          `json:"kdf"`
+	KDFParams  json.RawMessage `json:"kdfparams"`
+	Mac        hexString       `json:"mac"`
 }
 
 type hexString []byte
@@ -95,37 +94,30 @@ func (c *cryptoEncoding) getKDF(password []byte) ([]byte, error) {
 	if c.KDF == "pbkdf2" {
 		var params struct {
 			Dklen int
-			Salt  string
+			Salt  hexString
 			C     int
 			Prf   string
 		}
-		if err := mapstructure.Decode(c.KDFParams, &params); err != nil {
+		if err := json.Unmarshal(c.KDFParams, &params); err != nil {
 			return nil, err
 		}
 		if params.Prf != "hmac-sha256" {
 			return nil, fmt.Errorf("not found")
 		}
-		salt, err := hex.DecodeString(params.Salt)
-		if err != nil {
-			return nil, err
-		}
-		key = pbkdf2.Key(password, salt, params.C, params.Dklen, sha256.New)
+		key = pbkdf2.Key(password, params.Salt, params.C, params.Dklen, sha256.New)
 	} else if c.KDF == "scrypt" {
 		var params struct {
 			Dklen int
-			Salt  string
+			Salt  hexString
 			N     int
 			P     int
 			R     int
 		}
-		if err := mapstructure.Decode(c.KDFParams, &params); err != nil {
-			return nil, err
-		}
-		salt, err := hex.DecodeString(params.Salt)
+		err := json.Unmarshal(c.KDFParams, &params)
 		if err != nil {
 			return nil, err
 		}
-		key, err = scrypt.Key(password, salt, params.N, params.R, params.P, params.Dklen)
+		key, err = scrypt.Key(password, params.Salt, params.N, params.R, params.P, params.Dklen)
 		if err != nil {
 			return nil, err
 		}
