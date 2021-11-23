@@ -208,18 +208,13 @@ func TestEthEstimateGas(t *testing.T) {
 	input, err := hex.DecodeString(solcContract.Bin)
 	assert.NoError(t, err)
 
-	msg := &web3.CallMsg{
-		From: s.Account(0),
-		To:   nil,
-		Data: input,
-	}
-	gas, err := c.Eth().EstimateGas(msg)
+	gas, err := c.Eth().EstimateGasContract(input)
 	assert.NoError(t, err)
-	assert.NotEqual(t, gas, 0)
+	assert.Greater(t, gas, uint64(140000))
 
 	_, addr := s.DeployContract(cc)
 
-	msg = &web3.CallMsg{
+	msg := &web3.CallMsg{
 		From: s.Account(0),
 		To:   &addr,
 		Data: testutil.MethodSig("setA"),
