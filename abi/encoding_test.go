@@ -175,6 +175,15 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
+			// tuple with array slice
+			"tuple(address[] a)",
+			map[string]interface{}{
+				"a": []web3.Address{
+					{0x1},
+				},
+			},
+		},
+		{
 			// First dynamic second static
 			"tuple(int32[] a, int32[2] b)",
 			map[string]interface{}{

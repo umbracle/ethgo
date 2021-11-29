@@ -451,7 +451,7 @@ func decodeSimpleType(str string) (*Type, error) {
 		return &Type{kind: KindBool, t: boolT, raw: "bool"}, nil
 
 	case "address":
-		return &Type{kind: KindAddress, t: addressT, raw: "address"}, nil
+		return &Type{kind: KindAddress, t: addressT, size: 20, raw: "address"}, nil
 
 	case "function":
 		return &Type{kind: KindFunction, size: 24, t: functionT, raw: "function"}, nil

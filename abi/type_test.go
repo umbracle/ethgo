@@ -48,6 +48,11 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
+			s: "address[]",
+			a: simpleType("address[]"),
+			t: &Type{kind: KindSlice, t: reflect.SliceOf(addressT), raw: "address[]", elem: &Type{kind: KindAddress, size: 20, t: addressT, raw: "address"}},
+		},
+		{
 			s: "string[]",
 			a: simpleType("string[]"),
 			t: &Type{
