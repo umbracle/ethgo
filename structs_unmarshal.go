@@ -113,6 +113,13 @@ func (t *Transaction) UnmarshalJSON(buf []byte) error {
 	return t.unmarshalJSON(v)
 }
 
+// isKeySet is a helper function for checking if a key has any value != nil,
+// or if it's been set at all
+func isKeySet(v *fastjson.Value, key string) bool {
+	value := v.Get(key)
+	return value != nil && value.Type() != fastjson.TypeNull
+}
+
 func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 	var err error
 	if err := decodeHash(&t.Hash, v, "hash"); err != nil {
@@ -158,15 +165,33 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return err
 	}
 
-	if err = decodeHash(&t.BlockHash, v, "blockHash"); err != nil {
-		return err
+	// The blockHash field can be nullable
+	if isKeySet(v, "blockHash") {
+		if err = decodeHash(t.BlockHash, v, "blockHash"); err != nil {
+			return err
+		}
 	}
-	if t.BlockNumber, err = decodeUint(v, "blockNumber"); err != nil {
-		return err
+
+	// The blockNumber field can be nullable
+	if isKeySet(v, "blockNumber") {
+		blockNumPtr, err := decodeUint(v, "blockNumber")
+		if err != nil {
+			return err
+		}
+
+		t.BlockNumber = &blockNumPtr
 	}
-	if t.TxnIndex, err = decodeUint(v, "transactionIndex"); err != nil {
-		return err
+
+	// the transactionIndex field can be nullable
+	if isKeySet(v, "transactionIndex") {
+		txnIndexPtr, err := decodeUint(v, "transactionIndex")
+		if err != nil {
+			return err
+		}
+
+		t.TxnIndex = &txnIndexPtr
 	}
+
 	return nil
 }
 
@@ -356,6 +381,12 @@ func decodeHash(h *Hash, v *fastjson.Value, key string) error {
 	if len(b) == 0 {
 		return fmt.Errorf("field '%s' not found", key)
 	}
+
+	// Make sure the memory location is initialized
+	if h == nil {
+		h = &Hash{}
+	}
+
 	h.UnmarshalText(b)
 	return nil
 }

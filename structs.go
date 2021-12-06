@@ -119,9 +119,9 @@ type Transaction struct {
 	V           []byte
 	R           []byte
 	S           []byte
-	BlockHash   Hash
-	BlockNumber uint64
-	TxnIndex    uint64
+	BlockHash   *Hash
+	BlockNumber *uint64
+	TxnIndex    *uint64
 }
 
 type CallMsg struct {
