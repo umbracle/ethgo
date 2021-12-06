@@ -165,31 +165,26 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return err
 	}
 
-	// The blockHash field can be nullable
+	// Check if the block hash field is set
+	// If it's not -> the transaction is a pending txn, so these fields should be omitted
+	// If it is -> the transaction is a sealed txn, so these fields should be included
 	if isKeySet(v, "blockHash") {
-		if err = decodeHash(t.BlockHash, v, "blockHash"); err != nil {
-			return err
-		}
-	}
+		// The transaction is not a pending transaction, read data
 
-	// The blockNumber field can be nullable
-	if isKeySet(v, "blockNumber") {
-		blockNumPtr, err := decodeUint(v, "blockNumber")
-		if err != nil {
+		// Grab the block hash
+		if err = decodeHash(&t.BlockHash, v, "blockHash"); err != nil {
 			return err
 		}
 
-		t.BlockNumber = &blockNumPtr
-	}
-
-	// the transactionIndex field can be nullable
-	if isKeySet(v, "transactionIndex") {
-		txnIndexPtr, err := decodeUint(v, "transactionIndex")
-		if err != nil {
+		// Grab the block number
+		if t.BlockNumber, err = decodeUint(v, "blockNumber"); err != nil {
 			return err
 		}
 
-		t.TxnIndex = &txnIndexPtr
+		// Grab the transaction index
+		if t.TxnIndex, err = decodeUint(v, "transactionIndex"); err != nil {
+			return err
+		}
 	}
 
 	return nil

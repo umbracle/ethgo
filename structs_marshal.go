@@ -113,21 +113,15 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 	o.Set("r", a.NewString("0x"+hex.EncodeToString(t.R)))
 	o.Set("s", a.NewString("0x"+hex.EncodeToString(t.R)))
 
-	if t.BlockHash == nil {
+	if t.BlockHash == ZeroHash {
+		// The transaction is a pending transaction
 		o.Set("blockHash", a.NewNull())
-	} else {
-		o.Set("blockHash", a.NewString(t.BlockHash.String()))
-	}
-
-	if t.BlockNumber == nil {
 		o.Set("blockNumber", a.NewNull())
-	} else {
-		o.Set("blockNumber", a.NewString(fmt.Sprintf("0x%x", t.BlockNumber)))
-	}
-
-	if t.TxnIndex == nil {
 		o.Set("transactionIndex", a.NewNull())
 	} else {
+		// The transaction has valid metadata fields, fill them
+		o.Set("blockHash", a.NewString(t.BlockHash.String()))
+		o.Set("blockNumber", a.NewString(fmt.Sprintf("0x%x", t.BlockNumber)))
 		o.Set("transactionIndex", a.NewString(fmt.Sprintf("0x%x", t.TxnIndex)))
 	}
 
