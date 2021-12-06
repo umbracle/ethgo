@@ -73,7 +73,7 @@ func TestJSONEncoding(t *testing.T) {
 				"v":"0x25",
 				"r":"{{.Hash1}}",
 				"s":"{{.Hash1}}",
-				"blockHash": "{{.Hash0}}",
+				"blockHash": "{{.Hash1}}",
 				"blockNumber": "0x0",
 				"transactionIndex": "0x0"
 			}`,
@@ -92,7 +92,7 @@ func TestJSONEncoding(t *testing.T) {
 				"v":"0x25",
 				"r":"{{.Hash1}}",
 				"s":"{{.Hash1}}",
-				"blockHash": "{{.Hash0}}",
+				"blockHash": "{{.Hash1}}",
 				"blockNumber": "0x0",
 				"transactionIndex": "0x0"
 			}`,
