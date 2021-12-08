@@ -78,7 +78,7 @@ func signHash(tx *web3.Transaction, chainID uint64) []byte {
 		v.Set(a.NewUint(0))
 	}
 
-	hash := keccak256(v.MarshalTo(nil))
+	hash := web3.Keccak256(v.MarshalTo(nil))
 	fastrlp.DefaultArenaPool.Put(a)
 	return hash
 }

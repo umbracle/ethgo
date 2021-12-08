@@ -7,7 +7,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/umbracle/go-web3"
-	"golang.org/x/crypto/sha3"
 )
 
 // S256 is the secp256k1 elliptic curve
@@ -31,7 +30,7 @@ func (k *Key) MarshallPrivateKey() ([]byte, error) {
 }
 
 func (k *Key) SignMsg(msg []byte) ([]byte, error) {
-	return k.Sign(keccak256(msg))
+	return k.Sign(web3.Keccak256(msg))
 }
 
 func (k *Key) Sign(hash []byte) ([]byte, error) {
@@ -56,7 +55,7 @@ func NewKey(priv *ecdsa.PrivateKey) *Key {
 }
 
 func pubKeyToAddress(pub *ecdsa.PublicKey) (addr web3.Address) {
-	b := keccak256(elliptic.Marshal(S256, pub.X, pub.Y)[1:])
+	b := web3.Keccak256(elliptic.Marshal(S256, pub.X, pub.Y)[1:])
 	copy(addr[:], b[12:])
 	return
 }
@@ -71,7 +70,7 @@ func GenerateKey() (*Key, error) {
 }
 
 func EcrecoverMsg(msg, signature []byte) (web3.Address, error) {
-	return Ecrecover(keccak256(msg), signature)
+	return Ecrecover(web3.Keccak256(msg), signature)
 }
 
 func Ecrecover(hash, signature []byte) (web3.Address, error) {
@@ -95,13 +94,4 @@ func RecoverPubkey(signature, hash []byte) (*ecdsa.PublicKey, error) {
 		return nil, err
 	}
 	return pub.ToECDSA(), nil
-}
-
-func keccak256(buf ...[]byte) []byte {
-	h := sha3.NewLegacyKeccak256()
-	for _, i := range buf {
-		h.Write(i)
-	}
-	b := h.Sum(nil)
-	return b
 }
