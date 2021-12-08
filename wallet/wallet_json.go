@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/umbracle/go-web3"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/scrypt"
 )
@@ -126,7 +127,7 @@ func (c *cryptoEncoding) getKDF(password []byte) ([]byte, error) {
 	}
 
 	// validate mac
-	mac := keccak256(key[16:32], c.CipherText)
+	mac := web3.Keccak256(key[16:32], c.CipherText)
 	if !bytes.Equal(mac, c.Mac) {
 		return nil, fmt.Errorf("incorrect mac")
 	}
