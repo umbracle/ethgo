@@ -229,3 +229,8 @@ func min(i, j int) int {
 	}
 	return j
 }
+
+type Key interface {
+	Address() Address
+	Sign(hash []byte) ([]byte, error)
+}

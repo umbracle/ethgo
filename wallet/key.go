@@ -13,6 +13,9 @@ import (
 // S256 is the secp256k1 elliptic curve
 var S256 = btcec.S256()
 
+var _ web3.Key = &Key{}
+
+// Key is an implementation of the Key interface with a private key
 type Key struct {
 	priv *ecdsa.PrivateKey
 	pub  *ecdsa.PublicKey
@@ -43,7 +46,8 @@ func (k *Key) Sign(hash []byte) ([]byte, error) {
 	return append(sig, term)[1:], nil
 }
 
-func newKey(priv *ecdsa.PrivateKey) *Key {
+// NewKey creates a new key with a private key
+func NewKey(priv *ecdsa.PrivateKey) *Key {
 	return &Key{
 		priv: priv,
 		pub:  &priv.PublicKey,
@@ -63,7 +67,7 @@ func GenerateKey() (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newKey(priv), nil
+	return NewKey(priv), nil
 }
 
 func EcrecoverMsg(msg, signature []byte) (web3.Address, error) {

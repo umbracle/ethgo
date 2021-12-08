@@ -88,5 +88,5 @@ func NewWalletFromMnemonic(mnemonic string) (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newKey(priv), nil
+	return NewKey(priv), nil
 }
