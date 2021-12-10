@@ -20,7 +20,7 @@
             "version": 3
         },
         "password": "testpassword",
-        "address": "0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
+        "address": "0x008AeEda4D805471dF9b2A5B0f38A0C3bCBA786b"
     },
     {
         "wallet": {
@@ -44,6 +44,6 @@
             "version" : 3
         },
         "password": "testpassword",
-        "address": "0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
+        "address": "0x008AeEda4D805471dF9b2A5B0f38A0C3bCBA786b"
     }
 ]
