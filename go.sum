@@ -120,6 +120,8 @@ github.com/umbracle/fastrlp v0.0.0-20211228220138-9c20635803fb h1:jFYwAm/Nn6aWh2
 github.com/umbracle/fastrlp v0.0.0-20211228220138-9c20635803fb/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
 github.com/umbracle/fastrlp v0.0.0-20211228223544-26f56490122f h1:swxOU4cwCfjk8Uv/80lOantbwVAoUIzDgm+sZpqX/oY=
 github.com/umbracle/fastrlp v0.0.0-20211228223544-26f56490122f/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
+github.com/umbracle/fastrlp v0.0.0-20211229195328-c1416904ae17 h1:ZZy8Rj2SqGcZn1hTcoLdwFBROzrf5KiuRwhp8G4nnfA=
+github.com/umbracle/fastrlp v0.0.0-20211229195328-c1416904ae17/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasthttp v1.4.0 h1:PuaTGZIw3mjYhhhbVbCQp8aciRZN9YdoB7MGX9Ko76A=
