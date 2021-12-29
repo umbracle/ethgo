@@ -59,7 +59,7 @@ func TestSendSignedTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, from, key.Address())
 
-	data := txn.MarshalRLP()
+	data, _ := txn.MarshalRLPTo(nil)
 	hash, err := c.Eth().SendRawTransaction(data)
 	assert.NoError(t, err)
 
