@@ -128,22 +128,52 @@ type Block struct {
 	Uncles             []Hash
 }
 
+type TransactionType int
+
+const (
+	TransactionLegacy TransactionType = 0
+	// eip-2930
+	TransactionAccessList TransactionType = 1
+	// eip-1559
+	TransactionDynamicFee TransactionType = 2
+)
+
 type Transaction struct {
-	Hash        Hash
-	From        Address
-	To          *Address
-	Input       []byte
-	GasPrice    uint64
-	Gas         uint64
-	Value       *big.Int
-	Nonce       uint64
-	V           []byte
-	R           []byte
-	S           []byte
+	Type TransactionType
+
+	// legacy values
+	Hash     Hash
+	From     Address
+	To       *Address
+	Input    []byte
+	GasPrice uint64
+	Gas      uint64
+	Value    *big.Int
+	Nonce    uint64
+	V        []byte
+	R        []byte
+	S        []byte
+
+	// jsonrpc values
 	BlockHash   Hash
 	BlockNumber uint64
 	TxnIndex    uint64
+
+	// eip-2930 values
+	ChainID    *big.Int
+	AccessList AccessList
+
+	// eip-1559 values
+	MaxPriorityFeePerGas *big.Int
+	MaxFeePerGas         *big.Int
 }
+
+type AccessEntry struct {
+	Address Address
+	Storage []Hash
+}
+
+type AccessList []AccessEntry
 
 type CallMsg struct {
 	From     Address
@@ -204,8 +234,8 @@ type BlockNumber int
 
 const (
 	Latest   BlockNumber = -1
-	Earliest             = -2
-	Pending              = -3
+	Earliest BlockNumber = -2
+	Pending  BlockNumber = -3
 )
 
 func (b BlockNumber) Location() string {
