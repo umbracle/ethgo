@@ -22,7 +22,7 @@ type Address [20]byte
 // HexToAddress converts an hex string value to an address object
 func HexToAddress(str string) Address {
 	a := Address{}
-	a.UnmarshalText([]byte(str))
+	a.UnmarshalText(completeHex(str, 20))
 	return a
 }
 
@@ -45,6 +45,11 @@ func (a *Address) UnmarshalText(b []byte) error {
 // MarshalText implements the marshal interface
 func (a Address) MarshalText() ([]byte, error) {
 	return []byte(a.String()), nil
+}
+
+// Bytes returns the bytes of the Address
+func (a Address) Bytes() []byte {
+	return a[:]
 }
 
 func (a Address) String() string {
@@ -76,7 +81,7 @@ type Hash [32]byte
 // HexToHash converts an hex string value to a hash object
 func HexToHash(str string) Hash {
 	h := Hash{}
-	h.UnmarshalText([]byte(str))
+	h.UnmarshalText(completeHex(str, 32))
 	return h
 }
 
@@ -99,6 +104,11 @@ func (h *Hash) UnmarshalText(b []byte) error {
 // MarshalText implements the marshal interface
 func (h Hash) MarshalText() ([]byte, error) {
 	return []byte(h.String()), nil
+}
+
+// Bytes returns the bytes of the Hash
+func (h Hash) Bytes() []byte {
+	return h[:]
 }
 
 func (h Hash) String() string {
@@ -284,4 +294,20 @@ func min(i, j int) int {
 type Key interface {
 	Address() Address
 	Sign(hash []byte) ([]byte, error)
+}
+
+func completeHex(str string, num int) []byte {
+	num = num * 2
+	str = strings.TrimPrefix(str, "0x")
+
+	size := len(str)
+	if size < num {
+		for i := size; i < num; i++ {
+			str = "0" + str
+		}
+	} else {
+		diff := size - num
+		str = str[diff:]
+	}
+	return []byte("0x" + str)
 }
