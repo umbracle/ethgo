@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAddressChecksum(t *testing.T) {
+func TestAddress_Checksum(t *testing.T) {
 	cases := []struct {
 		src, dst string
 	}{
@@ -31,4 +31,14 @@ func TestAddressChecksum(t *testing.T) {
 		addr := HexToAddress(c.src)
 		assert.Equal(t, addr.String(), c.dst)
 	}
+}
+
+func TestAddress_HexToString(t *testing.T) {
+	assert.Equal(t, HexToAddress("0x1").String(), "0x0000000000000000000000000000000000000001")
+	assert.Equal(t, HexToAddress("00000000000000000000000000000000000000001").String(), "0x0000000000000000000000000000000000000001")
+	assert.Equal(t, HexToAddress("0000000000000000000000000000000000000001").String(), "0x0000000000000000000000000000000000000001")
+}
+
+func TestHash_HexToString(t *testing.T) {
+	assert.Equal(t, HexToHash("1").String(), "0x0000000000000000000000000000000000000000000000000000000000000001")
 }
