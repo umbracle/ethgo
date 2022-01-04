@@ -19,6 +19,7 @@ type ABI struct {
 	Constructor *Method
 	Methods     map[string]*Method
 	Events      map[string]*Event
+	Errors      map[string]*Error
 }
 
 func (a *ABI) GetMethod(name string) *Method {
@@ -26,8 +27,15 @@ func (a *ABI) GetMethod(name string) *Method {
 	return m
 }
 
+func (a *ABI) addError(e *Error) {
+	if len(a.Errors) == 0 {
+		a.Errors = map[string]*Error{}
+	}
+	a.Errors[e.Name] = e
+}
+
 func (a *ABI) addEvent(e *Event) {
-	if len(a.Methods) == 0 {
+	if len(a.Events) == 0 {
 		a.Events = map[string]*Event{}
 	}
 	a.Events[e.Name] = e
@@ -82,6 +90,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 
 	a.Methods = make(map[string]*Method)
 	a.Events = make(map[string]*Event)
+	a.Errors = make(map[string]*Error)
 
 	for _, field := range fields {
 		switch field.Type {
@@ -111,6 +120,12 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 				Name:      field.Name,
 				Anonymous: field.Anonymous,
 				Inputs:    field.Inputs.Type(),
+			}
+
+		case "error":
+			a.Errors[field.Name] = &Error{
+				Name:   field.Name,
+				Inputs: field.Inputs.Type(),
 			}
 
 		case "fallback":
@@ -250,15 +265,45 @@ func MustNewEvent(name string) *Event {
 
 // NewEvent creates a new solidity event object using the signature
 func NewEvent(name string) (*Event, error) {
-	name, typ, err := parseEventSignature(name)
+	name, typ, err := parseEventOrErrorSignature(name)
 	if err != nil {
 		return nil, err
 	}
 	return NewEventFromType(name, typ), nil
 }
 
-func parseEventSignature(name string) (string, *Type, error) {
-	name = strings.TrimPrefix(name, "event ")
+// Error is a solidity error
+type Error struct {
+	Name   string
+	Inputs *Type
+}
+
+// NewError creates a new solidity error object using the signature
+func NewError(name string) (*Error, error) {
+	name, typ, err := parseEventOrErrorSignature(name)
+	if err != nil {
+		return nil, err
+	}
+	return &Error{Name: name, Inputs: typ}, nil
+}
+
+func parseEventOrErrorSignature(name string) (string, *Type, error) {
+	// the prefix can be either for an 'event' or an 'error'
+	prefix := []string{
+		"event ",
+		"error ",
+	}
+	found := false
+	for _, p := range prefix {
+		if strings.HasPrefix(name, p) {
+			name = strings.TrimPrefix(name, p)
+			found = true
+		}
+	}
+	if !found {
+		return "", nil, fmt.Errorf("signature is neither for 'error' nor 'event'")
+	}
+
 	if !strings.HasSuffix(name, ")") {
 		return "", nil, fmt.Errorf("failed to parse input, expected 'name(types)'")
 	}
@@ -384,12 +429,21 @@ func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
 				return nil, err
 			}
 			res.addMethod(method)
+
 		} else if strings.HasPrefix(c, "event ") {
 			evnt, err := NewEvent(c)
 			if err != nil {
 				return nil, err
 			}
 			res.addEvent(evnt)
+
+		} else if strings.HasPrefix(c, "error ") {
+			errTyp, err := NewError(c)
+			if err != nil {
+				return nil, err
+			}
+			res.addError(errTyp)
+
 		} else {
 			return nil, fmt.Errorf("either event or function expected")
 		}

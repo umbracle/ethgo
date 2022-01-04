@@ -18,17 +18,43 @@ func TestAbi(t *testing.T) {
 				{
 					"name": "abc",
 					"type": "function"
+				},
+				{
+					"name": "bcd",
+					"type": "error"
+				},
+				{
+					"name": "cde",
+					"type": "event",
+					"inputs": [
+						{
+							"indexed": true,
+							"name": "a",
+							"type": "address"
+						}
+					]
 				}
 			]`,
 			Output: &ABI{
 				Methods: map[string]*Method{
-					"abc": &Method{
+					"abc": {
 						Name:    "abc",
 						Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
 						Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
 					},
 				},
-				Events: map[string]*Event{},
+				Events: map[string]*Event{
+					"cde": {
+						Name:   "cde",
+						Inputs: MustNewType("tuple(address indexed a)"),
+					},
+				},
+				Errors: map[string]*Error{
+					"bcd": {
+						Name:   "bcd",
+						Inputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+					},
+				},
 			},
 		},
 	}
@@ -41,6 +67,8 @@ func TestAbi(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(abi, c.Output) {
+				fmt.Println(abi.Events["cde"])
+				fmt.Println(c.Output.Events["cde"])
 				t.Fatal("bad")
 			}
 		})
@@ -51,6 +79,7 @@ func TestAbi_HumanReadable(t *testing.T) {
 	cases := []string{
 		"event Transfer(address from, address to, uint256 amount)",
 		"function symbol() returns (string)",
+		"error A(int256 a)",
 	}
 	vv, err := NewABIFromList(cases)
 	assert.NoError(t, err)
@@ -106,5 +135,33 @@ func TestAbi_ParseMethodSignature(t *testing.T) {
 		} else {
 			assert.Equal(t, c.output, "")
 		}
+	}
+}
+
+func TestAbi_ParseEventErrorSignature(t *testing.T) {
+	cases := []struct {
+		signature string
+		name      string
+		typ       string
+	}{
+		{
+			signature: "event A(int256 a, int256 b)",
+			name:      "A",
+			typ:       "(int256,int256)",
+		},
+		{
+			signature: "error A(int256 a, int256 b)",
+			name:      "A",
+			typ:       "(int256,int256)",
+		},
+	}
+
+	for _, c := range cases {
+		name, typ, err := parseEventOrErrorSignature(c.signature)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, name, c.name)
+		assert.Equal(t, c.typ, typ.String())
 	}
 }
