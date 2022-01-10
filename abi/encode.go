@@ -1,6 +1,7 @@
 package abi
 
 import (
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -178,6 +179,19 @@ func encodeAddress(v reflect.Value) ([]byte, error) {
 	if v.Kind() == reflect.Array {
 		v = convertArrayToBytes(v)
 	}
+	if v.Kind() == reflect.String {
+		strValue := v.String()
+		if !strings.HasPrefix(strValue, "0x") {
+			return nil, fmt.Errorf("missing 0x prefix")
+		}
+
+		bytesValue, err := hex.DecodeString(strings.TrimPrefix("0x", strValue))
+		if err != nil {
+			return nil, fmt.Errorf("invalid address %s", strValue)
+		}
+
+		return encodeAddress(reflect.ValueOf(bytesValue))
+	}
 	return leftPad(v.Bytes(), 32), nil
 }
 
@@ -222,6 +236,8 @@ func encodeNum(v reflect.Value) ([]byte, error) {
 		}
 		return toU256(v.Interface().(*big.Int)), nil
 
+	case reflect.Float64:
+		return encodeNum(reflect.ValueOf(int64(v.Float())))
 	default:
 		return nil, encodeErr(v, "number")
 	}

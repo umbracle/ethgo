@@ -184,6 +184,20 @@ func TestEncoding(t *testing.T) {
 			},
 		},
 		{
+			// tuple with address as string
+			"tuple(address a)",
+			map[string]interface{}{
+				"a": web3.Address{0x1}.String(),
+			},
+		},
+		{
+			// tuple address and input as string
+			"tuple(address[] a)",
+			map[string]interface{}{
+				"a": []string{web3.Address{0x1}.String(), web3.Address{0x2}.String()},
+			},
+		},
+		{
 			// First dynamic second static
 			"tuple(int32[] a, int32[2] b)",
 			map[string]interface{}{
