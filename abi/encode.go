@@ -2,6 +2,7 @@ package abi
 
 import (
 	"fmt"
+	"github.com/umbracle/go-web3"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -178,6 +179,13 @@ func encodeAddress(v reflect.Value) ([]byte, error) {
 	if v.Kind() == reflect.Array {
 		v = convertArrayToBytes(v)
 	}
+	if v.Kind() == reflect.String {
+		var addr web3.Address
+		if err := addr.UnmarshalText([]byte(v.String())); err != nil {
+			return nil, err
+		}
+		v = reflect.ValueOf(addr.Bytes())
+	}
 	return leftPad(v.Bytes(), 32), nil
 }
 
@@ -222,6 +230,8 @@ func encodeNum(v reflect.Value) ([]byte, error) {
 		}
 		return toU256(v.Interface().(*big.Int)), nil
 
+	case reflect.Float64:
+		return encodeNum(reflect.ValueOf(int64(v.Float())))
 	default:
 		return nil, encodeErr(v, "number")
 	}

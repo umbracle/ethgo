@@ -9,6 +9,11 @@ import (
 )
 
 func TestAbi(t *testing.T) {
+	methodOutput := &Method{
+		Name:    "abc",
+		Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+		Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+	}
 	cases := []struct {
 		Input  string
 		Output *ABI
@@ -22,11 +27,10 @@ func TestAbi(t *testing.T) {
 			]`,
 			Output: &ABI{
 				Methods: map[string]*Method{
-					"abc": &Method{
-						Name:    "abc",
-						Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-						Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-					},
+					"abc": methodOutput,
+				},
+				MethodsBySignature: map[string]*Method{
+					"abc()": methodOutput,
 				},
 				Events: map[string]*Event{},
 			},
@@ -45,6 +49,76 @@ func TestAbi(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAbi_Polymorphism(t *testing.T) {
+	// This ABI contains 2 "transfer" functions (polymorphism)
+	const polymorphicABI = `[
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "_token",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+		{
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ]`
+
+	abi, err := NewABI(polymorphicABI)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Len(t, abi.Methods, 2)
+	assert.Equal(t, abi.GetMethod("transfer").Sig(), "transfer(address,address,uint256)")
+	assert.Equal(t, abi.GetMethod("transfer0").Sig(), "transfer(address,uint256)")
+	assert.NotEmpty(t, abi.GetMethodBySignature("transfer(address,address,uint256)"))
+	assert.NotEmpty(t, abi.GetMethodBySignature("transfer(address,uint256)"))
 }
 
 func TestAbi_HumanReadable(t *testing.T) {

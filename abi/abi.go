@@ -16,13 +16,19 @@ import (
 
 // ABI represents the ethereum abi format
 type ABI struct {
-	Constructor *Method
-	Methods     map[string]*Method
-	Events      map[string]*Event
+	Constructor        *Method
+	Methods            map[string]*Method
+	MethodsBySignature map[string]*Method
+	Events             map[string]*Event
 }
 
 func (a *ABI) GetMethod(name string) *Method {
 	m := a.Methods[name]
+	return m
+}
+
+func (a *ABI) GetMethodBySignature(methodSignature string) *Method {
+	m := a.MethodsBySignature[methodSignature]
 	return m
 }
 
@@ -37,7 +43,11 @@ func (a *ABI) addMethod(m *Method) {
 	if len(a.Methods) == 0 {
 		a.Methods = map[string]*Method{}
 	}
+	if len(a.MethodsBySignature) == 0 {
+		a.MethodsBySignature = map[string]*Method{}
+	}
 	a.Methods[m.Name] = m
+	a.MethodsBySignature[m.Sig()] = m
 }
 
 // NewABI returns a parsed ABI struct
@@ -81,6 +91,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 	}
 
 	a.Methods = make(map[string]*Method)
+	a.MethodsBySignature = make(map[string]*Method)
 	a.Events = make(map[string]*Event)
 
 	for _, field := range fields {
@@ -99,15 +110,19 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 				c = true
 			}
 
-			a.Methods[field.Name] = &Method{
+			name := overloadedName(field.Name, func(s string) bool { _, ok := a.Methods[s]; return ok })
+			method := &Method{
 				Name:    field.Name,
 				Const:   c,
 				Inputs:  field.Inputs.Type(),
 				Outputs: field.Outputs.Type(),
 			}
+			a.Methods[name] = method
+			a.MethodsBySignature[method.Sig()] = method
 
 		case "event":
-			a.Events[field.Name] = &Event{
+			name := overloadedName(field.Name, func(s string) bool { _, ok := a.Events[s]; return ok })
+			a.Events[name] = &Event{
 				Name:      field.Name,
 				Anonymous: field.Anonymous,
 				Inputs:    field.Inputs.Type(),
@@ -395,4 +410,14 @@ func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
 		}
 	}
 	return res, nil
+}
+
+func overloadedName(rawName string, isAvail func(string) bool) string {
+	name := rawName
+	ok := isAvail(name)
+	for idx := 0; ok; idx++ {
+		name = fmt.Sprintf("%s%d", rawName, idx)
+		ok = isAvail(name)
+	}
+	return name
 }
