@@ -8,21 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAbi(t *testing.T) {
+func TestAbiXX(t *testing.T) {
 	cases := []struct {
 		Input  string
 		Output *ABI
 	}{
 		{
 			Input: `[
-				{
-					"name": "abc",
-					"type": "function"
-				},
-				{
-					"name": "bcd",
-					"type": "error"
-				},
 				{
 					"name": "cde",
 					"type": "event",
@@ -33,26 +25,57 @@ func TestAbi(t *testing.T) {
 							"type": "address"
 						}
 					]
+				},
+				{
+					"name": "def",
+					"type": "error",
+					"inputs": [
+						{
+							"indexed": true,
+							"name": "a",
+							"type": "address"
+						}
+					]
+				},
+				{
+					"type": "function",
+					"name": "balanceOf",
+					"constant": true,
+					"stateMutability": "view",
+				 	"payable": false,
+					"inputs": [
+						{
+					    	"type": "address",
+					    	"name": "owner"
+					   	}
+					],
+					"outputs": [
+						{
+					    	"type": "uint256",
+					    	"name": "balance"
+					   	}
+					]
 				}
 			]`,
 			Output: &ABI{
-				Methods: map[string]*Method{
-					"abc": {
-						Name:    "abc",
-						Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-						Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-					},
-				},
 				Events: map[string]*Event{
 					"cde": {
 						Name:   "cde",
 						Inputs: MustNewType("tuple(address indexed a)"),
 					},
 				},
+				Methods: map[string]*Method{
+					"balanceOf": {
+						Name:    "balanceOf",
+						Const:   true,
+						Inputs:  MustNewType("tuple(address owner)"),
+						Outputs: MustNewType("tuple(uint256 balance)"),
+					},
+				},
 				Errors: map[string]*Error{
-					"bcd": {
-						Name:   "bcd",
-						Inputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+					"def": {
+						Name:   "def",
+						Inputs: MustNewType("tuple(address indexed a)"),
 					},
 				},
 			},
@@ -67,10 +90,10 @@ func TestAbi(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(abi, c.Output) {
-				fmt.Println(abi.Events["cde"])
-				fmt.Println(c.Output.Events["cde"])
+				fmt.Println(reflect.DeepEqual(abi.Methods["balanceOf"].Outputs, c.Output.Methods["balanceOf"].Outputs))
 				t.Fatal("bad")
 			}
+
 		})
 	}
 }

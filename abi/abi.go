@@ -80,8 +80,8 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 		Constant        bool
 		Anonymous       bool
 		StateMutability string
-		Inputs          arguments
-		Outputs         arguments
+		Inputs          []*ArgumentStr
+		Outputs         []*ArgumentStr
 	}
 
 	if err := json.Unmarshal(data, &fields); err != nil {
@@ -98,9 +98,11 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 			if a.Constructor != nil {
 				return fmt.Errorf("multiple constructor declaration")
 			}
-			a.Constructor = &Method{
-				Inputs: field.Inputs.Type(),
-			}
+			/*
+				a.Constructor = &Method{
+					Inputs: field.Inputs.Type(),
+				}
+			*/
 
 		case "function", "":
 			c := field.Constant
@@ -108,24 +110,40 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 				c = true
 			}
 
+			inputs, err := NewTupleTypeFromArgs(field.Inputs)
+			if err != nil {
+				panic(err)
+			}
+			outputs, err := NewTupleTypeFromArgs(field.Outputs)
+			if err != nil {
+				panic(err)
+			}
 			a.Methods[field.Name] = &Method{
 				Name:    field.Name,
 				Const:   c,
-				Inputs:  field.Inputs.Type(),
-				Outputs: field.Outputs.Type(),
+				Inputs:  inputs,
+				Outputs: outputs,
 			}
 
 		case "event":
+			input, err := NewTupleTypeFromArgs(field.Inputs)
+			if err != nil {
+				panic(err)
+			}
 			a.Events[field.Name] = &Event{
 				Name:      field.Name,
 				Anonymous: field.Anonymous,
-				Inputs:    field.Inputs.Type(),
+				Inputs:    input,
 			}
 
 		case "error":
+			input, err := NewTupleTypeFromArgs(field.Inputs)
+			if err != nil {
+				panic(err)
+			}
 			a.Errors[field.Name] = &Error{
 				Name:   field.Name,
-				Inputs: field.Inputs.Type(),
+				Inputs: input,
 			}
 
 		case "fallback":
@@ -349,52 +367,9 @@ func (e *Event) ParseLog(log *web3.Log) (map[string]interface{}, error) {
 func buildSignature(name string, typ *Type) string {
 	types := make([]string, len(typ.tuple))
 	for i, input := range typ.tuple {
-		types[i] = input.Elem.raw
+		types[i] = input.Elem.String()
 	}
 	return fmt.Sprintf("%v(%v)", name, strings.Join(types, ","))
-}
-
-type argument struct {
-	Name    string
-	Type    *Type
-	Indexed bool
-}
-
-type arguments []*argument
-
-func (a *arguments) Type() *Type {
-	inputs := []*TupleElem{}
-	for _, i := range *a {
-		inputs = append(inputs, &TupleElem{
-			Name:    i.Name,
-			Elem:    i.Type,
-			Indexed: i.Indexed,
-		})
-	}
-
-	tt := &Type{
-		kind:  KindTuple,
-		raw:   "tuple",
-		tuple: inputs,
-	}
-	return tt
-}
-
-func (a *argument) UnmarshalJSON(data []byte) error {
-	var arg *ArgumentStr
-	if err := json.Unmarshal(data, &arg); err != nil {
-		return fmt.Errorf("argument json err: %v", err)
-	}
-
-	t, err := NewTypeFromArgument(arg)
-	if err != nil {
-		return err
-	}
-
-	a.Type = t
-	a.Name = arg.Name
-	a.Indexed = arg.Indexed
-	return nil
 }
 
 // ArgumentStr encodes a type object
