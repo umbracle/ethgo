@@ -3,6 +3,8 @@ package abi
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestType(t *testing.T) {
@@ -10,27 +12,28 @@ func TestType(t *testing.T) {
 		s   string
 		a   *ArgumentStr
 		t   *Type
+		r   string
 		err bool
 	}{
 		{
 			s: "bool",
 			a: simpleType("bool"),
-			t: &Type{kind: KindBool, t: boolT, raw: "bool"},
+			t: &Type{kind: KindBool, t: boolT},
 		},
 		{
 			s: "uint32",
 			a: simpleType("uint32"),
-			t: &Type{kind: KindUInt, size: 32, t: uint32T, raw: "uint32"},
+			t: &Type{kind: KindUInt, size: 32, t: uint32T},
 		},
 		{
 			s: "int32",
 			a: simpleType("int32"),
-			t: &Type{kind: KindInt, size: 32, t: int32T, raw: "int32"},
+			t: &Type{kind: KindInt, size: 32, t: int32T},
 		},
 		{
 			s: "int32[]",
 			a: simpleType("int32[]"),
-			t: &Type{kind: KindSlice, t: reflect.SliceOf(int32T), raw: "int32[]", elem: &Type{kind: KindInt, size: 32, t: int32T, raw: "int32"}},
+			t: &Type{kind: KindSlice, t: reflect.SliceOf(int32T), elem: &Type{kind: KindInt, size: 32, t: int32T}},
 		},
 		{
 			s: "bytes[2]",
@@ -38,19 +41,17 @@ func TestType(t *testing.T) {
 			t: &Type{
 				kind: KindArray,
 				t:    reflect.ArrayOf(2, dynamicBytesT),
-				raw:  "bytes[2]",
 				size: 2,
 				elem: &Type{
 					kind: KindBytes,
 					t:    dynamicBytesT,
-					raw:  "bytes",
 				},
 			},
 		},
 		{
 			s: "address[]",
 			a: simpleType("address[]"),
-			t: &Type{kind: KindSlice, t: reflect.SliceOf(addressT), raw: "address[]", elem: &Type{kind: KindAddress, size: 20, t: addressT, raw: "address"}},
+			t: &Type{kind: KindSlice, t: reflect.SliceOf(addressT), elem: &Type{kind: KindAddress, size: 20, t: addressT}},
 		},
 		{
 			s: "string[]",
@@ -58,11 +59,9 @@ func TestType(t *testing.T) {
 			t: &Type{
 				kind: KindSlice,
 				t:    reflect.SliceOf(stringT),
-				raw:  "string[]",
 				elem: &Type{
 					kind: KindString,
 					t:    stringT,
-					raw:  "string",
 				},
 			},
 		},
@@ -73,11 +72,9 @@ func TestType(t *testing.T) {
 				kind: KindArray,
 				size: 2,
 				t:    reflect.ArrayOf(2, stringT),
-				raw:  "string[2]",
 				elem: &Type{
 					kind: KindString,
 					t:    stringT,
-					raw:  "string",
 				},
 			},
 		},
@@ -88,16 +85,13 @@ func TestType(t *testing.T) {
 			t: &Type{
 				kind: KindSlice,
 				t:    reflect.SliceOf(reflect.ArrayOf(2, stringT)),
-				raw:  "string[2][]",
 				elem: &Type{
 					kind: KindArray,
 					size: 2,
 					t:    reflect.ArrayOf(2, stringT),
-					raw:  "string[2]",
 					elem: &Type{
 						kind: KindString,
 						t:    stringT,
-						raw:  "string",
 					},
 				},
 			},
@@ -116,7 +110,6 @@ func TestType(t *testing.T) {
 			},
 			t: &Type{
 				kind: KindTuple,
-				raw:  "(int64)",
 				t:    tupleT,
 				tuple: []*TupleElem{
 					{
@@ -125,7 +118,6 @@ func TestType(t *testing.T) {
 							kind: KindInt,
 							size: 64,
 							t:    int64T,
-							raw:  "int64",
 						},
 						Indexed: true,
 					},
@@ -146,11 +138,9 @@ func TestType(t *testing.T) {
 			t: &Type{
 				kind: KindArray,
 				size: 2,
-				raw:  "(int64)[2]",
 				t:    reflect.ArrayOf(2, tupleT),
 				elem: &Type{
 					kind: KindTuple,
-					raw:  "(int64)",
 					t:    tupleT,
 					tuple: []*TupleElem{
 						{
@@ -159,7 +149,6 @@ func TestType(t *testing.T) {
 								kind: KindInt,
 								size: 64,
 								t:    int64T,
-								raw:  "int64",
 							},
 						},
 					},
@@ -179,11 +168,9 @@ func TestType(t *testing.T) {
 			},
 			t: &Type{
 				kind: KindSlice,
-				raw:  "(int64)[]",
 				t:    reflect.SliceOf(tupleT),
 				elem: &Type{
 					kind: KindTuple,
-					raw:  "(int64)",
 					t:    tupleT,
 					tuple: []*TupleElem{
 						{
@@ -192,7 +179,6 @@ func TestType(t *testing.T) {
 								kind: KindInt,
 								size: 64,
 								t:    int64T,
-								raw:  "int64",
 							},
 						},
 					},
@@ -200,7 +186,7 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
-			s: "tuple(int32 indexed arg0, tuple(int32 c) b_2)",
+			s: "tuple(int32 indexed arg0,tuple(int32 c) b_2)",
 			a: &ArgumentStr{
 				Type: "tuple",
 				Components: []*ArgumentStr{
@@ -224,7 +210,6 @@ func TestType(t *testing.T) {
 			t: &Type{
 				kind: KindTuple,
 				t:    tupleT,
-				raw:  "(int32,(int32))",
 				tuple: []*TupleElem{
 					{
 						Name: "arg0",
@@ -232,7 +217,6 @@ func TestType(t *testing.T) {
 							kind: KindInt,
 							size: 32,
 							t:    int32T,
-							raw:  "int32",
 						},
 						Indexed: true,
 					},
@@ -241,7 +225,6 @@ func TestType(t *testing.T) {
 						Elem: &Type{
 							kind: KindTuple,
 							t:    tupleT,
-							raw:  "(int32)",
 							tuple: []*TupleElem{
 								{
 									Name: "c",
@@ -249,7 +232,6 @@ func TestType(t *testing.T) {
 										kind: KindInt,
 										size: 32,
 										t:    int32T,
-										raw:  "int32",
 									},
 								},
 							},
@@ -266,7 +248,6 @@ func TestType(t *testing.T) {
 			},
 			t: &Type{
 				kind:  KindTuple,
-				raw:   "()",
 				t:     tupleT,
 				tuple: []*TupleElem{},
 			},
@@ -308,6 +289,13 @@ func TestType(t *testing.T) {
 			}
 
 			if !c.err {
+				// compare the string
+				expected := c.s
+				if c.r != "" {
+					expected = c.r
+				}
+				assert.Equal(t, expected, e0.Format(true))
+
 				e1, err := NewTypeFromArgument(c.a)
 				if err != nil {
 					t.Fatal(err)
