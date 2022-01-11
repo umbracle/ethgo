@@ -91,6 +91,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 	}
 
 	a.Methods = make(map[string]*Method)
+	a.MethodsBySignature = make(map[string]*Method)
 	a.Events = make(map[string]*Event)
 
 	for _, field := range fields {
@@ -111,7 +112,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 
 			name := overloadedName(field.Name, func(s string) bool { _, ok := a.Methods[s]; return ok })
 			method := &Method{
-				Name:    name,
+				Name:    field.Name,
 				Const:   c,
 				Inputs:  field.Inputs.Type(),
 				Outputs: field.Outputs.Type(),
@@ -122,7 +123,7 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 		case "event":
 			name := overloadedName(field.Name, func(s string) bool { _, ok := a.Events[s]; return ok })
 			a.Events[name] = &Event{
-				Name:      name,
+				Name:      field.Name,
 				Anonymous: field.Anonymous,
 				Inputs:    field.Inputs.Type(),
 			}

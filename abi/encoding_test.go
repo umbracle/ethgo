@@ -459,7 +459,6 @@ func TestEncodingBestEffort(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(res2, c.Expected) {
-				fmt.Println(reflect.ValueOf(res2), reflect.ValueOf(c.Expected))
 				t.Fatal("bad")
 			}
 			if tt.kind == KindTuple {
