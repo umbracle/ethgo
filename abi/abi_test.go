@@ -122,11 +122,11 @@ func TestAbi_Polymorphism(t *testing.T) {
 
 func TestAbi_HumanReadable(t *testing.T) {
 	cases := []string{
-		//"constructor(string symbol, string name)", // TODO
+		"constructor(string symbol, string name)",
 		"function transferFrom(address from, address to, uint256 value)",
 		"function balanceOf(address owner) view returns (uint256 balance)",
 		"event Transfer(address indexed from, address indexed to, address value)",
-		//"error InsufficientBalance(account owner, uint balance)", // TODO
+		"error InsufficientBalance(address owner, uint256 balance)",
 		"function addPerson(tuple(string name, uint16 age) person)",
 		"function addPeople(tuple(string name, uint16 age)[] person)",
 		"function getPerson(uint256 id) view returns (tuple(string name, uint16 age))",
@@ -136,6 +136,9 @@ func TestAbi_HumanReadable(t *testing.T) {
 	assert.NoError(t, err)
 
 	expect := &ABI{
+		Constructor: &Method{
+			Inputs: MustNewType("tuple(string symbol, string name)"),
+		},
 		Methods: map[string]*Method{
 			"transferFrom": &Method{
 				Name:    "transferFrom",
@@ -173,8 +176,13 @@ func TestAbi_HumanReadable(t *testing.T) {
 				Inputs: MustNewType("tuple(uint256 indexed id, tuple(string name, uint16 age) person)"),
 			},
 		},
+		Errors: map[string]*Error{
+			"InsufficientBalance": &Error{
+				Name:   "InsufficientBalance",
+				Inputs: MustNewType("tuple(address owner, uint256 balance)"),
+			},
+		},
 	}
-
 	assert.Equal(t, expect, vv)
 }
 

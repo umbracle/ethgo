@@ -20,6 +20,7 @@ type ABI struct {
 	Methods            map[string]*Method
 	MethodsBySignature map[string]*Method
 	Events             map[string]*Event
+	Errors             map[string]*Error
 }
 
 func (a *ABI) GetMethod(name string) *Method {
@@ -30,6 +31,13 @@ func (a *ABI) GetMethod(name string) *Method {
 func (a *ABI) GetMethodBySignature(methodSignature string) *Method {
 	m := a.MethodsBySignature[methodSignature]
 	return m
+}
+
+func (a *ABI) addError(e *Error) {
+	if len(a.Errors) == 0 {
+		a.Errors = map[string]*Error{}
+	}
+	a.Errors[e.Name] = e
 }
 
 func (a *ABI) addEvent(e *Event) {
@@ -265,15 +273,30 @@ func MustNewEvent(name string) *Event {
 
 // NewEvent creates a new solidity event object using the signature
 func NewEvent(name string) (*Event, error) {
-	name, typ, err := parseEventSignature(name)
+	name, typ, err := parseEventSignature("event", name)
 	if err != nil {
 		return nil, err
 	}
 	return NewEventFromType(name, typ), nil
 }
 
-func parseEventSignature(name string) (string, *Type, error) {
-	name = strings.TrimPrefix(name, "event ")
+// Error is a solidity error object
+type Error struct {
+	Name   string
+	Inputs *Type
+}
+
+// NewError creates a new solidity error object
+func NewError(name string) (*Error, error) {
+	name, typ, err := parseEventSignature("error", name)
+	if err != nil {
+		return nil, err
+	}
+	return &Error{Name: name, Inputs: typ}, nil
+}
+
+func parseEventSignature(prefix string, name string) (string, *Type, error) {
+	name = strings.TrimPrefix(name, prefix+" ")
 	if !strings.HasSuffix(name, ")") {
 		return "", nil, fmt.Errorf("failed to parse input, expected 'name(types)'")
 	}
@@ -393,7 +416,16 @@ func releaseKeccak(k hash.Hash) {
 func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
 	res := &ABI{}
 	for _, c := range humanReadableAbi {
-		if strings.HasPrefix(c, "function ") {
+		if strings.HasPrefix(c, "constructor") {
+			typ, err := NewType("tuple" + strings.TrimPrefix(c, "constructor"))
+			if err != nil {
+				return nil, err
+			}
+			res.Constructor = &Method{
+				Inputs: typ,
+			}
+
+		} else if strings.HasPrefix(c, "function ") {
 			method, err := NewMethod(c)
 			if err != nil {
 				return nil, err
@@ -405,6 +437,12 @@ func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
 				return nil, err
 			}
 			res.addEvent(evnt)
+		} else if strings.HasPrefix(c, "error ") {
+			errTyp, err := NewError(c)
+			if err != nil {
+				return nil, err
+			}
+			res.addError(errTyp)
 		} else {
 			return nil, fmt.Errorf("either event or function expected")
 		}
