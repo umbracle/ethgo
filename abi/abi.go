@@ -33,7 +33,7 @@ func (a *ABI) GetMethodBySignature(methodSignature string) *Method {
 }
 
 func (a *ABI) addEvent(e *Event) {
-	if len(a.Methods) == 0 {
+	if len(a.Events) == 0 {
 		a.Events = map[string]*Event{}
 	}
 	a.Events[e.Name] = e
@@ -194,8 +194,8 @@ func NewMethod(name string) (*Method, error) {
 }
 
 var (
-	funcRegexpWithReturn    = regexp.MustCompile(`(.*)\((.*)\)(.*) returns \((.*)\)`)
-	funcRegexpWithoutReturn = regexp.MustCompile(`(.*)\((.*)\)(.*)`)
+	funcRegexpWithReturn    = regexp.MustCompile(`(\w*)\((.*)\)(.*) returns \((.*)\)`)
+	funcRegexpWithoutReturn = regexp.MustCompile(`(\w*)\((.*)\)(.*)`)
 )
 
 func parseMethodSignature(name string) (string, *Type, *Type, error) {

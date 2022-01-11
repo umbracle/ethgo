@@ -1,7 +1,6 @@
 package abi
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -123,13 +122,60 @@ func TestAbi_Polymorphism(t *testing.T) {
 
 func TestAbi_HumanReadable(t *testing.T) {
 	cases := []string{
-		"event Transfer(address from, address to, uint256 amount)",
-		"function symbol() returns (string)",
+		//"constructor(string symbol, string name)", // TODO
+		"function transferFrom(address from, address to, uint256 value)",
+		"function balanceOf(address owner) view returns (uint256 balance)",
+		"event Transfer(address indexed from, address indexed to, address value)",
+		//"error InsufficientBalance(account owner, uint balance)", // TODO
+		"function addPerson(tuple(string name, uint16 age) person)",
+		"function addPeople(tuple(string name, uint16 age)[] person)",
+		"function getPerson(uint256 id) view returns (tuple(string name, uint16 age))",
+		"event PersonAdded(uint256 indexed id, tuple(string name, uint16 age) person)",
 	}
 	vv, err := NewABIFromList(cases)
 	assert.NoError(t, err)
 
-	fmt.Println(vv.Methods["symbol"].Inputs.String())
+	expect := &ABI{
+		Methods: map[string]*Method{
+			"transferFrom": &Method{
+				Name:    "transferFrom",
+				Inputs:  MustNewType("tuple(address from, address to, uint256 value)"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"balanceOf": &Method{
+				Name:    "balanceOf",
+				Inputs:  MustNewType("tuple(address owner)"),
+				Outputs: MustNewType("tuple(uint256 balance)"),
+			},
+			"addPerson": &Method{
+				Name:    "addPerson",
+				Inputs:  MustNewType("tuple(tuple(string name, uint16 age) person)"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"addPeople": &Method{
+				Name:    "addPeople",
+				Inputs:  MustNewType("tuple(tuple(string name, uint16 age)[] person)"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"getPerson": &Method{
+				Name:    "getPerson",
+				Inputs:  MustNewType("tuple(uint256 id)"),
+				Outputs: MustNewType("tuple(tuple(string name, uint16 age))"),
+			},
+		},
+		Events: map[string]*Event{
+			"Transfer": &Event{
+				Name:   "Transfer",
+				Inputs: MustNewType("tuple(address indexed from, address indexed to, address value)"),
+			},
+			"PersonAdded": &Event{
+				Name:   "PersonAdded",
+				Inputs: MustNewType("tuple(uint256 indexed id, tuple(string name, uint16 age) person)"),
+			},
+		},
+	}
+
+	assert.Equal(t, expect, vv)
 }
 
 func TestAbi_ParseMethodSignature(t *testing.T) {
