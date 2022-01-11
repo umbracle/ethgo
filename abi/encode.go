@@ -180,8 +180,11 @@ func encodeAddress(v reflect.Value) ([]byte, error) {
 		v = convertArrayToBytes(v)
 	}
 	if v.Kind() == reflect.String {
-		web3Address := web3.HexToAddress(v.String())
-		return encodeAddress(reflect.ValueOf(web3Address))
+		var addr web3.Address
+		if err := addr.UnmarshalText([]byte(v.String())); err != nil {
+			return nil, err
+		}
+		v = reflect.ValueOf(addr.Bytes())
 	}
 	return leftPad(v.Bytes(), 32), nil
 }
