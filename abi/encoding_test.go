@@ -54,6 +54,11 @@ func TestEncoding(t *testing.T) {
 			big.NewInt(-10),
 		},
 		{
+			// int as float64
+			"int256",
+			float64(-10),
+		},
+		{
 			"bytes5",
 			[5]byte{0x1, 0x2, 0x3, 0x4, 0x5},
 		},
@@ -72,6 +77,11 @@ func TestEncoding(t *testing.T) {
 		{
 			"address[]",
 			[]web3.Address{{1}, {2}},
+		},
+		{
+			// addresses as strings
+			"address[]",
+			[]string{web3.Address{1}.String(), web3.Address{2}.String()},
 		},
 		{
 			"bytes10[]",
@@ -94,6 +104,11 @@ func TestEncoding(t *testing.T) {
 		{
 			"uint8[]",
 			[]uint8{1, 2},
+		},
+		{
+			// uint as float64
+			"uint8[]",
+			[]float64{1, 2},
 		},
 		{
 			"string[]",
@@ -353,6 +368,109 @@ func TestEncoding(t *testing.T) {
 	}
 }
 
+func TestEncodingBestEffort(t *testing.T) {
+	strAddress := "0xdbb881a51CD4023E4400CEF3ef73046743f08da3"
+	web3Address := web3.HexToAddress(strAddress)
+
+	cases := []struct {
+		Type     string
+		Input    interface{}
+		Expected interface{}
+	}{
+		{
+			"uint40",
+			float64(50),
+			big.NewInt(50),
+		},
+		{
+			"int256",
+			float64(2),
+			big.NewInt(2),
+		},
+		{
+			"int256[]",
+			[]interface{}{float64(1), float64(2)},
+			[]*big.Int{big.NewInt(1), big.NewInt(2)},
+		},
+		{
+			"int256",
+			float64(-10),
+			big.NewInt(-10),
+		},
+		{
+			"address[]",
+			[]interface{}{strAddress, strAddress},
+			[]web3.Address{web3Address, web3Address},
+		},
+
+		{
+			"uint8[]",
+			[]interface{}{float64(1), float64(2)},
+			[]uint8{1, 2},
+		},
+		{
+			"tuple(address a)",
+			map[string]interface{}{
+				"a": strAddress,
+			},
+			map[string]interface{}{
+				"a": web3Address,
+			},
+		},
+		{
+			"tuple(address[] a)",
+			map[string]interface{}{
+				"a": []interface{}{strAddress, strAddress},
+			},
+			map[string]interface{}{
+				"a": []web3.Address{web3Address, web3Address},
+			},
+		},
+		{
+			"tuple(address a, int64 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": float64(266),
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": int64(266),
+			},
+		},
+	}
+
+	server := testutil.NewTestServer(t, nil)
+	defer server.Close()
+
+	for _, c := range cases {
+		t.Run("", func(t *testing.T) {
+			tt, err := NewType(c.Type)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			res1, err := Encode(c.Input, tt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res2, err := Decode(tt, res1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(res2, c.Expected) {
+				fmt.Println(reflect.ValueOf(res2), reflect.ValueOf(c.Expected))
+				t.Fatal("bad")
+			}
+			if tt.kind == KindTuple {
+				if err := testTypeWithContract(t, server, tt); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func TestEncodingArguments(t *testing.T) {
 	cases := []struct {
 		Arg   *ArgumentStr
@@ -426,6 +544,7 @@ func testEncodeDecode(t *testing.T, server *testutil.TestServer, tt *Type, input
 	}
 
 	if !reflect.DeepEqual(res2, input) {
+		fmt.Println(reflect.TypeOf(res2), reflect.TypeOf(input))
 		return fmt.Errorf("bad")
 	}
 	if tt.kind == KindTuple {

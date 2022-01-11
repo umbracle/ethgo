@@ -1,8 +1,8 @@
 package abi
 
 import (
-	"encoding/hex"
 	"fmt"
+	"github.com/umbracle/go-web3"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -180,17 +180,8 @@ func encodeAddress(v reflect.Value) ([]byte, error) {
 		v = convertArrayToBytes(v)
 	}
 	if v.Kind() == reflect.String {
-		strValue := v.String()
-		if !strings.HasPrefix(strValue, "0x") {
-			return nil, fmt.Errorf("missing 0x prefix")
-		}
-
-		bytesValue, err := hex.DecodeString(strings.TrimPrefix("0x", strValue))
-		if err != nil {
-			return nil, fmt.Errorf("invalid address %s", strValue)
-		}
-
-		return encodeAddress(reflect.ValueOf(bytesValue))
+		web3Address := web3.HexToAddress(v.String())
+		return encodeAddress(reflect.ValueOf(web3Address))
 	}
 	return leftPad(v.Bytes(), 32), nil
 }

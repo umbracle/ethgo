@@ -110,16 +110,6 @@ github.com/stretchr/testify v1.4.0 h1:2E4SXV/wtOkTonXsotYi4li6zVWxYlZuYNCXe9XRJy
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/tyler-smith/go-bip39 v1.1.0 h1:5eUemwrMargf3BSLRRCalXT93Ns6pQJIjYQN2nyfOP8=
 github.com/tyler-smith/go-bip39 v1.1.0/go.mod h1:gUYDtqQw1JS3ZJ8UWVcGTGqqr6YIN3CWg+kkNaLt55U=
-github.com/umbracle/fastrlp v0.0.0-20210128110402-41364ca56ca8 h1:lWWKP+Oi7FSORlB3Y8rLz1Q7OOxtD8vecmtYOSNkIpo=
-github.com/umbracle/fastrlp v0.0.0-20210128110402-41364ca56ca8/go.mod h1:z0AyVhz/7VbuYSaCB+tFgypZKD1DJL76ATih6XqFlig=
-github.com/umbracle/fastrlp v0.0.0-20211210202053-92c528b55dea h1:KkTT5DT0SPmtNlQLSAI9jj0l2kkhn55Tl+txokkiWxQ=
-github.com/umbracle/fastrlp v0.0.0-20211210202053-92c528b55dea/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
-github.com/umbracle/fastrlp v0.0.0-20211228214822-d284b9a1ca89 h1:1HVAbF+D8wO8q7u+VMVZPysfZDdAdPdTDn5YECH2xrM=
-github.com/umbracle/fastrlp v0.0.0-20211228214822-d284b9a1ca89/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
-github.com/umbracle/fastrlp v0.0.0-20211228220138-9c20635803fb h1:jFYwAm/Nn6aWh2QCtejD0Ys/QVNKgf1AStCMONzcEDs=
-github.com/umbracle/fastrlp v0.0.0-20211228220138-9c20635803fb/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
-github.com/umbracle/fastrlp v0.0.0-20211228223544-26f56490122f h1:swxOU4cwCfjk8Uv/80lOantbwVAoUIzDgm+sZpqX/oY=
-github.com/umbracle/fastrlp v0.0.0-20211228223544-26f56490122f/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
 github.com/umbracle/fastrlp v0.0.0-20211229195328-c1416904ae17 h1:ZZy8Rj2SqGcZn1hTcoLdwFBROzrf5KiuRwhp8G4nnfA=
 github.com/umbracle/fastrlp v0.0.0-20211229195328-c1416904ae17/go.mod h1:c8J0h9aULj2i3umrfyestM6jCq0LK0U6ly6bWy96nd4=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
