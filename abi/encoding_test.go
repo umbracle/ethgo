@@ -54,11 +54,6 @@ func TestEncoding(t *testing.T) {
 			big.NewInt(-10),
 		},
 		{
-			// int as float64
-			"int256",
-			float64(-10),
-		},
-		{
 			"bytes5",
 			[5]byte{0x1, 0x2, 0x3, 0x4, 0x5},
 		},
@@ -77,11 +72,6 @@ func TestEncoding(t *testing.T) {
 		{
 			"address[]",
 			[]web3.Address{{1}, {2}},
-		},
-		{
-			// addresses as strings
-			"address[]",
-			[]string{web3.Address{1}.String(), web3.Address{2}.String()},
 		},
 		{
 			"bytes10[]",
@@ -104,11 +94,6 @@ func TestEncoding(t *testing.T) {
 		{
 			"uint8[]",
 			[]uint8{1, 2},
-		},
-		{
-			// uint as float64
-			"uint8[]",
-			[]float64{1, 2},
 		},
 		{
 			"string[]",
@@ -196,20 +181,6 @@ func TestEncoding(t *testing.T) {
 				"a": []web3.Address{
 					{0x1},
 				},
-			},
-		},
-		{
-			// tuple with address as string
-			"tuple(address a)",
-			map[string]interface{}{
-				"a": web3.Address{0x1}.String(),
-			},
-		},
-		{
-			// tuple address and input as string
-			"tuple(address[] a)",
-			map[string]interface{}{
-				"a": []string{web3.Address{0x1}.String(), web3.Address{0x2}.String()},
 			},
 		},
 		{
@@ -543,7 +514,6 @@ func testEncodeDecode(t *testing.T, server *testutil.TestServer, tt *Type, input
 	}
 
 	if !reflect.DeepEqual(res2, input) {
-		fmt.Println(reflect.TypeOf(res2), reflect.TypeOf(input))
 		return fmt.Errorf("bad")
 	}
 	if tt.kind == KindTuple {

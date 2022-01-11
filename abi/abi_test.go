@@ -9,6 +9,11 @@ import (
 )
 
 func TestAbi(t *testing.T) {
+	methodOutput := &Method{
+		Name:    "abc",
+		Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+		Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+	}
 	cases := []struct {
 		Input  string
 		Output *ABI
@@ -22,11 +27,10 @@ func TestAbi(t *testing.T) {
 			]`,
 			Output: &ABI{
 				Methods: map[string]*Method{
-					"abc": &Method{
-						Name:    "abc",
-						Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-						Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-					},
+					"abc": methodOutput,
+				},
+				MethodsBySignature: map[string]*Method{
+					"abc()": methodOutput,
 				},
 				Events: map[string]*Event{},
 			},
