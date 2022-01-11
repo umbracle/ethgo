@@ -125,6 +125,7 @@ func TestAbi_HumanReadable(t *testing.T) {
 		"constructor(string symbol, string name)",
 		"function transferFrom(address from, address to, uint256 value)",
 		"function balanceOf(address owner) view returns (uint256 balance)",
+		"function balanceOf() view returns ()",
 		"event Transfer(address indexed from, address indexed to, address value)",
 		"error InsufficientBalance(address owner, uint256 balance)",
 		"function addPerson(tuple(string name, uint16 age) person)",
@@ -152,6 +153,11 @@ func TestAbi_HumanReadable(t *testing.T) {
 				Name:    "balanceOf",
 				Inputs:  MustNewType("tuple(address owner)"),
 				Outputs: MustNewType("tuple(uint256 balance)"),
+			},
+			"balanceOf0": &Method{
+				Name:    "balanceOf",
+				Inputs:  MustNewType("tuple()"),
+				Outputs: MustNewType("tuple()"),
 			},
 			"addPerson": &Method{
 				Name:    "addPerson",
