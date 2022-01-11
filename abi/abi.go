@@ -44,7 +44,11 @@ func (a *ABI) addEvent(e *Event) {
 	if len(a.Events) == 0 {
 		a.Events = map[string]*Event{}
 	}
-	a.Events[e.Name] = e
+	name := overloadedName(e.Name, func(s string) bool {
+		_, ok := a.Events[s]
+		return ok
+	})
+	a.Events[name] = e
 }
 
 func (a *ABI) addMethod(m *Method) {
@@ -54,8 +58,22 @@ func (a *ABI) addMethod(m *Method) {
 	if len(a.MethodsBySignature) == 0 {
 		a.MethodsBySignature = map[string]*Method{}
 	}
-	a.Methods[m.Name] = m
+	name := overloadedName(m.Name, func(s string) bool {
+		_, ok := a.Methods[s]
+		return ok
+	})
+	a.Methods[name] = m
 	a.MethodsBySignature[m.Sig()] = m
+}
+
+func overloadedName(rawName string, isAvail func(string) bool) string {
+	name := rawName
+	ok := isAvail(name)
+	for idx := 0; ok; idx++ {
+		name = fmt.Sprintf("%s%d", rawName, idx)
+		ok = isAvail(name)
+	}
+	return name
 }
 
 // NewABI returns a parsed ABI struct
@@ -117,24 +135,21 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 			if field.StateMutability == "view" || field.StateMutability == "pure" {
 				c = true
 			}
-
-			name := overloadedName(field.Name, func(s string) bool { _, ok := a.Methods[s]; return ok })
 			method := &Method{
 				Name:    field.Name,
 				Const:   c,
 				Inputs:  field.Inputs.Type(),
 				Outputs: field.Outputs.Type(),
 			}
-			a.Methods[name] = method
-			a.MethodsBySignature[method.Sig()] = method
+			a.addMethod(method)
 
 		case "event":
-			name := overloadedName(field.Name, func(s string) bool { _, ok := a.Events[s]; return ok })
-			a.Events[name] = &Event{
+			event := &Event{
 				Name:      field.Name,
 				Anonymous: field.Anonymous,
 				Inputs:    field.Inputs.Type(),
 			}
+			a.addEvent(event)
 
 		case "fallback":
 		case "receive":
@@ -448,14 +463,4 @@ func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
 		}
 	}
 	return res, nil
-}
-
-func overloadedName(rawName string, isAvail func(string) bool) string {
-	name := rawName
-	ok := isAvail(name)
-	for idx := 0; ok; idx++ {
-		name = fmt.Sprintf("%s%d", rawName, idx)
-		ok = isAvail(name)
-	}
-	return name
 }

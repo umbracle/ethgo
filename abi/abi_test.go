@@ -135,6 +135,9 @@ func TestAbi_HumanReadable(t *testing.T) {
 	vv, err := NewABIFromList(cases)
 	assert.NoError(t, err)
 
+	// make it nil to not compare it and avoid writing each method twice for the test
+	vv.MethodsBySignature = nil
+
 	expect := &ABI{
 		Constructor: &Method{
 			Inputs: MustNewType("tuple(string symbol, string name)"),
