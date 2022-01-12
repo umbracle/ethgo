@@ -236,7 +236,10 @@ func encodeNum(v reflect.Value) ([]byte, error) {
 	case reflect.String:
 		n, ok := new(big.Int).SetString(v.String(), 10)
 		if !ok {
-			return nil, encodeErr(v, "number")
+			n, ok = new(big.Int).SetString(v.String()[2:], 16)
+			if !ok {
+				return nil, encodeErr(v, "number")
+			}
 		}
 		return encodeNum(reflect.ValueOf(n))
 

@@ -360,6 +360,11 @@ func TestEncodingBestEffort(t *testing.T) {
 			big.NewInt(50),
 		},
 		{
+			"uint40",
+			"0x32",
+			big.NewInt(50),
+		},
+		{
 			"int256",
 			float64(2),
 			big.NewInt(2),
@@ -367,6 +372,11 @@ func TestEncodingBestEffort(t *testing.T) {
 		{
 			"int256",
 			"50000000000000000000000000000000000000",
+			overflowBigInt,
+		},
+		{
+			"int256",
+			"0x259DA6542D43623D04C5112000000000",
 			overflowBigInt,
 		},
 		{
@@ -438,6 +448,17 @@ func TestEncodingBestEffort(t *testing.T) {
 			map[string]interface{}{
 				"a": strAddress,
 				"b": "50000000000000000000000000000000000000",
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": overflowBigInt,
+			},
+		},
+		{
+			"tuple(address a, int256 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": "0x259DA6542D43623D04C5112000000000",
 			},
 			map[string]interface{}{
 				"a": web3Address,
