@@ -1,6 +1,7 @@
 package abi
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -10,9 +11,16 @@ import (
 func TestAbi(t *testing.T) {
 	methodOutput := &Method{
 		Name:    "abc",
-		Inputs:  &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
-		Outputs: &Type{kind: KindTuple, raw: "tuple", tuple: []*TupleElem{}},
+		Inputs:  MustNewType("tuple()"),
+		Outputs: MustNewType("tuple()"),
 	}
+	balanceFunc := &Method{
+		Name:    "balanceOf",
+		Const:   true,
+		Inputs:  MustNewType("tuple(address owner)"),
+		Outputs: MustNewType("tuple(uint256 balance)"),
+	}
+
 	cases := []struct {
 		Input  string
 		Output *ABI
@@ -22,16 +30,70 @@ func TestAbi(t *testing.T) {
 				{
 					"name": "abc",
 					"type": "function"
+				},
+				{
+					"name": "cde",
+					"type": "event",
+					"inputs": [
+						{
+							"indexed": true,
+							"name": "a",
+							"type": "address"
+						}
+					]
+				},
+				{
+					"name": "def",
+					"type": "error",
+					"inputs": [
+						{
+							"indexed": true,
+							"name": "a",
+							"type": "address"
+						}
+					]
+				},
+				{
+					"type": "function",
+					"name": "balanceOf",
+					"constant": true,
+					"stateMutability": "view",
+				 	"payable": false,
+					"inputs": [
+						{
+					    	"type": "address",
+					    	"name": "owner"
+					   	}
+					],
+					"outputs": [
+						{
+					    	"type": "uint256",
+					    	"name": "balance"
+					   	}
+					]
 				}
 			]`,
 			Output: &ABI{
+				Events: map[string]*Event{
+					"cde": {
+						Name:   "cde",
+						Inputs: MustNewType("tuple(address indexed a)"),
+					},
+				},
 				Methods: map[string]*Method{
-					"abc": methodOutput,
+					"abc":       methodOutput,
+					"balanceOf": balanceFunc,
 				},
 				MethodsBySignature: map[string]*Method{
-					"abc()": methodOutput,
+					"abc()":              methodOutput,
+					"balanceOf(address)": balanceFunc,
 				},
-				Events: map[string]*Event{},
+				Errors: map[string]*Error{
+					"def": {
+						Name:   "def",
+						Inputs: MustNewType("tuple(address indexed a)"),
+					},
+				},
 			},
 		},
 	}
@@ -44,8 +106,10 @@ func TestAbi(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(abi, c.Output) {
+				fmt.Println(reflect.DeepEqual(abi.Methods["balanceOf"].Outputs, c.Output.Methods["balanceOf"].Outputs))
 				t.Fatal("bad")
 			}
+
 		})
 	}
 }
@@ -206,22 +270,22 @@ func TestAbi_ParseMethodSignature(t *testing.T) {
 			// both input and output
 			signature: "function approve(address to) returns (address)",
 			name:      "approve",
-			input:     "(address)",
-			output:    "(address)",
+			input:     "tuple(address)",
+			output:    "tuple(address)",
 		},
 		{
 			// no input
 			signature: "function approve() returns (address)",
 			name:      "approve",
-			input:     "()",
-			output:    "(address)",
+			input:     "tuple()",
+			output:    "tuple(address)",
 		},
 		{
 			// no output
 			signature: "function approve(address)",
 			name:      "approve",
-			input:     "(address)",
-			output:    "()",
+			input:     "tuple(address)",
+			output:    "tuple()",
 		},
 	}
 
