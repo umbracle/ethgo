@@ -434,7 +434,7 @@ func TestEncodingBestEffort(t *testing.T) {
 			},
 		},
 		{
-			"tuple(address a, int64 b)",
+			"tuple(address a, int256 b)",
 			map[string]interface{}{
 				"a": strAddress,
 				"b": "50000000000000000000000000000000000000",
