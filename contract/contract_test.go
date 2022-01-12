@@ -37,7 +37,7 @@ func TestContractNoInput(t *testing.T) {
 	assert.Equal(t, vals["0"], big.NewInt(1))
 
 	abi1, err := abi.NewABIFromList([]string{
-		"function set () view returns (uint256)",
+		"function set() view returns (uint256)",
 	})
 	assert.NoError(t, err)
 
