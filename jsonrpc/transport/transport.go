@@ -45,7 +45,5 @@ func NewTransport(url string, headers map[string]string) (Transport, error) {
 		}
 		return t, nil
 	}
-
 	return newHTTP(url, headers), nil
-
 }
