@@ -232,6 +232,14 @@ func encodeNum(v reflect.Value) ([]byte, error) {
 
 	case reflect.Float64:
 		return encodeNum(reflect.ValueOf(int64(v.Float())))
+
+	case reflect.String:
+		n, ok := new(big.Int).SetString(v.String(), 10)
+		if !ok {
+			return nil, encodeErr(v, "number")
+		}
+		return encodeNum(reflect.ValueOf(n))
+
 	default:
 		return nil, encodeErr(v, "number")
 	}
