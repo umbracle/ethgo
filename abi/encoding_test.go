@@ -339,6 +339,165 @@ func TestEncoding(t *testing.T) {
 	}
 }
 
+func TestEncodingBestEffort(t *testing.T) {
+	strAddress := "0xdbb881a51CD4023E4400CEF3ef73046743f08da3"
+	web3Address := web3.HexToAddress(strAddress)
+	overflowBigInt, _ := new(big.Int).SetString("50000000000000000000000000000000000000", 10)
+
+	cases := []struct {
+		Type     string
+		Input    interface{}
+		Expected interface{}
+	}{
+		{
+			"uint40",
+			float64(50),
+			big.NewInt(50),
+		},
+		{
+			"uint40",
+			"50",
+			big.NewInt(50),
+		},
+		{
+			"uint40",
+			"0x32",
+			big.NewInt(50),
+		},
+		{
+			"int256",
+			float64(2),
+			big.NewInt(2),
+		},
+		{
+			"int256",
+			"50000000000000000000000000000000000000",
+			overflowBigInt,
+		},
+		{
+			"int256",
+			"0x259DA6542D43623D04C5112000000000",
+			overflowBigInt,
+		},
+		{
+			"int256[]",
+			[]interface{}{float64(1), float64(2)},
+			[]*big.Int{big.NewInt(1), big.NewInt(2)},
+		},
+		{
+			"int256[]",
+			[]interface{}{"1", "2"},
+			[]*big.Int{big.NewInt(1), big.NewInt(2)},
+		},
+		{
+			"int256",
+			float64(-10),
+			big.NewInt(-10),
+		},
+		{
+			"int256",
+			"-10",
+			big.NewInt(-10),
+		},
+		{
+			"address[]",
+			[]interface{}{strAddress, strAddress},
+			[]web3.Address{web3Address, web3Address},
+		},
+		{
+			"uint8[]",
+			[]interface{}{float64(1), float64(2)},
+			[]uint8{1, 2},
+		},
+		{
+			"uint8[]",
+			[]interface{}{"1", "2"},
+			[]uint8{1, 2},
+		},
+		{
+			"tuple(address a)",
+			map[string]interface{}{
+				"a": strAddress,
+			},
+			map[string]interface{}{
+				"a": web3Address,
+			},
+		},
+		{
+			"tuple(address[] a)",
+			map[string]interface{}{
+				"a": []interface{}{strAddress, strAddress},
+			},
+			map[string]interface{}{
+				"a": []web3.Address{web3Address, web3Address},
+			},
+		},
+		{
+			"tuple(address a, int64 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": float64(266),
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": int64(266),
+			},
+		},
+		{
+			"tuple(address a, int256 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": "50000000000000000000000000000000000000",
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": overflowBigInt,
+			},
+		},
+		{
+			"tuple(address a, int256 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": "0x259DA6542D43623D04C5112000000000",
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": overflowBigInt,
+			},
+		},
+	}
+
+	server := testutil.NewTestServer(t, nil)
+	defer server.Close()
+
+	for _, c := range cases {
+		t.Run("", func(t *testing.T) {
+			tt, err := NewType(c.Type)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			res1, err := Encode(c.Input, tt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			res2, err := Decode(tt, res1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(res2, c.Expected) {
+				t.Fatal("bad")
+			}
+			if tt.kind == KindTuple {
+				if err := testTypeWithContract(t, server, tt); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func TestEncodingArguments(t *testing.T) {
 	cases := []struct {
 		Arg   *ArgumentStr

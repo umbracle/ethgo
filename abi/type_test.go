@@ -36,6 +36,18 @@ func TestType(t *testing.T) {
 			t: &Type{kind: KindSlice, t: reflect.SliceOf(int32T), elem: &Type{kind: KindInt, size: 32, t: int32T}},
 		},
 		{
+			s: "int",
+			a: simpleType("int"),
+			t: &Type{kind: KindInt, size: 256, t: bigIntT},
+			r: "int256",
+		},
+		{
+			s: "int[]",
+			a: simpleType("int[]"),
+			t: &Type{kind: KindSlice, t: reflect.SliceOf(bigIntT), elem: &Type{kind: KindInt, size: 256, t: bigIntT}},
+			r: "int256[]",
+		},
+		{
 			s: "bytes[2]",
 			a: simpleType("bytes[2]"),
 			t: &Type{
@@ -254,10 +266,6 @@ func TestType(t *testing.T) {
 		},
 		{
 			s:   "int[[",
-			err: true,
-		},
-		{
-			s:   "int",
 			err: true,
 		},
 		{

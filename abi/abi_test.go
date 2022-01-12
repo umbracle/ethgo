@@ -8,13 +8,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAbiXX(t *testing.T) {
+func TestAbi(t *testing.T) {
+	methodOutput := &Method{
+		Name:    "abc",
+		Inputs:  MustNewType("tuple()"),
+		Outputs: MustNewType("tuple()"),
+	}
+	balanceFunc := &Method{
+		Name:    "balanceOf",
+		Const:   true,
+		Inputs:  MustNewType("tuple(address owner)"),
+		Outputs: MustNewType("tuple(uint256 balance)"),
+	}
+
 	cases := []struct {
 		Input  string
 		Output *ABI
 	}{
 		{
 			Input: `[
+				{
+					"name": "abc",
+					"type": "function"
+				},
 				{
 					"name": "cde",
 					"type": "event",
@@ -65,12 +81,12 @@ func TestAbiXX(t *testing.T) {
 					},
 				},
 				Methods: map[string]*Method{
-					"balanceOf": {
-						Name:    "balanceOf",
-						Const:   true,
-						Inputs:  MustNewType("tuple(address owner)"),
-						Outputs: MustNewType("tuple(uint256 balance)"),
-					},
+					"abc":       methodOutput,
+					"balanceOf": balanceFunc,
+				},
+				MethodsBySignature: map[string]*Method{
+					"abc()":              methodOutput,
+					"balanceOf(address)": balanceFunc,
 				},
 				Errors: map[string]*Error{
 					"def": {
@@ -98,16 +114,149 @@ func TestAbiXX(t *testing.T) {
 	}
 }
 
+func TestAbi_Polymorphism(t *testing.T) {
+	// This ABI contains 2 "transfer" functions (polymorphism)
+	const polymorphicABI = `[
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "_token",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+		{
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "_to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ]`
+
+	abi, err := NewABI(polymorphicABI)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Len(t, abi.Methods, 2)
+	assert.Equal(t, abi.GetMethod("transfer").Sig(), "transfer(address,address,uint256)")
+	assert.Equal(t, abi.GetMethod("transfer0").Sig(), "transfer(address,uint256)")
+	assert.NotEmpty(t, abi.GetMethodBySignature("transfer(address,address,uint256)"))
+	assert.NotEmpty(t, abi.GetMethodBySignature("transfer(address,uint256)"))
+}
+
 func TestAbi_HumanReadable(t *testing.T) {
 	cases := []string{
-		"event Transfer(address from, address to, uint256 amount)",
-		"function symbol() returns (string)",
-		"error A(int256 a)",
+		"constructor(string symbol, string name)",
+		"function transferFrom(address from, address to, uint256 value)",
+		"function balanceOf(address owner) view returns (uint256 balance)",
+		"function balanceOf() view returns ()",
+		"event Transfer(address indexed from, address indexed to, address value)",
+		"error InsufficientBalance(address owner, uint256 balance)",
+		"function addPerson(tuple(string name, uint16 age) person)",
+		"function addPeople(tuple(string name, uint16 age)[] person)",
+		"function getPerson(uint256 id) view returns (tuple(string name, uint16 age))",
+		"event PersonAdded(uint256 indexed id, tuple(string name, uint16 age) person)",
 	}
 	vv, err := NewABIFromList(cases)
 	assert.NoError(t, err)
 
-	fmt.Println(vv.Methods["symbol"].Inputs.String())
+	// make it nil to not compare it and avoid writing each method twice for the test
+	vv.MethodsBySignature = nil
+
+	expect := &ABI{
+		Constructor: &Method{
+			Inputs: MustNewType("tuple(string symbol, string name)"),
+		},
+		Methods: map[string]*Method{
+			"transferFrom": &Method{
+				Name:    "transferFrom",
+				Inputs:  MustNewType("tuple(address from, address to, uint256 value)"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"balanceOf": &Method{
+				Name:    "balanceOf",
+				Inputs:  MustNewType("tuple(address owner)"),
+				Outputs: MustNewType("tuple(uint256 balance)"),
+			},
+			"balanceOf0": &Method{
+				Name:    "balanceOf",
+				Inputs:  MustNewType("tuple()"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"addPerson": &Method{
+				Name:    "addPerson",
+				Inputs:  MustNewType("tuple(tuple(string name, uint16 age) person)"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"addPeople": &Method{
+				Name:    "addPeople",
+				Inputs:  MustNewType("tuple(tuple(string name, uint16 age)[] person)"),
+				Outputs: MustNewType("tuple()"),
+			},
+			"getPerson": &Method{
+				Name:    "getPerson",
+				Inputs:  MustNewType("tuple(uint256 id)"),
+				Outputs: MustNewType("tuple(tuple(string name, uint16 age))"),
+			},
+		},
+		Events: map[string]*Event{
+			"Transfer": &Event{
+				Name:   "Transfer",
+				Inputs: MustNewType("tuple(address indexed from, address indexed to, address value)"),
+			},
+			"PersonAdded": &Event{
+				Name:   "PersonAdded",
+				Inputs: MustNewType("tuple(uint256 indexed id, tuple(string name, uint16 age) person)"),
+			},
+		},
+		Errors: map[string]*Error{
+			"InsufficientBalance": &Error{
+				Name:   "InsufficientBalance",
+				Inputs: MustNewType("tuple(address owner, uint256 balance)"),
+			},
+		},
+	}
+	assert.Equal(t, expect, vv)
 }
 
 func TestAbi_ParseMethodSignature(t *testing.T) {
@@ -121,22 +270,22 @@ func TestAbi_ParseMethodSignature(t *testing.T) {
 			// both input and output
 			signature: "function approve(address to) returns (address)",
 			name:      "approve",
-			input:     "(address)",
-			output:    "(address)",
+			input:     "tuple(address)",
+			output:    "tuple(address)",
 		},
 		{
 			// no input
 			signature: "function approve() returns (address)",
 			name:      "approve",
-			input:     "()",
-			output:    "(address)",
+			input:     "tuple()",
+			output:    "tuple(address)",
 		},
 		{
 			// no output
 			signature: "function approve(address)",
 			name:      "approve",
-			input:     "(address)",
-			output:    "()",
+			input:     "tuple(address)",
+			output:    "tuple()",
 		},
 	}
 
@@ -158,33 +307,5 @@ func TestAbi_ParseMethodSignature(t *testing.T) {
 		} else {
 			assert.Equal(t, c.output, "")
 		}
-	}
-}
-
-func TestAbi_ParseEventErrorSignature(t *testing.T) {
-	cases := []struct {
-		signature string
-		name      string
-		typ       string
-	}{
-		{
-			signature: "event A(int256 a, int256 b)",
-			name:      "A",
-			typ:       "(int256,int256)",
-		},
-		{
-			signature: "error A(int256 a, int256 b)",
-			name:      "A",
-			typ:       "(int256,int256)",
-		},
-	}
-
-	for _, c := range cases {
-		name, typ, err := parseEventOrErrorSignature(c.signature)
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, name, c.name)
-		assert.Equal(t, c.typ, typ.String())
 	}
 }

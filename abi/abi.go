@@ -16,14 +16,20 @@ import (
 
 // ABI represents the ethereum abi format
 type ABI struct {
-	Constructor *Method
-	Methods     map[string]*Method
-	Events      map[string]*Event
-	Errors      map[string]*Error
+	Constructor        *Method
+	Methods            map[string]*Method
+	MethodsBySignature map[string]*Method
+	Events             map[string]*Event
+	Errors             map[string]*Error
 }
 
 func (a *ABI) GetMethod(name string) *Method {
 	m := a.Methods[name]
+	return m
+}
+
+func (a *ABI) GetMethodBySignature(methodSignature string) *Method {
+	m := a.MethodsBySignature[methodSignature]
 	return m
 }
 
@@ -38,14 +44,36 @@ func (a *ABI) addEvent(e *Event) {
 	if len(a.Events) == 0 {
 		a.Events = map[string]*Event{}
 	}
-	a.Events[e.Name] = e
+	name := overloadedName(e.Name, func(s string) bool {
+		_, ok := a.Events[s]
+		return ok
+	})
+	a.Events[name] = e
 }
 
 func (a *ABI) addMethod(m *Method) {
 	if len(a.Methods) == 0 {
 		a.Methods = map[string]*Method{}
 	}
-	a.Methods[m.Name] = m
+	if len(a.MethodsBySignature) == 0 {
+		a.MethodsBySignature = map[string]*Method{}
+	}
+	name := overloadedName(m.Name, func(s string) bool {
+		_, ok := a.Methods[s]
+		return ok
+	})
+	a.Methods[name] = m
+	a.MethodsBySignature[m.Sig()] = m
+}
+
+func overloadedName(rawName string, isAvail func(string) bool) string {
+	name := rawName
+	ok := isAvail(name)
+	for idx := 0; ok; idx++ {
+		name = fmt.Sprintf("%s%d", rawName, idx)
+		ok = isAvail(name)
+	}
+	return name
 }
 
 // NewABI returns a parsed ABI struct
@@ -88,21 +116,19 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	a.Methods = make(map[string]*Method)
-	a.Events = make(map[string]*Event)
-	a.Errors = make(map[string]*Error)
-
 	for _, field := range fields {
 		switch field.Type {
 		case "constructor":
 			if a.Constructor != nil {
 				return fmt.Errorf("multiple constructor declaration")
 			}
-			/*
-				a.Constructor = &Method{
-					Inputs: field.Inputs.Type(),
-				}
-			*/
+			input, err := NewTupleTypeFromArgs(field.Inputs)
+			if err != nil {
+				panic(err)
+			}
+			a.Constructor = &Method{
+				Inputs: input,
+			}
 
 		case "function", "":
 			c := field.Constant
@@ -118,33 +144,36 @@ func (a *ABI) UnmarshalJSON(data []byte) error {
 			if err != nil {
 				panic(err)
 			}
-			a.Methods[field.Name] = &Method{
+			method := &Method{
 				Name:    field.Name,
 				Const:   c,
 				Inputs:  inputs,
 				Outputs: outputs,
 			}
+			a.addMethod(method)
 
 		case "event":
 			input, err := NewTupleTypeFromArgs(field.Inputs)
 			if err != nil {
 				panic(err)
 			}
-			a.Events[field.Name] = &Event{
+			event := &Event{
 				Name:      field.Name,
 				Anonymous: field.Anonymous,
 				Inputs:    input,
 			}
+			a.addEvent(event)
 
 		case "error":
 			input, err := NewTupleTypeFromArgs(field.Inputs)
 			if err != nil {
 				panic(err)
 			}
-			a.Errors[field.Name] = &Error{
+			errObj := &Error{
 				Name:   field.Name,
 				Inputs: input,
 			}
+			a.addError(errObj)
 
 		case "fallback":
 		case "receive":
@@ -212,8 +241,8 @@ func NewMethod(name string) (*Method, error) {
 }
 
 var (
-	funcRegexpWithReturn    = regexp.MustCompile(`(.*)\((.*)\)(.*) returns \((.*)\)`)
-	funcRegexpWithoutReturn = regexp.MustCompile(`(.*)\((.*)\)(.*)`)
+	funcRegexpWithReturn    = regexp.MustCompile(`(\w*)\((.*)\)(.*) returns \((.*)\)`)
+	funcRegexpWithoutReturn = regexp.MustCompile(`(\w*)\((.*)\)(.*)`)
 )
 
 func parseMethodSignature(name string) (string, *Type, *Type, error) {
@@ -283,44 +312,33 @@ func MustNewEvent(name string) *Event {
 
 // NewEvent creates a new solidity event object using the signature
 func NewEvent(name string) (*Event, error) {
-	name, typ, err := parseEventOrErrorSignature(name)
+	name, typ, err := parseEventOrErrorSignature("event ", name)
 	if err != nil {
 		return nil, err
 	}
 	return NewEventFromType(name, typ), nil
 }
 
-// Error is a solidity error
+// Error is a solidity error object
 type Error struct {
 	Name   string
 	Inputs *Type
 }
 
-// NewError creates a new solidity error object using the signature
+// NewError creates a new solidity error object
 func NewError(name string) (*Error, error) {
-	name, typ, err := parseEventOrErrorSignature(name)
+	name, typ, err := parseEventOrErrorSignature("error ", name)
 	if err != nil {
 		return nil, err
 	}
 	return &Error{Name: name, Inputs: typ}, nil
 }
 
-func parseEventOrErrorSignature(name string) (string, *Type, error) {
-	// the prefix can be either for an 'event' or an 'error'
-	prefix := []string{
-		"event ",
-		"error ",
+func parseEventOrErrorSignature(prefix string, name string) (string, *Type, error) {
+	if !strings.HasPrefix(name, prefix) {
+		return "", nil, fmt.Errorf("prefix '%s' not found", prefix)
 	}
-	found := false
-	for _, p := range prefix {
-		if strings.HasPrefix(name, p) {
-			name = strings.TrimPrefix(name, p)
-			found = true
-		}
-	}
-	if !found {
-		return "", nil, fmt.Errorf("signature is neither for 'error' nor 'event'")
-	}
+	name = strings.TrimPrefix(name, prefix)
 
 	if !strings.HasSuffix(name, ")") {
 		return "", nil, fmt.Errorf("failed to parse input, expected 'name(types)'")
@@ -398,7 +416,16 @@ func releaseKeccak(k hash.Hash) {
 func NewABIFromList(humanReadableAbi []string) (*ABI, error) {
 	res := &ABI{}
 	for _, c := range humanReadableAbi {
-		if strings.HasPrefix(c, "function ") {
+		if strings.HasPrefix(c, "constructor") {
+			typ, err := NewType("tuple" + strings.TrimPrefix(c, "constructor"))
+			if err != nil {
+				return nil, err
+			}
+			res.Constructor = &Method{
+				Inputs: typ,
+			}
+
+		} else if strings.HasPrefix(c, "function ") {
 			method, err := NewMethod(c)
 			if err != nil {
 				return nil, err

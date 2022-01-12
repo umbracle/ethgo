@@ -160,7 +160,7 @@ func (t *Type) Format(includeArgs bool) string {
 	case KindTuple:
 		rawAux := []string{}
 		for _, i := range t.TupleElems() {
-			name := i.Elem.String()
+			name := i.Elem.Format(includeArgs)
 			if i.Indexed {
 				name += " indexed"
 			}
@@ -445,11 +445,11 @@ func decodeSimpleType(str string) (*Type, error) {
 		ok = true
 	}
 
-	// Only int and uint need bytes for sure, 'bytes' may
+	// int and uint without bytes default to 256, 'bytes' may
 	// have or not, the rest dont have bytes
 	if t == "int" || t == "uint" {
 		if !ok {
-			return nil, fmt.Errorf("int and uint expect bytes")
+			bytes = 256
 		}
 	} else if t != "bytes" && ok {
 		return nil, fmt.Errorf("type %s does not expect bytes", t)
@@ -583,13 +583,6 @@ func (l *lexer) readChar() {
 
 	l.position = l.readPosition
 	l.readPosition++
-}
-
-func (l *lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
-		return 0
-	}
-	return l.input[l.readPosition]
 }
 
 func (l *lexer) nextToken() token {
