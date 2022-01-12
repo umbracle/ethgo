@@ -342,6 +342,7 @@ func TestEncoding(t *testing.T) {
 func TestEncodingBestEffort(t *testing.T) {
 	strAddress := "0xdbb881a51CD4023E4400CEF3ef73046743f08da3"
 	web3Address := web3.HexToAddress(strAddress)
+	overflowBigInt, _ := new(big.Int).SetString("50000000000000000000000000000000000000", 10)
 
 	cases := []struct {
 		Type     string
@@ -354,13 +355,38 @@ func TestEncodingBestEffort(t *testing.T) {
 			big.NewInt(50),
 		},
 		{
+			"uint40",
+			"50",
+			big.NewInt(50),
+		},
+		{
+			"uint40",
+			"0x32",
+			big.NewInt(50),
+		},
+		{
 			"int256",
 			float64(2),
 			big.NewInt(2),
 		},
 		{
+			"int256",
+			"50000000000000000000000000000000000000",
+			overflowBigInt,
+		},
+		{
+			"int256",
+			"0x259DA6542D43623D04C5112000000000",
+			overflowBigInt,
+		},
+		{
 			"int256[]",
 			[]interface{}{float64(1), float64(2)},
+			[]*big.Int{big.NewInt(1), big.NewInt(2)},
+		},
+		{
+			"int256[]",
+			[]interface{}{"1", "2"},
 			[]*big.Int{big.NewInt(1), big.NewInt(2)},
 		},
 		{
@@ -369,14 +395,23 @@ func TestEncodingBestEffort(t *testing.T) {
 			big.NewInt(-10),
 		},
 		{
+			"int256",
+			"-10",
+			big.NewInt(-10),
+		},
+		{
 			"address[]",
 			[]interface{}{strAddress, strAddress},
 			[]web3.Address{web3Address, web3Address},
 		},
-
 		{
 			"uint8[]",
 			[]interface{}{float64(1), float64(2)},
+			[]uint8{1, 2},
+		},
+		{
+			"uint8[]",
+			[]interface{}{"1", "2"},
 			[]uint8{1, 2},
 		},
 		{
@@ -406,6 +441,28 @@ func TestEncodingBestEffort(t *testing.T) {
 			map[string]interface{}{
 				"a": web3Address,
 				"b": int64(266),
+			},
+		},
+		{
+			"tuple(address a, int256 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": "50000000000000000000000000000000000000",
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": overflowBigInt,
+			},
+		},
+		{
+			"tuple(address a, int256 b)",
+			map[string]interface{}{
+				"a": strAddress,
+				"b": "0x259DA6542D43623D04C5112000000000",
+			},
+			map[string]interface{}{
+				"a": web3Address,
+				"b": overflowBigInt,
 			},
 		},
 	}
