@@ -385,7 +385,7 @@ func (e *Event) ParseLog(log *web3.Log) (map[string]interface{}, error) {
 func buildSignature(name string, typ *Type) string {
 	types := make([]string, len(typ.tuple))
 	for i, input := range typ.tuple {
-		types[i] = input.Elem.String()
+		types[i] = strings.Replace(input.Elem.String(), "tuple", "", -1)
 	}
 	return fmt.Sprintf("%v(%v)", name, strings.Join(types, ","))
 }
