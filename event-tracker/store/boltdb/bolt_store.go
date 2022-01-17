@@ -6,7 +6,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker/store"
+	"github.com/umbracle/go-web3/event-tracker/store"
 )
 
 var _ store.Store = (*BoltStore)(nil)

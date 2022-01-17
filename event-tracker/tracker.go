@@ -16,11 +16,11 @@ import (
 	"time"
 
 	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/blocktracker"
+	blocktracker "github.com/umbracle/go-web3/block-tracker"
 	"github.com/umbracle/go-web3/etherscan"
+	"github.com/umbracle/go-web3/event-tracker/store"
+	"github.com/umbracle/go-web3/event-tracker/store/inmem"
 	"github.com/umbracle/go-web3/jsonrpc/codec"
-	"github.com/umbracle/go-web3/tracker/store"
-	"github.com/umbracle/go-web3/tracker/store/inmem"
 )
 
 var (
