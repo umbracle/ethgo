@@ -8,13 +8,13 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/event-tracker/store"
+	tracker "github.com/umbracle/go-web3/event-tracker"
 
 	// Enable postgres for sqlx
 	_ "github.com/lib/pq"
 )
 
-var _ store.Store = (*PostgreSQLStore)(nil)
+//var _ tracker.Store = (*PostgreSQLStore)(nil)
 
 // PostgreSQLStore is a tracker store implementation that uses PostgreSQL as a backend.
 type PostgreSQLStore struct {
@@ -76,7 +76,7 @@ func (p *PostgreSQLStore) Set(k, v string) error {
 }
 
 // GetEntry implements the store interface
-func (p *PostgreSQLStore) GetEntry(hash string) (store.Entry, error) {
+func (p *PostgreSQLStore) GetEntry(hash string) (tracker.Entry, error) {
 	tableName := "logs_" + hash
 	if _, err := p.db.Exec(logSQLSchema(tableName)); err != nil {
 		return nil, err
@@ -92,6 +92,22 @@ func (p *PostgreSQLStore) GetEntry(hash string) (store.Entry, error) {
 type Entry struct {
 	table string
 	db    *sqlx.DB
+}
+
+func (e *Entry) Close() error {
+	return nil
+}
+
+func (e *Entry) UpsertGenesis(g *tracker.Genesis) error {
+	return nil
+}
+
+func (e *Entry) GetLastBlock() (*web3.Block, error) {
+	panic("TODO")
+}
+
+func (e *Entry) StoreEvent(evnt *tracker.Event) error {
+	panic("TODO")
 }
 
 // LastIndex implements the store interface
