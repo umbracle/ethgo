@@ -17,7 +17,7 @@ func newWebsocket(url string, headers map[string]string) (Transport, error) {
 	for k, v := range headers {
 		wsHeaders.Add(k, v)
 	}
-	wsConn, _, err := websocket.DefaultDialer.Dial(url, http.Header{})
+	wsConn, _, err := websocket.DefaultDialer.Dial(url, wsHeaders)
 	if err != nil {
 		return nil, err
 	}
