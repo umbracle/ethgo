@@ -190,6 +190,7 @@ type CallMsg struct {
 	To       *Address
 	Data     []byte
 	GasPrice uint64
+	Gas      *big.Int
 	Value    *big.Int
 }
 
