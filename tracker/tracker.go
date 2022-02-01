@@ -56,18 +56,15 @@ func (f *FilterConfig) buildHash() {
 			continue
 		}
 
-		innerTopicArray := make([]byte, 0)
 		for _, innerTopic := range topics {
 			if innerTopic == nil {
-				innerTopicArray = append(innerTopicArray, []byte("empty")...)
+				h.Write([]byte("empty"))
 
 				continue
 			}
 
-			innerTopicArray = append(innerTopicArray, []byte(innerTopic.String())...)
+			h.Write([]byte(innerTopic.String()))
 		}
-
-		h.Write(innerTopicArray)
 	}
 	f.Hash = hex.EncodeToString(h.Sum(nil))
 }
