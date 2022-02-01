@@ -239,7 +239,7 @@ func (l *LogFilter) MarshalJSON() ([]byte, error) {
 	o.Set("topics", v)
 
 	if l.BlockHash != nil {
-		o.Set("blockhash", a.NewString((*l.BlockHash).String()))
+		o.Set("blockHash", a.NewString((*l.BlockHash).String()))
 	}
 	if l.From != nil {
 		o.Set("fromBlock", a.NewString((*l.From).String()))
