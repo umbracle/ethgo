@@ -1,6 +1,73 @@
 
 # JsonRPC
 
-Be careful because by default you import another library from native Go.
+Ethereum uses JsonRPC to send requests, here is a list of the endpoints supported.
+As of now, there are three rules for the endpoints supported here:
+- Major endpoints supported in Geth.
+- Supported by Infra providers.
 
-We namespace the different things in the namespace.
+## Overview
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/umbracle/go-web3/jsonrpc"
+)
+
+func main() {
+	client, err := jsonrpc.NewClient("https://mainnet.infura.io")
+	if err != nil {
+		panic(err)
+	}
+}
+```
+
+Be careful because by default the Go linter imports the native library (`encoding/jsonrpc`) when completing code.
+
+The library supports `websocket`, `http` and `ipc`, you only need to set the specific endpoint for each one.
+
+For websockets:
+
+```go
+client, err := jsonrpc.NewClient("wss://mainnet.infura.io")
+```
+
+or Ipc:
+
+```go
+client, err := jsonrpc.NewClient("ipc://path/geth.ipc")
+```
+
+It also supports custom headers:
+
+```go
+headers := map[string]string{
+    "": "", // token
+}
+client, err := jsonrpc.NewClient("...", jsonrpc.WithHeaders(headers))
+```
+
+useful to set tokens to access the endpoints. By default, JsonRPC already sends the "application/json" to each of the endpoints.
+
+## Endpoints
+
+Once create the client instance, each of the endpoints is separated in different namespaces:
+
+```
+eth := client.Eth()
+```
+
+so that we can separate the different endpoints like in the original spec.
+
+The current available are:
+
+- [Eth](./jsonrpc/eth): Ethereum endpoints.
+- [Debug](./jsonrpc/debug): Debug the client.
+- [Net](./jsonrpc/net): For some data about the client.
+
+## Subscribe
+
+This is only enabled for `websocket` and `ipc` transport that support streaming. There are some endpoints.

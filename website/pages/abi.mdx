@@ -5,25 +5,25 @@ The ABI codifier uses randomized tests with e2e integration tests with a real Ge
 
 To use the library import:
 
-```
+```go
 "github.com/umbracle/go-web3/abi"
 ```
 
 Declare basic objects:
 
-```golang
+```go
 typ, err := abi.NewType("uint256")
 ```
 
 or 
 
-```golang
+```go
 typ = abi.MustNewType("uint256")
 ```
 
 and use it to encode/decode the data:
 
-```golang
+```go
 num := big.NewInt(1)
 
 encoded, err := typ.Encode(num)
@@ -42,7 +42,7 @@ fmt.Println(num.Cmp(num2) == 0) // num == num2
 
 You can also codify structs as Solidity tuples:
 
-```golang
+```go
 import (
 	"fmt"
     

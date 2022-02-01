@@ -1,2 +1,25 @@
 
 # Signers
+
+We have this interface at the root of the project
+
+```go
+type Key interface {
+	Address() Address
+	Sign(hash []byte) ([]byte, error)
+}
+```
+
+This represents an abstraction of something that can sign data.
+
+### Wallet
+
+The `wallet` package gives support for an ecdsa Ethereum wallet.
+
+#### Mnemonic
+
+NewWalletFromMnemonic
+
+#### PrivateKey
+
+#### Hardware file

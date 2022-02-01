@@ -1,2 +1,34 @@
 
 # Ethereum Name Service (ENS)
+
+The Ethereum Name Service ([ENS](https://ens.domains/)) is a distributed, open, and extensible naming system based on the Ethereum blockchain.
+
+## Resolve an ENS name
+
+```go
+import (
+    "fmt"
+
+    web3 "github.com/umbracle/go-web3"
+    "github.com/umbracle/go-web3/jsonrpc"
+    "github.com/umbracle/go-web3/contract/builtin/ens"
+)
+
+// Address of the ENS resolver in Ethereum mainnet
+var mainnetAddress = web3.HexToAddress("0x314159265dD8dbb310642f98f50C066173C1259b")
+
+func main() {
+	client, err := jsonrpc.NewClient("https://mainnet.infura.io")
+    if err != nil {
+        panic(err)
+    }
+
+	resolver := ens.NewENSResolver(mainnetAddress, client)
+	addr, err := resolver.Resolve("umbracle.eth")
+	if err != nil {
+		panic(err)
+	}
+
+    fmt.Println(addr)
+}
+```
