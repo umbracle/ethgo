@@ -38,7 +38,7 @@ const (
 // FilterConfig is a tracker filter configuration
 type FilterConfig struct {
 	Address []web3.Address `json:"address"`
-	Topics  []*web3.Hash   `json:"topics"`
+	Topics  [][]*web3.Hash `json:"topics"`
 	Start   uint64
 	Hash    string
 	Async   bool
@@ -49,12 +49,25 @@ func (f *FilterConfig) buildHash() {
 	for _, i := range f.Address {
 		h.Write([]byte(i.String()))
 	}
-	for _, i := range f.Topics {
-		if i == nil {
+	for _, topics := range f.Topics {
+		if topics == nil {
 			h.Write([]byte("empty"))
-		} else {
-			h.Write([]byte(i.String()))
+
+			continue
 		}
+
+		innerTopicArray := make([]byte, 0)
+		for _, innerTopic := range topics {
+			if innerTopic == nil {
+				innerTopicArray = append(innerTopicArray, []byte("empty")...)
+
+				continue
+			}
+
+			innerTopicArray = append(innerTopicArray, []byte(innerTopic.String())...)
+		}
+
+		h.Write(innerTopicArray)
 	}
 	f.Hash = hex.EncodeToString(h.Sum(nil))
 }

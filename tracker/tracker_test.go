@@ -133,7 +133,7 @@ func TestFilterIntegration(t *testing.T) {
 	typ, _ := abi.NewType("uint256")
 	topic, _ := abi.EncodeTopic(typ, 1)
 
-	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: []*web3.Hash{nil, &topic}})
+	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*web3.Hash{nil, {&topic}}})
 	if len(logs) != 20 {
 		t.Fatal("bad")
 	}
@@ -167,13 +167,13 @@ func TestFilterIntegrationEventHash(t *testing.T) {
 	}
 
 	eventTopicID := abi0.Events["A"].ID()
-	logs := testFilter(t, client.Eth(), &FilterConfig{Topics: []*web3.Hash{&eventTopicID}})
+	logs := testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*web3.Hash{{&eventTopicID}}})
 	if len(logs) != 10 {
 		t.Fatal("bad")
 	}
 
 	eventTopicID[1] = 1
-	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: []*web3.Hash{&eventTopicID}})
+	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*web3.Hash{{&eventTopicID}}})
 	if len(logs) != 0 {
 		t.Fatal("bad")
 	}

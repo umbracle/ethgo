@@ -216,12 +216,25 @@ func (l *LogFilter) MarshalJSON() ([]byte, error) {
 	}
 
 	v := a.NewArray()
-	for indx, topic := range l.Topics {
-		if topic == nil {
+	for indx, topics := range l.Topics {
+		if topics == nil {
 			v.SetArrayItem(indx, a.NewNull())
-		} else {
-			v.SetArrayItem(indx, a.NewString(topic.String()))
+
+			continue
 		}
+
+		innerTopicArray := a.NewArray()
+		for innerIndx, innerTopic := range topics {
+			if innerTopic == nil {
+				innerTopicArray.SetArrayItem(innerIndx, a.NewNull())
+
+				continue
+			}
+
+			innerTopicArray.SetArrayItem(innerIndx, a.NewString(innerTopic.String()))
+		}
+
+		v.SetArrayItem(indx, innerTopicArray)
 	}
 	o.Set("topics", v)
 
