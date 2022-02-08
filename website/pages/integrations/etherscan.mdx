@@ -1,4 +1,6 @@
 
+import GoDocLink from '../../components/godoc'
+
 # Etherscan
 
 [Etherscan](https://etherscan.io/) is a block explorer and it implements some read compatible endpoint with JsonRPC services. It requires an [apiKey](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics) to use the services and not be rate limited.
@@ -21,15 +23,15 @@ func main() {
 The package will resolve the name of the network to the specific endpoint in Etherscan, at this point it only works for `Mainnet`, `Ropsten`, `Rinkeby` and `Goerli`. You can use a specific url with:
 
 ```go
-ethscan, err := etherscan.NewEtherscan("api.polygonscan.com", "apiKey")
+ethscan, err := etherscan.NewEtherscan("https://api.polygonscan.com", "apiKey")
 ```
 
 ## BlockNumber
 
-BlockNumber returns the current block number.
+<GoDocLink href="etherscan#Etherscan.BlockNumber">BlockNumber</GoDocLink> returns the current block number.
 
 ```go
-num, err := ethscan.GetBlockByNumber()
+num, err := ethscan.BlockNumber()
 ```
 
 Output
@@ -38,7 +40,7 @@ Output
 
 ## GetBlockByNumber
 
-GetBlockByNumber returns a specific block by its number.
+<GoDocLink href="etherscan#Etherscan.GetBlockByNumber">GetBlockByNumber</GoDocLink> returns a specific block by its number.
 
 ```go
 block, err := ethscan.GetBlockByNumber(web3.BlockNumber(100), true)
@@ -55,7 +57,7 @@ Output:
 
 ## GetContractCode
 
-GetContractCode returns the contract of a given address (if any).
+<GoDocLink href="etherscan#Etherscan.GetContractCode">GetContractCode</GoDocLink> returns the contract of a given address (if any).
 
 ```go
 code, err := ethscan.GetContractCode(address)
