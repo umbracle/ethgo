@@ -8,7 +8,6 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -17,15 +16,8 @@ import (
 	"github.com/umbracle/go-web3/testutil"
 )
 
-func encodeHex(b []byte) string {
-	return "0x" + hex.EncodeToString(b)
-}
-
-func decodeHex(str string) []byte {
-	if strings.HasPrefix(str, "0x") {
-		str = str[2:]
-	}
-	buf, err := hex.DecodeString(str)
+func mustDecodeHex(str string) []byte {
+	buf, err := decodeHex(str)
 	if err != nil {
 		panic(fmt.Errorf("could not decode hex: %v", err))
 	}
@@ -59,7 +51,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			"bytes",
-			decodeHex("0x12345678911121314151617181920211"),
+			mustDecodeHex("0x12345678911121314151617181920211"),
 		},
 		{
 			"string",
@@ -83,8 +75,8 @@ func TestEncoding(t *testing.T) {
 		{
 			"bytes[]",
 			[][]byte{
-				decodeHex("0x11"),
-				decodeHex("0x22"),
+				mustDecodeHex("0x11"),
+				mustDecodeHex("0x22"),
 			},
 		},
 		{
@@ -413,6 +405,16 @@ func TestEncodingBestEffort(t *testing.T) {
 			"uint8[]",
 			[]interface{}{"1", "2"},
 			[]uint8{1, 2},
+		},
+		{
+			"bytes",
+			"0x11",
+			[]uint8{17},
+		},
+		{
+			"bytes32",
+			"0x11",
+			[32]uint8{17},
 		},
 		{
 			"tuple(address a)",
