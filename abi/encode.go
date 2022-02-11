@@ -178,7 +178,8 @@ func encodeFixedBytes(v reflect.Value) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		return rightPad(value, 32), nil
+
+		v = reflect.ValueOf(value)
 	}
 	return rightPad(v.Bytes(), 32), nil
 }
@@ -206,7 +207,8 @@ func encodeBytes(v reflect.Value) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		return packBytesSlice(value, len(value))
+
+		v = reflect.ValueOf(value)
 	}
 	return packBytesSlice(v.Bytes(), v.Len())
 }
