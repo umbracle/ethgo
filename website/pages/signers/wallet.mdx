@@ -1,0 +1,37 @@
+
+# Wallet
+
+The `wallet` package is an implementation of the [Signer](./signer) abstraction using a private key. It supports loading the private key from different mediums.
+
+## Random
+
+Create a random key:
+
+```go
+key, err := wallet.GenerateKey()
+```
+
+## Mnemonic
+
+Create the key from a mnemonic phrase:
+
+```go
+mnemonic := ""
+key, err := wallet.NewWalletFromMnemonic(mnemonic)
+```
+
+## PrivateKey
+
+Create the key from a private key (in bytes):
+
+```go
+key, err := wallet.NewWalletFromPrivKey([]byte{})
+```
+
+## Hardware file
+
+Create the key from an encrypted JSON wallet following the [keystore](https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition) format.
+
+```go
+key, err := wallet.NewJSONWalletFromFile("./file.json")
+```

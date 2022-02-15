@@ -1,13 +1,15 @@
 
+import GoDocLink from '../../components/godoc'
+
 # Ethereum
 
 Ethereum is for things related to the endpoints. There are two types of endpoints, the ones that do not have.. and the ones that.. You have to consider that when talking with nodes on infra services, endpoints that assume accounts will not be available. Thus, we have not given much support to those either in this library.
 
 ## GetCode
 
-Returns code at a given address.
+<GoDocLink href="jsonrpc#Eth.GetCode">GetCode</GoDocLink> returns code at a given address.
 
-```
+```go
 code, err := client.Eth().GetCode(address, tag)
 ```
 
@@ -22,19 +24,99 @@ Output
 
 ## Accounts
 
+<GoDocLink href="jsonrpc#Eth.Accounts">Accounts</GoDocLink> returns a list of addresses owned by client.
+
+```go
+accounts, err := client.Eth().Accounts()
+```
+
+Params
+
+Output
+
 ## GetStorageAt
+
+<GoDocLink href="jsonrpc#Eth.GetStorageAt">GetStorageAt</GoDocLink> returns the value from a storage position at a given address.
+
+```go
+code, err := client.Eth().GetStorageAt(addr web3.Address, slot web3.Hash, block web3.BlockNumberOrHash)
+```
+
+Params
+
+Output
 
 ## BlockNumber
 
+<GoDocLink href="jsonrpc#Eth.BlockNumber">BlockNumber</GoDocLink> returns the number of most recent block. 
+
+```go
+number, err := client.Eth().BlockNumber()
+```
+
+Output
+
+- number (`uint`): 
+
 ## GetBlockByNumber
+
+<GoDocLink href="jsonrpc#Eth.GetBlockByNumber">GetBlockByNumber</GoDocLink> returns information about a block by block number. 
+
+```go
+block, err := client.Eth().GetBlockByNumber(i, full)
+```
+
+Params
+
+Output
 
 ## GetBlockByHash
 
+<GoDocLink href="jsonrpc#Eth.GetBlockByHash">GetBlockByHash</GoDocLink> returns information about a block by hash. 
+
+```go
+block, err := client.Eth().GetBlockByHash(hash, full)
+```
+
+Params
+
+Output
+
 ## GetFilterChanges
+
+<GoDocLink href="jsonrpc#Eth.GetFilterChanges">GetFilterChanges</GoDocLink> returns the filter changes for log filters.
+
+```go
+block, err := client.Eth().GetBlockByHash(hash, full)
+```
+
+Params
+
+Output
 
 ## GetTransactionByHash
 
+<GoDocLink href="jsonrpc#Eth.GetTransactionByHash">GetTransactionByHash</GoDocLink> returns a transaction by his hash  
+
+```go
+block, err := client.Eth().GetBlockByHash(hash, full)
+```
+
+Params
+
+Output
+
 ## GetFilterChangesBlock
+
+<GoDocLink href="jsonrpc#Eth.GetFilterChangesBlock">GetFilterChangesBlock</GoDocLink> returns the filter changes for block filters 
+
+```go
+block, err := client.Eth().GetBlockByHash(hash, full)
+```
+
+Params
+
+Output
 
 ## NewFilter
 

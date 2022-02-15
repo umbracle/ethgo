@@ -1,0 +1,13 @@
+
+# Signers
+
+The `Signer` is an interface that represents an Ethereum account that has an address (Address) and can sign arbitrary messages.
+
+Its signature looks like this: 
+
+```go
+type Key interface {
+	Address() Address
+	Sign(hash []byte) ([]byte, error)
+}
+```

@@ -1,34 +1,47 @@
 
+import GoDocLink from '../../components/godoc'
+
 # Ethereum Name Service (ENS)
 
 The Ethereum Name Service ([ENS](https://ens.domains/)) is a distributed, open, and extensible naming system based on the Ethereum blockchain.
 
-## Resolve an ENS name
+The <GoDocLink href="">ENS</GoDocLink> object on the `ens` package is a module that abstracts the interaction with the ENS registry.
 
 ```go
-import (
-    "fmt"
+package main
 
-    web3 "github.com/umbracle/go-web3"
-    "github.com/umbracle/go-web3/jsonrpc"
-    "github.com/umbracle/go-web3/contract/builtin/ens"
+import (
+    "github.com/umbracle/go-web3/ens"
 )
 
-// Address of the ENS resolver in Ethereum mainnet
-var mainnetAddress = web3.HexToAddress("0x314159265dD8dbb310642f98f50C066173C1259b")
-
 func main() {
-	client, err := jsonrpc.NewClient("https://mainnet.infura.io")
-    if err != nil {
-        panic(err)
-    }
-
-	resolver := ens.NewENSResolver(mainnetAddress, client)
-	addr, err := resolver.Resolve("umbracle.eth")
+	ensMod, err := ens.NewENS(ens.WithAddress("https://mainnet.infura.io"))
 	if err != nil {
 		panic(err)
 	}
-
-    fmt.Println(addr)
 }
 ```
+
+It will default to `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e` as the address for the ENS registry when connecting with one of the official Ethereum networks. However, this can be parametrized at creation time. This module also requires a JsonRPC connection to make the calls to the ENS registry contract.
+
+## Options
+
+- <GoDocLink href="ens#WithAddress">WithAddress</GoDocLink>: JsonRPC url of the endpoint to connect with.
+- <GoDocLink href="ens#WithClient">WithClient</GoDocLink>: `JsonRPC` object to make rpc calls. It takes preference over an address from `WithAddress`.
+- <GoDocLink href="ens#WithResolver">WithResolver</GoDocLink>: Custom resolver address to use rather than the default one.
+
+## Resolve
+
+<GoDocLink href="ens#ENS.Resolve">Resolve</GoDocLink> resolves an ENS name to its registered address.
+
+```go
+ensMod.Resolve("umbracle.eth")
+```
+
+Input:
+
+- `name` (string): ENS name to resolve.
+
+Output:
+
+- `address`: (Address): Ethereum address that resolves to the input name.
