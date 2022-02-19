@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestKeystore(t *testing.T) {
+func TestV3_EncodeDecode(t *testing.T) {
 	data := []byte{0x1, 0x2}
 	password := "abcd"
 
