@@ -57,7 +57,7 @@ func EncryptV3(content []byte, password string, customScrypt ...int) ([]byte, er
 	// generate mac
 	mac := web3.Keccak256(kdf[16:32], cipherText)
 
-	xx := &v3Encoding{
+	v3 := &v3Encoding{
 		Version: 3,
 		Crypto: &cryptoEncoding{
 			Cipher:     "aes-128-ctr",
@@ -71,11 +71,11 @@ func EncryptV3(content []byte, password string, customScrypt ...int) ([]byte, er
 		},
 	}
 
-	lastRaw, err := xx.Marshal()
+	encrypted, err := v3.Marshal()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	return lastRaw, nil
+	return encrypted, nil
 }
 
 // DecryptV3 decodes bytes in the v3 keystore format
@@ -167,8 +167,7 @@ func (h *hexString) UnmarshalJSON(data []byte) error {
 
 	data, err := hex.DecodeString(raw)
 	if err != nil {
-		fmt.Println(string(raw))
-		panic(err)
+		return err
 	}
 	*h = data
 	return nil
