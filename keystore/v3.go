@@ -3,24 +3,11 @@ package keystore
 import (
 	"bytes"
 	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/umbracle/go-web3"
-	"golang.org/x/crypto/pbkdf2"
-	"golang.org/x/crypto/scrypt"
 )
-
-func getRand(size int) []byte {
-	buf := make([]byte, size)
-	rand.Read(buf)
-	return buf
-}
 
 // EncryptV3 encrypts data in v3 format
 func EncryptV3(content []byte, password string, customScrypt ...int) ([]byte, error) {
@@ -92,7 +79,7 @@ func DecryptV3(content []byte, password string) ([]byte, error) {
 	}
 
 	// decode the kdf
-	kdf, err := encoding.Crypto.getKDF([]byte(password))
+	kdf, err := applyKdf(encoding.Crypto.KDF, []byte(password), encoding.Crypto.KDFParamsRaw)
 	if err != nil {
 		return nil, err
 	}
@@ -107,19 +94,6 @@ func DecryptV3(content []byte, password string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return dst, nil
-}
-
-func aesCTR(key, cipherText, iv []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	stream := cipher.NewCTR(block, iv)
-
-	dst := make([]byte, len(cipherText))
-	stream.XORKeyStream(dst, cipherText)
-
 	return dst, nil
 }
 
@@ -152,68 +126,4 @@ type cryptoEncoding struct {
 	KDFParams    interface{}
 	KDFParamsRaw json.RawMessage `json:"kdfparams"`
 	Mac          hexString       `json:"mac"`
-}
-
-type hexString []byte
-
-func (h hexString) MarshalJSON() ([]byte, error) {
-	str := "\"" + hex.EncodeToString(h) + "\""
-	return []byte(str), nil
-}
-
-func (h *hexString) UnmarshalJSON(data []byte) error {
-	raw := string(data)
-	raw = strings.Trim(raw, "\"")
-
-	data, err := hex.DecodeString(raw)
-	if err != nil {
-		return err
-	}
-	*h = data
-	return nil
-}
-
-type scryptParams struct {
-	Dklen int
-	Salt  hexString
-	N     int
-	P     int
-	R     int
-}
-
-func (s *scryptParams) Key(password []byte) ([]byte, error) {
-	return scrypt.Key(password, s.Salt, s.N, s.R, s.P, s.Dklen)
-}
-
-func (c *cryptoEncoding) getKDF(password []byte) ([]byte, error) {
-	var key []byte
-
-	if c.KDF == "pbkdf2" {
-		var params struct {
-			Dklen int
-			Salt  hexString
-			C     int
-			Prf   string
-		}
-		if err := json.Unmarshal(c.KDFParamsRaw, &params); err != nil {
-			return nil, err
-		}
-		if params.Prf != "hmac-sha256" {
-			return nil, fmt.Errorf("not found")
-		}
-		key = pbkdf2.Key(password, params.Salt, params.C, params.Dklen, sha256.New)
-	} else if c.KDF == "scrypt" {
-		var params scryptParams
-		err := json.Unmarshal(c.KDFParamsRaw, &params)
-		if err != nil {
-			return nil, err
-		}
-		key, err = params.Key(password)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		return nil, fmt.Errorf("kdf '%s' not supported", c.KDF)
-	}
-	return key, nil
 }
