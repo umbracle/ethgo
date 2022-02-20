@@ -53,10 +53,10 @@ func aesCTR(key, cipherText, iv []byte) ([]byte, error) {
 }
 
 type pbkdf2Params struct {
-	Dklen int
-	Salt  hexString
-	C     int
-	Prf   string
+	Dklen int       `json:"dklen"`
+	Salt  hexString `json:"salt"`
+	C     int       `json:"c"`
+	Prf   string    `json:"prf"`
 }
 
 func (p *pbkdf2Params) Key(password []byte) []byte {
@@ -64,11 +64,11 @@ func (p *pbkdf2Params) Key(password []byte) []byte {
 }
 
 type scryptParams struct {
-	Dklen int
-	Salt  hexString
-	N     int
-	P     int
-	R     int
+	Dklen int       `json:"dklen"`
+	Salt  hexString `json:"salt"`
+	N     int       `json:"n"`
+	P     int       `json:"p"`
+	R     int       `json:"r"`
 }
 
 func (s *scryptParams) Key(password []byte) ([]byte, error) {
