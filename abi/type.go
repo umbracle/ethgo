@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/umbracle/go-web3"
+	web3 "github.com/umbracle/ethgo"
 )
 
 // batch of predefined reflect types

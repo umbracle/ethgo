@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/testutil"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/testutil"
 )
 
 func TestSubscribeNewHead(t *testing.T) {

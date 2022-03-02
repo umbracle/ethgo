@@ -3,11 +3,12 @@ package abi
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/umbracle/go-web3"
 	"math/big"
 	"reflect"
 	"strconv"
 	"strings"
+
+	web3 "github.com/umbracle/ethgo"
 )
 
 var (

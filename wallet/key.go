@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/umbracle/go-web3"
+	web3 "github.com/umbracle/ethgo"
 )
 
 // S256 is the secp256k1 elliptic curve

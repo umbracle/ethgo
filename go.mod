@@ -1,4 +1,4 @@
-module github.com/umbracle/go-web3
+module github.com/umbracle/ethgo
 
 go 1.12
 

@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	solcDir  = "/tmp/go-web3-solc"
+	solcDir  = "/tmp/ethgo-solc"
 	solcPath = solcDir + "/solidity"
 )
 
@@ -128,7 +128,7 @@ func existsSolidity(t *testing.T, path string) bool {
 }
 
 func TestDownloadSolidityCompiler(t *testing.T) {
-	dst1, err := ioutil.TempDir("/tmp", "go-web3-")
+	dst1, err := ioutil.TempDir("/tmp", "ethgo-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func TestDownloadSolidityCompiler(t *testing.T) {
 		t.Fatal("it should exist")
 	}
 
-	dst2, err := ioutil.TempDir("/tmp", "go-web3-")
+	dst2, err := ioutil.TempDir("/tmp", "ethgo-")
 	if err != nil {
 		t.Fatal(err)
 	}

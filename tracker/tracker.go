@@ -15,12 +15,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/blocktracker"
-	"github.com/umbracle/go-web3/etherscan"
-	"github.com/umbracle/go-web3/jsonrpc/codec"
-	"github.com/umbracle/go-web3/tracker/store"
-	"github.com/umbracle/go-web3/tracker/store/inmem"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/blocktracker"
+	"github.com/umbracle/ethgo/etherscan"
+	"github.com/umbracle/ethgo/jsonrpc/codec"
+	"github.com/umbracle/ethgo/tracker/store"
+	"github.com/umbracle/ethgo/tracker/store/inmem"
 )
 
 var (

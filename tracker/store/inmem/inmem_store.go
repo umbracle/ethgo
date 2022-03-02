@@ -4,8 +4,8 @@ import (
 	"strings"
 	"sync"
 
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker/store"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/tracker/store"
 )
 
 var _ store.Store = (*InmemStore)(nil)

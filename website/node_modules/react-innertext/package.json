@@ -1,0 +1,49 @@
+{
+  "name": "react-innertext",
+  "version": "1.1.5",
+  "author": "Charles Stover (react-innertext@charlesstover.com)",
+  "description": "Returns the innerText of a React JSX object.",
+  "homepage": "https://github.com/CharlesStover/react-innertext#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "repository": "github:CharlesStover/react-innertext",
+  "types": "index.d.ts",
+  "bugs": {
+    "email": "react-innertext@charlesstover.com",
+    "url": "https://github.com/CharlesStover/react-innertext/issues"
+  },
+  "directories": {
+    "lib": "src",
+    "test": "tests"
+  },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
+  "keywords": [
+    "innerText",
+    "jsx",
+    "react",
+    "reactjs"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc",
+    "test": "mocha -r ts-node/register tests/index.test.tsx"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^12.0.8",
+    "@types/react": "^16.8.0",
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0",
+    "react": "^16.0.0",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.0"
+  },
+  "peerDependencies": {
+    "@types/react": ">=0.0.0 <=99",
+    "react": ">=0.0.0 <=99"
+  }
+}

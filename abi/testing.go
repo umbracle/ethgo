@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/umbracle/go-web3"
+	web3 "github.com/umbracle/ethgo"
 )
 
 func randomInt(min, max int) int {

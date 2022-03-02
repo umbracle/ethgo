@@ -1,6 +1,6 @@
 package ens
 
-import "github.com/umbracle/go-web3"
+import web3 "github.com/umbracle/ethgo"
 
 var defaultEnsAddr = web3.HexToAddress("0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e")
 

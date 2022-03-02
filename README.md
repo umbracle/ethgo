@@ -1,5 +1,5 @@
 
-# Go-Web3
+# Eth-Go
 
 ## JsonRPC
 
@@ -9,8 +9,8 @@ package main
 import (
 	"fmt"
 	
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 func main() {
@@ -40,7 +40,7 @@ The ABI codifier uses randomized tests with e2e integration tests with a real Ge
 To use the library import:
 
 ```
-"github.com/umbracle/go-web3/abi"
+"github.com/umbracle/ethgo/abi"
 ```
 
 Declare basic objects:
@@ -80,8 +80,8 @@ You can also codify structs as Solidity tuples:
 import (
 	"fmt"
     
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/abi"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/abi"
 	"math/big"
 )
 
@@ -155,8 +155,8 @@ Resolve names on the Ethereum Name Service registrar.
 import (
     "fmt"
 
-    "github.com/umbracle/go-web3/jsonrpc"
-    "github.com/umbracle/go-web3/ens"
+    "github.com/umbracle/ethgo/jsonrpc"
+    "github.com/umbracle/ethgo/ens"
 )
 
 func main() {
@@ -183,9 +183,9 @@ func main() {
 import (
     "fmt"
 
-    web3 "github.com/umbracle/go-web3"
-    "github.com/umbracle/go-web3/jsonrpc"
-    "github.com/umbracle/go-web3/blocktracker"
+    web3 "github.com/umbracle/ethgo"
+    "github.com/umbracle/ethgo/jsonrpc"
+    "github.com/umbracle/ethgo/blocktracker"
 )
 
 func main() {

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/contract/builtin/ens"
-	"github.com/umbracle/go-web3/jsonrpc"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/contract/builtin/ens"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 type EnsConfig struct {

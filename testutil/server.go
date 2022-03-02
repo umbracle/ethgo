@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/ory/dockertest"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/compiler"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/compiler"
 	"golang.org/x/crypto/sha3"
 )
 

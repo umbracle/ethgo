@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker/store"
+	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/tracker/store"
 
 	// Enable postgres for sqlx
 	_ "github.com/lib/pq"

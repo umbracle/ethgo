@@ -1,0 +1,32 @@
+{
+  "name": "@reach/utils",
+  "version": "0.11.2",
+  "description": "Internal, shared utilities for Reach UI.",
+  "author": "React Training <hello@reacttraining.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reach/reach-ui.git",
+    "directory": "packages/utils"
+  },
+  "scripts": {
+    "build": "ts-node --transpile-only ../../scripts/build-package $npm_package_name"
+  },
+  "peerDependencies": {
+    "react": "^16.8.0",
+    "react-dom": "^16.8.0"
+  },
+  "main": "dist/index.js",
+  "module": "dist/utils.esm.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "dependencies": {
+    "@types/warning": "^3.0.0",
+    "tslib": "^2.0.0",
+    "warning": "^4.0.3"
+  },
+  "gitHead": "2aa6f03c5eed8c2b7525a29db1c69fe6bc540e5d"
+}
