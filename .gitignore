@@ -2,3 +2,7 @@ bin/
 pkg/
 
 .idea
+
+# website
+node_modules
+.next

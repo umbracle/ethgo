@@ -1,0 +1,11 @@
+
+# Signers
+
+The `Signer` represents an abstract entity that can sign arbitrary messages.
+
+```go
+type Key interface {
+	Address() Address
+	Sign(hash []byte) ([]byte, error)
+}
+```
