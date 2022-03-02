@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/testutil"
 )
 
 var (
 	url   = "https://mainnet.infura.io"
-	zeroX = web3.HexToAddress("0xe41d2489571d322189246dafa5ebde1f4699f498")
+	zeroX = ethgo.HexToAddress("0xe41d2489571d322189246dafa5ebde1f4699f498")
 )
 
 func TestERC20Decimals(t *testing.T) {

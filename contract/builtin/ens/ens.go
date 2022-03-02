@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/big"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
@@ -21,12 +21,12 @@ type ENS struct {
 }
 
 // DeployENS deploys a new ENS contract
-func DeployENS(provider *jsonrpc.Client, from web3.Address, args ...interface{}) *contract.Txn {
+func DeployENS(provider *jsonrpc.Client, from ethgo.Address, args ...interface{}) *contract.Txn {
 	return contract.DeployContract(provider, from, abiENS, binENS, args...)
 }
 
 // NewENS creates a new instance of the contract at a specific address
-func NewENS(addr web3.Address, provider *jsonrpc.Client) *ENS {
+func NewENS(addr ethgo.Address, provider *jsonrpc.Client) *ENS {
 	return &ENS{c: contract.NewContract(addr, abiENS, provider)}
 }
 
@@ -38,17 +38,17 @@ func (e *ENS) Contract() *contract.Contract {
 // calls
 
 // Owner calls the owner method in the solidity contract
-func (e *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (retval0 web3.Address, err error) {
+func (e *ENS) Owner(node [32]byte, block ...ethgo.BlockNumber) (retval0 ethgo.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
-	out, err = e.c.Call("owner", web3.EncodeBlock(block...), node)
+	out, err = e.c.Call("owner", ethgo.EncodeBlock(block...), node)
 	if err != nil {
 		return
 	}
 
 	// decode outputs
-	retval0, ok = out["0"].(web3.Address)
+	retval0, ok = out["0"].(ethgo.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
@@ -58,17 +58,17 @@ func (e *ENS) Owner(node [32]byte, block ...web3.BlockNumber) (retval0 web3.Addr
 }
 
 // Resolver calls the resolver method in the solidity contract
-func (e *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (retval0 web3.Address, err error) {
+func (e *ENS) Resolver(node [32]byte, block ...ethgo.BlockNumber) (retval0 ethgo.Address, err error) {
 	var out map[string]interface{}
 	var ok bool
 
-	out, err = e.c.Call("resolver", web3.EncodeBlock(block...), node)
+	out, err = e.c.Call("resolver", ethgo.EncodeBlock(block...), node)
 	if err != nil {
 		return
 	}
 
 	// decode outputs
-	retval0, ok = out["0"].(web3.Address)
+	retval0, ok = out["0"].(ethgo.Address)
 	if !ok {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
@@ -78,11 +78,11 @@ func (e *ENS) Resolver(node [32]byte, block ...web3.BlockNumber) (retval0 web3.A
 }
 
 // Ttl calls the ttl method in the solidity contract
-func (e *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (retval0 uint64, err error) {
+func (e *ENS) Ttl(node [32]byte, block ...ethgo.BlockNumber) (retval0 uint64, err error) {
 	var out map[string]interface{}
 	var ok bool
 
-	out, err = e.c.Call("ttl", web3.EncodeBlock(block...), node)
+	out, err = e.c.Call("ttl", ethgo.EncodeBlock(block...), node)
 	if err != nil {
 		return
 	}
@@ -100,17 +100,17 @@ func (e *ENS) Ttl(node [32]byte, block ...web3.BlockNumber) (retval0 uint64, err
 // txns
 
 // SetOwner sends a setOwner transaction in the solidity contract
-func (e *ENS) SetOwner(node [32]byte, owner web3.Address) *contract.Txn {
+func (e *ENS) SetOwner(node [32]byte, owner ethgo.Address) *contract.Txn {
 	return e.c.Txn("setOwner", node, owner)
 }
 
 // SetResolver sends a setResolver transaction in the solidity contract
-func (e *ENS) SetResolver(node [32]byte, resolver web3.Address) *contract.Txn {
+func (e *ENS) SetResolver(node [32]byte, resolver ethgo.Address) *contract.Txn {
 	return e.c.Txn("setResolver", node, resolver)
 }
 
 // SetSubnodeOwner sends a setSubnodeOwner transaction in the solidity contract
-func (e *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner web3.Address) *contract.Txn {
+func (e *ENS) SetSubnodeOwner(node [32]byte, label [32]byte, owner ethgo.Address) *contract.Txn {
 	return e.c.Txn("setSubnodeOwner", node, label, owner)
 }
 
@@ -121,18 +121,18 @@ func (e *ENS) SetTTL(node [32]byte, ttl uint64) *contract.Txn {
 
 // events
 
-func (e *ENS) NewOwnerEventSig() web3.Hash {
+func (e *ENS) NewOwnerEventSig() ethgo.Hash {
 	return e.c.ABI().Events["NewOwner"].ID()
 }
 
-func (e *ENS) NewResolverEventSig() web3.Hash {
+func (e *ENS) NewResolverEventSig() ethgo.Hash {
 	return e.c.ABI().Events["NewResolver"].ID()
 }
 
-func (e *ENS) NewTTLEventSig() web3.Hash {
+func (e *ENS) NewTTLEventSig() ethgo.Hash {
 	return e.c.ABI().Events["NewTTL"].ID()
 }
 
-func (e *ENS) TransferEventSig() web3.Hash {
+func (e *ENS) TransferEventSig() ethgo.Hash {
 	return e.c.ABI().Events["Transfer"].ID()
 }

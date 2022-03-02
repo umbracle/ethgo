@@ -50,7 +50,7 @@ func funcName(str string) string {
 func encodeSimpleArg(typ *abi.Type) string {
 	switch typ.Kind() {
 	case abi.KindAddress:
-		return "web3.Address"
+		return "ethgo.Address"
 
 	case abi.KindString:
 		return "string"
@@ -180,7 +180,7 @@ import (
 	"fmt"
 	"math/big"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
@@ -195,12 +195,12 @@ type {{.Name}} struct {
 }
 {{if .Contract.Bin}}
 // Deploy{{.Name}} deploys a new {{.Name}} contract
-func Deploy{{.Name}}(provider *jsonrpc.Client, from web3.Address, args ...interface{}) *contract.Txn {
+func Deploy{{.Name}}(provider *jsonrpc.Client, from ethgo.Address, args ...interface{}) *contract.Txn {
 	return contract.DeployContract(provider, from, abi{{.Name}}, bin{{.Name}}, args...)
 }
 {{end}}
 // New{{.Name}} creates a new instance of the contract at a specific address
-func New{{.Name}}(addr web3.Address, provider *jsonrpc.Client) *{{.Name}} {
+func New{{.Name}}(addr ethgo.Address, provider *jsonrpc.Client) *{{.Name}} {
 	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, provider)}
 }
 
@@ -212,11 +212,11 @@ func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
 // calls
 {{range $key, $value := .Abi.Methods}}{{if .Const}}
 // {{funcName $key}} calls the {{$key}} method in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElems .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...web3.BlockNumber) ({{range $index, $val := tupleElems .Outputs}}retval{{$index}} {{arg .}}, {{end}}err error) {
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElems .Inputs}}{{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}} {{arg .}}, {{end}}block ...ethgo.BlockNumber) ({{range $index, $val := tupleElems .Outputs}}retval{{$index}} {{arg .}}, {{end}}err error) {
 	var out map[string]interface{}
 	{{ $length := tupleLen .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
 
-	out, err = {{$.Ptr}}.c.Call("{{$key}}", web3.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
+	out, err = {{$.Ptr}}.c.Call("{{$key}}", ethgo.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
 	if err != nil {
 		return
 	}
@@ -240,7 +240,7 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := tupleEl
 {{end}}{{end}}
 // events
 {{range $key, $value := .Abi.Events}}
-func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}EventSig() web3.Hash {
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}EventSig() ethgo.Hash {
 	return {{$.Ptr}}.c.ABI().Events["{{funcName $key}}"].ID()
 }
 {{end}}`

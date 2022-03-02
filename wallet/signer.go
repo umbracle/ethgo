@@ -3,16 +3,16 @@ package wallet
 import (
 	"math/big"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/fastrlp"
 )
 
 type Signer interface {
 	// RecoverSender returns the sender to the transaction
-	RecoverSender(tx *web3.Transaction) (web3.Address, error)
+	RecoverSender(tx *ethgo.Transaction) (ethgo.Address, error)
 
 	// SignTx signs a transaction
-	SignTx(tx *web3.Transaction, key *Key) (*web3.Transaction, error)
+	SignTx(tx *ethgo.Transaction, key *Key) (*ethgo.Transaction, error)
 }
 
 type EIP1155Signer struct {
@@ -23,7 +23,7 @@ func NewEIP155Signer(chainID uint64) *EIP1155Signer {
 	return &EIP1155Signer{chainID: chainID}
 }
 
-func (e *EIP1155Signer) RecoverSender(tx *web3.Transaction) (web3.Address, error) {
+func (e *EIP1155Signer) RecoverSender(tx *ethgo.Transaction) (ethgo.Address, error) {
 	v := new(big.Int).SetBytes(tx.V).Uint64()
 	v -= e.chainID * 2
 	v -= 8
@@ -31,16 +31,16 @@ func (e *EIP1155Signer) RecoverSender(tx *web3.Transaction) (web3.Address, error
 
 	sig, err := encodeSignature(tx.R, tx.S, byte(v))
 	if err != nil {
-		return web3.Address{}, err
+		return ethgo.Address{}, err
 	}
 	addr, err := Ecrecover(signHash(tx, e.chainID), sig)
 	if err != nil {
-		return web3.Address{}, err
+		return ethgo.Address{}, err
 	}
 	return addr, nil
 }
 
-func (e *EIP1155Signer) SignTx(tx *web3.Transaction, key *Key) (*web3.Transaction, error) {
+func (e *EIP1155Signer) SignTx(tx *ethgo.Transaction, key *Key) (*ethgo.Transaction, error) {
 	hash := signHash(tx, e.chainID)
 
 	sig, err := key.Sign(hash)
@@ -56,7 +56,7 @@ func (e *EIP1155Signer) SignTx(tx *web3.Transaction, key *Key) (*web3.Transactio
 	return tx, nil
 }
 
-func signHash(tx *web3.Transaction, chainID uint64) []byte {
+func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	a := fastrlp.DefaultArenaPool.Get()
 
 	v := a.NewArray()
@@ -78,7 +78,7 @@ func signHash(tx *web3.Transaction, chainID uint64) []byte {
 		v.Set(a.NewUint(0))
 	}
 
-	hash := web3.Keccak256(v.MarshalTo(nil))
+	hash := ethgo.Keccak256(v.MarshalTo(nil))
 	fastrlp.DefaultArenaPool.Put(a)
 	return hash
 }

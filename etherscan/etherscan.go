@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/jsonrpc/codec"
 	"github.com/valyala/fasthttp"
 )
@@ -19,19 +19,19 @@ type Etherscan struct {
 }
 
 // NewEtherscanFromNetwork creates a new client from the network id
-func NewEtherscanFromNetwork(n web3.Network, apiKey string) (*Etherscan, error) {
+func NewEtherscanFromNetwork(n ethgo.Network, apiKey string) (*Etherscan, error) {
 	var url string
 	switch n {
-	case web3.Mainnet:
+	case ethgo.Mainnet:
 		url = "https://api.etherscan.io"
 
-	case web3.Ropsten:
+	case ethgo.Ropsten:
 		url = "https://ropsten.etherscan.io"
 
-	case web3.Rinkeby:
+	case ethgo.Rinkeby:
 		url = "https://rinkeby.etherscan.io"
 
-	case web3.Goerli:
+	case ethgo.Goerli:
 		url = "https://goerli.etherscan.io"
 
 	default:
@@ -114,8 +114,8 @@ func (e *Etherscan) BlockNumber() (uint64, error) {
 }
 
 // GetBlockByNumber returns information about a block by block number.
-func (e *Etherscan) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, error) {
-	var b *web3.Block
+func (e *Etherscan) GetBlockByNumber(i ethgo.BlockNumber, full bool) (*ethgo.Block, error) {
+	var b *ethgo.Block
 	params := map[string]string{
 		"tag":     i.String(),
 		"boolean": strconv.FormatBool(full),
@@ -134,7 +134,7 @@ type ContractCode struct {
 	ConstructorArguments string
 }
 
-func (e *Etherscan) GetContractCode(addr web3.Address) (*ContractCode, error) {
+func (e *Etherscan) GetContractCode(addr ethgo.Address) (*ContractCode, error) {
 	var out []*ContractCode
 	err := e.Query("contract", "getsourcecode", &out, map[string]string{
 		"address": addr.String(),

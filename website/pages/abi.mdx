@@ -44,7 +44,7 @@ You can also codify structs as Solidity tuples:
 import (
 	"fmt"
     
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"math/big"
 )
@@ -53,11 +53,11 @@ func main() {
 	typ := abi.MustNewType("tuple(address a, uint256 b)")
 
 	type Obj struct {
-		A web3.Address
+		A ethgo.Address
 		B *big.Int
 	}
 	obj := &Obj{
-		A: web3.Address{0x1},
+		A: ethgo.Address{0x1},
 		B: big.NewInt(1),
 	}
 

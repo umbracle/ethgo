@@ -1,6 +1,6 @@
 package store
 
-import web3 "github.com/umbracle/ethgo"
+import "github.com/umbracle/ethgo"
 
 // Store is a datastore for the tracker
 type Store interface {
@@ -26,11 +26,11 @@ type Entry interface {
 	LastIndex() (uint64, error)
 
 	// StoreLogs stores the web3 logs of the event
-	StoreLogs(logs []*web3.Log) error
+	StoreLogs(logs []*ethgo.Log) error
 
 	// RemoveLogs all the logs starting at index 'indx'
 	RemoveLogs(indx uint64) error
 
 	// GetLog returns the log at indx
-	GetLog(indx uint64, log *web3.Log) error
+	GetLog(indx uint64, log *ethgo.Log) error
 }

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/testutil"
 )
 
@@ -34,7 +34,7 @@ func TestTopicEncoding(t *testing.T) {
 		},
 		{
 			Type: "address",
-			Val:  web3.Address{0x1},
+			Val:  ethgo.Address{0x1},
 		},
 	}
 

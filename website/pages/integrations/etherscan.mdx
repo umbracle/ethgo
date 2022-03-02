@@ -12,11 +12,11 @@ package main
 
 import (
     "github.com/umbracle/ethgo/etherscan"
-    web3 "github.com/umbracle/ethgo"
+    "github.com/umbracle/ethgo"
 )
 
 func main() {
-    ethscan, err := etherscan.NewEtherscanFromNetwork(web3.Mainnet, "apiKey")
+    ethscan, err := etherscan.NewEtherscanFromNetwork(ethgo.Mainnet, "apiKey")
 }
 ```
 
@@ -45,7 +45,7 @@ Output
 <GoDocLink href="etherscan#Etherscan.GetBlockByNumber">GetBlockByNumber</GoDocLink> returns a specific block by its number.
 
 ```go
-block, err := ethscan.GetBlockByNumber(web3.BlockNumber(100), true)
+block, err := ethscan.GetBlockByNumber(ethgo.BlockNumber(100), true)
 ```
 
 Input:

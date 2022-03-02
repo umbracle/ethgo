@@ -13,7 +13,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/tracker"
@@ -56,8 +56,8 @@ func main() {
 		tracker.WithEtherscan(os.Getenv("ETHERSCAN_APIKEY")),
 		tracker.WithFilter(&tracker.FilterConfig{
 			Async: true,
-			Address: []web3.Address{
-				web3.HexToAddress(target),
+			Address: []ethgo.Address{
+				ethgo.HexToAddress(target),
 			},
 		}),
 	)

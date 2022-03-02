@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 )
 
 func testEtherscanMainnet(t *testing.T) *Etherscan {
@@ -34,7 +34,7 @@ func TestContract(t *testing.T) {
 	e := testEtherscanMainnet(t)
 
 	// uniswap v2. router
-	code, err := e.GetContractCode(web3.HexToAddress("0x7a250d5630b4cf539739df2c5dacb4c659f2488d"))
+	code, err := e.GetContractCode(ethgo.HexToAddress("0x7a250d5630b4cf539739df2c5dacb4c659f2488d"))
 	assert.NoError(t, err)
 	assert.Equal(t, code.Runs, "999999")
 

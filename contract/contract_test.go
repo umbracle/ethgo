@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/testutil"
@@ -14,7 +14,7 @@ import (
 
 var (
 	addr0  = "0x0000000000000000000000000000000000000000"
-	addr0B = web3.HexToAddress(addr0)
+	addr0B = ethgo.HexToAddress(addr0)
 )
 
 func TestContractNoInput(t *testing.T) {
@@ -32,7 +32,7 @@ func TestContractNoInput(t *testing.T) {
 	p, _ := jsonrpc.NewClient(s.HTTPAddr())
 	c := NewContract(addr, abi0, p)
 
-	vals, err := c.Call("set", web3.Latest)
+	vals, err := c.Call("set", ethgo.Latest)
 	assert.NoError(t, err)
 	assert.Equal(t, vals["0"], big.NewInt(1))
 
@@ -42,7 +42,7 @@ func TestContractNoInput(t *testing.T) {
 	assert.NoError(t, err)
 
 	c1 := NewContract(addr, abi1, p)
-	vals, err = c1.Call("set", web3.Latest)
+	vals, err = c1.Call("set", ethgo.Latest)
 	assert.NoError(t, err)
 	assert.Equal(t, vals["0"], big.NewInt(1))
 }
@@ -63,7 +63,7 @@ func TestContractIO(t *testing.T) {
 	c := NewContract(addr, abi, p)
 	c.SetFrom(s.Account(0))
 
-	resp, err := c.Call("setA", web3.Latest, addr0B, 1000)
+	resp, err := c.Call("setA", ethgo.Latest, addr0B, 1000)
 	assert.NoError(t, err)
 
 	assert.Equal(t, resp["0"], addr0B)
@@ -88,7 +88,7 @@ func TestDeployContract(t *testing.T) {
 	bin, err := hex.DecodeString(artifact.Bin)
 	assert.NoError(t, err)
 
-	txn := DeployContract(p, s.Account(0), abi, bin, web3.Address{0x1}, 1000)
+	txn := DeployContract(p, s.Account(0), abi, bin, ethgo.Address{0x1}, 1000)
 
 	if err := txn.Do(); err != nil {
 		t.Fatal(err)
@@ -98,11 +98,11 @@ func TestDeployContract(t *testing.T) {
 	}
 
 	i := NewContract(txn.Receipt().ContractAddress, abi, p)
-	resp, err := i.Call("val_0", web3.Latest)
+	resp, err := i.Call("val_0", ethgo.Latest)
 	assert.NoError(t, err)
-	assert.Equal(t, resp["0"], web3.Address{0x1})
+	assert.Equal(t, resp["0"], ethgo.Address{0x1})
 
-	resp, err = i.Call("val_1", web3.Latest)
+	resp, err = i.Call("val_1", ethgo.Latest)
 	assert.NoError(t, err)
 	assert.Equal(t, resp["0"], big.NewInt(1000))
 }

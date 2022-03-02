@@ -1,7 +1,7 @@
 package ens
 
 import (
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
@@ -10,11 +10,11 @@ type ENSResolver struct {
 	provider *jsonrpc.Client
 }
 
-func NewENSResolver(addr web3.Address, provider *jsonrpc.Client) *ENSResolver {
+func NewENSResolver(addr ethgo.Address, provider *jsonrpc.Client) *ENSResolver {
 	return &ENSResolver{NewENS(addr, provider), provider}
 }
 
-func (e *ENSResolver) Resolve(addr string, block ...web3.BlockNumber) (res web3.Address, err error) {
+func (e *ENSResolver) Resolve(addr string, block ...ethgo.BlockNumber) (res ethgo.Address, err error) {
 	addrHash := NameHash(addr)
 	resolverAddr, err := e.e.Resolver(addrHash, block...)
 	if err != nil {

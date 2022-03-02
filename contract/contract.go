@@ -5,21 +5,21 @@ import (
 	"fmt"
 	"math/big"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 // Contract is an Ethereum contract
 type Contract struct {
-	addr     web3.Address
-	from     *web3.Address
+	addr     ethgo.Address
+	from     *ethgo.Address
 	abi      *abi.ABI
 	provider *jsonrpc.Client
 }
 
 // DeployContract deploys a contract
-func DeployContract(provider *jsonrpc.Client, from web3.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
+func DeployContract(provider *jsonrpc.Client, from ethgo.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
 	return &Txn{
 		from:     from,
 		provider: provider,
@@ -30,7 +30,7 @@ func DeployContract(provider *jsonrpc.Client, from web3.Address, abi *abi.ABI, b
 }
 
 // NewContract creates a new contract instance
-func NewContract(addr web3.Address, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
+func NewContract(addr ethgo.Address, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
 	return &Contract{
 		addr:     addr,
 		abi:      abi,
@@ -44,12 +44,12 @@ func (c *Contract) ABI() *abi.ABI {
 }
 
 // Addr returns the address of the contract
-func (c *Contract) Addr() web3.Address {
+func (c *Contract) Addr() ethgo.Address {
 	return c.addr
 }
 
 // SetFrom sets the origin of the calls
-func (c *Contract) SetFrom(addr web3.Address) {
+func (c *Contract) SetFrom(addr ethgo.Address) {
 	c.from = &addr
 }
 
@@ -59,7 +59,7 @@ func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, erro
 }
 
 // Call calls a method in the contract
-func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
+func (c *Contract) Call(method string, block ethgo.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
 	m := c.abi.GetMethod(method)
 	if m == nil {
 		return nil, fmt.Errorf("method %s not found", method)
@@ -71,7 +71,7 @@ func (c *Contract) Call(method string, block web3.BlockNumber, args ...interface
 	}
 
 	// Call function
-	msg := &web3.CallMsg{
+	msg := &ethgo.CallMsg{
 		To:   &c.addr,
 		Data: data,
 	}
@@ -115,8 +115,8 @@ func (c *Contract) Txn(method string, args ...interface{}) *Txn {
 
 // Txn is a transaction object
 type Txn struct {
-	from     web3.Address
-	addr     *web3.Address
+	from     ethgo.Address
+	addr     *ethgo.Address
 	provider *jsonrpc.Client
 	method   *abi.Method
 	args     []interface{}
@@ -125,8 +125,8 @@ type Txn struct {
 	gasLimit uint64
 	gasPrice uint64
 	value    *big.Int
-	hash     web3.Hash
-	receipt  *web3.Receipt
+	hash     ethgo.Hash
+	receipt  *ethgo.Receipt
 }
 
 func (t *Txn) isContractDeployment() bool {
@@ -158,7 +158,7 @@ func (t *Txn) estimateGas() (uint64, error) {
 		return t.provider.Eth().EstimateGasContract(t.data)
 	}
 
-	msg := &web3.CallMsg{
+	msg := &ethgo.CallMsg{
 		From:  t.from,
 		To:    t.addr,
 		Data:  t.data,
@@ -202,7 +202,7 @@ func (t *Txn) Do() error {
 	}
 
 	// send transaction
-	txn := &web3.Transaction{
+	txn := &ethgo.Transaction{
 		From:     t.from,
 		Input:    t.data,
 		GasPrice: t.gasPrice,
@@ -256,7 +256,7 @@ func (t *Txn) SetGasLimit(gasLimit uint64) *Txn {
 
 // Wait waits till the transaction is mined
 func (t *Txn) Wait() error {
-	if (t.hash == web3.Hash{}) {
+	if (t.hash == ethgo.Hash{}) {
 		panic("transaction not executed")
 	}
 
@@ -276,7 +276,7 @@ func (t *Txn) Wait() error {
 }
 
 // Receipt returns the receipt of the transaction after wait
-func (t *Txn) Receipt() *web3.Receipt {
+func (t *Txn) Receipt() *ethgo.Receipt {
 	return t.receipt
 }
 
@@ -286,12 +286,12 @@ type Event struct {
 }
 
 // Encode encodes an event
-func (e *Event) Encode() web3.Hash {
+func (e *Event) Encode() ethgo.Hash {
 	return e.event.ID()
 }
 
 // ParseLog parses a log
-func (e *Event) ParseLog(log *web3.Log) (map[string]interface{}, error) {
+func (e *Event) ParseLog(log *ethgo.Log) (map[string]interface{}, error) {
 	return abi.ParseLog(e.event.Inputs, log)
 }
 

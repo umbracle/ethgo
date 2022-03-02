@@ -9,7 +9,7 @@ package main
 import (
 	"fmt"
 	
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
@@ -24,7 +24,7 @@ func main() {
 		panic(err)
 	}
 
-	header, err := client.Eth().GetBlockByNumber(web3.BlockNumber(number), true)
+	header, err := client.Eth().GetBlockByNumber(ethgo.BlockNumber(number), true)
 	if err != nil {
 		panic(err)
 	}
@@ -80,7 +80,7 @@ You can also codify structs as Solidity tuples:
 import (
 	"fmt"
     
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"math/big"
 )
@@ -89,11 +89,11 @@ func main() {
 	typ := abi.MustNewType("tuple(address a, uint256 b)")
 
 	type Obj struct {
-		A web3.Address
+		A ethgo.Address
 		B *big.Int
 	}
 	obj := &Obj{
-		A: web3.Address{0x1},
+		A: ethgo.Address{0x1},
 		B: big.NewInt(1),
 	}
 
@@ -128,11 +128,11 @@ As for now the library only provides primitive abstractions to send signed abstr
 // Generate a random wallet
 key, _ := wallet.GenerateKey()
 
-to := web3.Address{0x1}
+to := ethgo.Address{0x1}
 transferVal := big.NewInt(1000)
 
 // Create the transaction
-txn := &web3.Transaction{
+txn := &ethgo.Transaction{
 	To:    &to,
 	Value: transferVal,
 	Gas:   100000,
@@ -183,7 +183,6 @@ func main() {
 import (
     "fmt"
 
-    web3 "github.com/umbracle/ethgo"
     "github.com/umbracle/ethgo/jsonrpc"
     "github.com/umbracle/ethgo/blocktracker"
 )

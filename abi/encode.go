@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 )
 
 var (
@@ -190,7 +190,7 @@ func encodeAddress(v reflect.Value) ([]byte, error) {
 		v = convertArrayToBytes(v)
 	}
 	if v.Kind() == reflect.String {
-		var addr web3.Address
+		var addr ethgo.Address
 		if err := addr.UnmarshalText([]byte(v.String())); err != nil {
 			return nil, err
 		}

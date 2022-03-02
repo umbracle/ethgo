@@ -4,10 +4,10 @@ import (
 	"math/big"
 	"reflect"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 )
 
-func CompareLogs(one, two []*web3.Log) bool {
+func CompareLogs(one, two []*ethgo.Log) bool {
 	if len(one) != len(two) {
 		return false
 	}
@@ -17,7 +17,7 @@ func CompareLogs(one, two []*web3.Log) bool {
 	return reflect.DeepEqual(one, two)
 }
 
-func CompareBlocks(one, two []*web3.Block) bool {
+func CompareBlocks(one, two []*ethgo.Block) bool {
 	if len(one) != len(two) {
 		return false
 	}

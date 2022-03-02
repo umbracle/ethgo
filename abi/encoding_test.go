@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	web3 "github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/compiler"
 	"github.com/umbracle/ethgo/testutil"
 )
@@ -63,7 +63,7 @@ func TestEncoding(t *testing.T) {
 		},
 		{
 			"address[]",
-			[]web3.Address{{1}, {2}},
+			[]ethgo.Address{{1}, {2}},
 		},
 		{
 			"bytes10[]",
@@ -170,7 +170,7 @@ func TestEncoding(t *testing.T) {
 			// tuple with array slice
 			"tuple(address[] a)",
 			map[string]interface{}{
-				"a": []web3.Address{
+				"a": []ethgo.Address{
 					{0x1},
 				},
 			},
@@ -333,7 +333,7 @@ func TestEncoding(t *testing.T) {
 
 func TestEncodingBestEffort(t *testing.T) {
 	strAddress := "0xdbb881a51CD4023E4400CEF3ef73046743f08da3"
-	web3Address := web3.HexToAddress(strAddress)
+	ethAddress := ethgo.HexToAddress(strAddress)
 	overflowBigInt, _ := new(big.Int).SetString("50000000000000000000000000000000000000", 10)
 
 	cases := []struct {
@@ -394,7 +394,7 @@ func TestEncodingBestEffort(t *testing.T) {
 		{
 			"address[]",
 			[]interface{}{strAddress, strAddress},
-			[]web3.Address{web3Address, web3Address},
+			[]ethgo.Address{ethAddress, ethAddress},
 		},
 		{
 			"uint8[]",
@@ -422,7 +422,7 @@ func TestEncodingBestEffort(t *testing.T) {
 				"a": strAddress,
 			},
 			map[string]interface{}{
-				"a": web3Address,
+				"a": ethAddress,
 			},
 		},
 		{
@@ -431,7 +431,7 @@ func TestEncodingBestEffort(t *testing.T) {
 				"a": []interface{}{strAddress, strAddress},
 			},
 			map[string]interface{}{
-				"a": []web3.Address{web3Address, web3Address},
+				"a": []ethgo.Address{ethAddress, ethAddress},
 			},
 		},
 		{
@@ -441,7 +441,7 @@ func TestEncodingBestEffort(t *testing.T) {
 				"b": float64(266),
 			},
 			map[string]interface{}{
-				"a": web3Address,
+				"a": ethAddress,
 				"b": int64(266),
 			},
 		},
@@ -452,7 +452,7 @@ func TestEncodingBestEffort(t *testing.T) {
 				"b": "50000000000000000000000000000000000000",
 			},
 			map[string]interface{}{
-				"a": web3Address,
+				"a": ethAddress,
 				"b": overflowBigInt,
 			},
 		},
@@ -463,7 +463,7 @@ func TestEncodingBestEffort(t *testing.T) {
 				"b": "0x259DA6542D43623D04C5112000000000",
 			},
 			map[string]interface{}{
-				"a": web3Address,
+				"a": ethAddress,
 				"b": overflowBigInt,
 			},
 		},
@@ -647,7 +647,7 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	if err != nil {
 		return err
 	}
-	txn := &web3.Transaction{
+	txn := &ethgo.Transaction{
 		Input: binBuf,
 	}
 	receipt, err := server.SendTxn(txn)
@@ -668,7 +668,7 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 		return err
 	}
 
-	res, err := server.Call(&web3.CallMsg{
+	res, err := server.Call(&ethgo.CallMsg{
 		To:   &receipt.ContractAddress,
 		Data: data,
 	})
@@ -685,11 +685,11 @@ func TestEncodingStruct(t *testing.T) {
 	typ := MustNewType("tuple(address a, uint256 b)")
 
 	type Obj struct {
-		A web3.Address
+		A ethgo.Address
 		B *big.Int
 	}
 	obj := Obj{
-		A: web3.Address{0x1},
+		A: ethgo.Address{0x1},
 		B: big.NewInt(1),
 	}
 
