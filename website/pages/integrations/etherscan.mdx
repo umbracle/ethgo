@@ -3,7 +3,7 @@ import GoDocLink from '../../components/godoc'
 
 # Etherscan
 
-[Etherscan](https://etherscan.io/) is a block explorer and it implements some read compatible endpoint with JsonRPC services. It requires an [apiKey](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics) to use the services and not be rate limited.
+[Etherscan](https://etherscan.io/) is a block explorer and it implements some read compatible endpoint with the [JsonRPC](/jsonrpc) spec. It requires an [apiKey](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics) to use the service and not be rate limited.
 
 Create an instance of Etherscan from a network id:
 
@@ -20,7 +20,9 @@ func main() {
 }
 ```
 
-The package will resolve the name of the network to the specific endpoint in Etherscan, at this point it only works for `Mainnet`, `Ropsten`, `Rinkeby` and `Goerli`. You can use a specific url with:
+The package will resolve the name of the network to the specific endpoint in Etherscan, at this point it only works for `Mainnet`, `Ropsten`, `Rinkeby` and `Goerli`.
+
+For a custom url use:
 
 ```go
 ethscan, err := etherscan.NewEtherscan("https://api.polygonscan.com", "apiKey")

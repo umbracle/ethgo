@@ -1,27 +1,29 @@
 
-# Coder
+# Application Binary interface
+
+The ABI codifier uses randomized tests with e2e integration tests with a real Geth client to ensure that the codification is correct and provides the same results as the AbiEncoder from Solidity. 
 
 To use the library import:
 
-```go
+```
 "github.com/umbracle/go-web3/abi"
 ```
 
 Declare basic objects:
 
-```go
+```golang
 typ, err := abi.NewType("uint256")
 ```
 
 or 
 
-```go
+```golang
 typ = abi.MustNewType("uint256")
 ```
 
 and use it to encode/decode the data:
 
-```go
+```golang
 num := big.NewInt(1)
 
 encoded, err := typ.Encode(num)
@@ -40,7 +42,7 @@ fmt.Println(num.Cmp(num2) == 0) // num == num2
 
 You can also codify structs as Solidity tuples:
 
-```go
+```golang
 import (
 	"fmt"
     
@@ -86,4 +88,3 @@ func main() {
 
 ## Testing
 
-The ABI codifier uses randomized tests with e2e integration tests with a real Geth client to ensure that the codification is correct and provides the same results as the AbiEncoder from Solidity. 

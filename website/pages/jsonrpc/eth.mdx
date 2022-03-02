@@ -1,50 +1,55 @@
 
 import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
 
 # Ethereum
-
-Ethereum is for things related to the endpoints. There are two types of endpoints, the ones that do not have.. and the ones that.. You have to consider that when talking with nodes on infra services, endpoints that assume accounts will not be available. Thus, we have not given much support to those either in this library.
 
 ## GetCode
 
 <GoDocLink href="jsonrpc#Eth.GetCode">GetCode</GoDocLink> returns code at a given address.
 
 ```go
-code, err := client.Eth().GetCode(address, tag)
+code, err := client.Eth().GetCode(address, block)
 ```
 
-Params
+<b>Params</b>:
 
-- `address`: Address of the contract to query.
-- `tag`: Either when to query the data.
+- `address` <Address/>: Address of the contract to query.
+- `block` <Blocktag/>: Block reference to query the data.
 
-Output
+<b>Output</b>:
 
-- `code`: Bytecode of the contract.
+- `code` `([]byte)`: Bytecode of the contract.
 
 ## Accounts
 
-<GoDocLink href="jsonrpc#Eth.Accounts">Accounts</GoDocLink> returns a list of addresses owned by client.
+<GoDocLink href="jsonrpc#Eth.Accounts">Accounts</GoDocLink> returns a list of addresses owned by client. This endpoint is not enabled in infrastructure providers.
 
 ```go
 accounts, err := client.Eth().Accounts()
 ```
 
-Params
+<b>Output</b>:
 
-Output
+- `accounts` <Address text="[]Address"/>: List of addresses registered in the client. 
 
 ## GetStorageAt
 
 <GoDocLink href="jsonrpc#Eth.GetStorageAt">GetStorageAt</GoDocLink> returns the value from a storage position at a given address.
 
 ```go
-code, err := client.Eth().GetStorageAt(addr web3.Address, slot web3.Hash, block web3.BlockNumberOrHash)
+storage, err := client.Eth().GetStorageAt(addr, slot, block)
 ```
 
-Params
+<b>Params</b>:
 
-Output
+- `addr` <Address />: Address to query.
+- `slot` <Hash />: Slot storage for the address.
+- `block` <Blocktag/>: Block reference to query the data.
+
+<b>Output</b>:
+
+- `storage` `([]byte)`: Content of the storage.
 
 ## BlockNumber
 
@@ -54,21 +59,26 @@ Output
 number, err := client.Eth().BlockNumber()
 ```
 
-Output
+<b>Output</b>:
 
-- number (`uint`): 
+- `number` (`uint`): Number of the most recent block.
 
 ## GetBlockByNumber
 
 <GoDocLink href="jsonrpc#Eth.GetBlockByNumber">GetBlockByNumber</GoDocLink> returns information about a block by block number. 
 
 ```go
-block, err := client.Eth().GetBlockByNumber(i, full)
+block, err := client.Eth().GetBlockByNumber(num, full)
 ```
 
-Params
+<b>Params</b>:
 
-Output
+- `number` (`uint`): Number of the block to query.
+- `full` (`bool`): Whether the ouput block should include transactions.
+
+<b>Output</b>:
+
+- `block` <Block/>: Block queried.
 
 ## GetBlockByHash
 
@@ -78,64 +88,103 @@ Output
 block, err := client.Eth().GetBlockByHash(hash, full)
 ```
 
-Params
+<b>Params</b>:
 
-Output
+- `hash` <Hash />: Hash of the block to query.
+- `full` (`bool`): Whether the ouput block should include transactions.
 
-## GetFilterChanges
+<b>Output</b>:
 
-<GoDocLink href="jsonrpc#Eth.GetFilterChanges">GetFilterChanges</GoDocLink> returns the filter changes for log filters.
-
-```go
-block, err := client.Eth().GetBlockByHash(hash, full)
-```
-
-Params
-
-Output
+- `block` <Block/>: Block queried.
 
 ## GetTransactionByHash
 
 <GoDocLink href="jsonrpc#Eth.GetTransactionByHash">GetTransactionByHash</GoDocLink> returns a transaction by his hash  
 
 ```go
-block, err := client.Eth().GetBlockByHash(hash, full)
+transaction, err := client.Eth().GetTransactionByHash(hash)
 ```
 
-Params
+<b>Params</b>:
 
-Output
+- `hash` <Hash />: Hash of the transaction to query.
 
-## GetFilterChangesBlock
+<b>Output</b>:
 
-<GoDocLink href="jsonrpc#Eth.GetFilterChangesBlock">GetFilterChangesBlock</GoDocLink> returns the filter changes for block filters 
-
-```go
-block, err := client.Eth().GetBlockByHash(hash, full)
-```
-
-Params
-
-Output
-
-## NewFilter
-
-## NewBlockFilter
-
-## UninstallFilter
+- `transaction` <Transaction/>: Transaction being queried.
 
 ## SendRawTransaction
 
-## SendTransaction
+<GoDocLink href="jsonrpc#Eth.SendRawTransaction">SendRawTransaction</GoDocLink> creates new message call transaction or a contract creation for signed transactions.
+
+```go
+hash, err := client.Eth().SendRawTransaction(transaction)
+```
+
+<b>Params</b>:
+
+- `transaction` `([]byte)`: Signed transaction and encoded in RLP format.
+
+<b>Output</b>:
+
+- `hash` <Hash/>: Hash of the transaction created.
 
 ## GetTransactionReceipt
 
+<GoDocLink href="jsonrpc#Eth.GetTransactionReceipt">GetTransactionReceipt</GoDocLink> returns the receipt of a transaction by transaction hash.
+
+```go
+receipt, err := client.Eth().GetTransactionReceipt(hash)
+```
+
+<b>Params</b>:
+
+- `hash` <Hash/>: Hash of the transaction being queried.
+
+<b>Output</b>:
+
+- `receipt` <Receipt/>: receipt being queried.
+
 ## GetNonce
+
+<GoDocLink href="jsonrpc#Eth.GetNonce">GetNonce</GoDocLink> returns the number of transactions sent from an address.
+
+```go
+nonce, err := client.Eth().GetNonce(address)
+```
+
+<b>Params</b>:
+
+- `address` <Address/>: address of the account to query.
+
+<b>Output</b>:
+
+- `nonce` `(uint64)`: next valid nonce for the account.
 
 ## GetBalance 
 
+<GoDocLink href="jsonrpc#Eth.GetBalance">GetBalance</GoDocLink> returns the balance of the account of given address.
+
+```go
+balance, err := client.Eth().GetBalance(address)
+```
+
+<b>Params</b>:
+
+- `address` <Address/>: address of the account to query.
+
+<b>Output</b>:
+
+- `balance` `(big.Int)`: balance of the account in big format.
+
 ## GasPrice
 
-## Call
+<GoDocLink href="jsonrpc#Eth.GasPrice">GasPrice</GoDocLink> returns the current price per gas in wei.
 
-## ChainID
+```go
+price, err := client.Eth().GasPrice()
+```
+
+<b>Output</b>:
+
+- `price` `(big.Int)`: gas price in wei.
