@@ -4,7 +4,7 @@ export default {
     titleSuffix: ' – Ethgo',
     nextLinks: true,
     prevLinks: true,
-    search: true,
+    search: false,
     customSearch: null, // customizable, you can use algolia for example
     darkMode: true,
     footer: true,
