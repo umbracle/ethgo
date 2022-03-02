@@ -1,6 +1,6 @@
 export default {
-    projectLink: 'https://github.com/umbracle/go-web3', // GitHub link in the navbar
-    docsRepositoryBase: 'https://github.com/umbracle/go-web3/blob/master/website', // base URL for the docs repository
+    projectLink: 'https://github.com/umbracle/ethgo', // GitHub link in the navbar
+    docsRepositoryBase: 'https://github.com/umbracle/ethgo/blob/master/website', // base URL for the docs repository
     titleSuffix: ' – Ethgo',
     nextLinks: true,
     prevLinks: true,

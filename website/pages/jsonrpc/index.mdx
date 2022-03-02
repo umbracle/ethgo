@@ -1,4 +1,7 @@
 
+import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+
 # JsonRPC
 
 Ethereum uses `JsonRPC` as the main interface to interact with the client and the network.
@@ -9,7 +12,7 @@ Ethereum uses `JsonRPC` as the main interface to interact with the client and th
 package main
 
 import (
-	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 func main() {
@@ -38,7 +41,7 @@ client, err := jsonrpc.NewClient("ipc://path/geth.ipc")
 
 Once the JsonRPC client has been created, the endpoints are available on different namespaces following the spec:
 
-```
+```go
 eth := client.Eth()
 ```
 
@@ -48,3 +51,9 @@ The available namespaces are:
 - [Net](./jsonrpc/net): Client information.
 
 ## Block tag
+
+Some endpoints of the `eth` namespace can be queried at a specific block. There exists three ways to specify this block:
+
+- `number` or `tag` <GoDocLink href="#BlockNumber">(BlockNumber)</GoDocLink>: integer block number or the tag `latest`, `pending` or `earliest`.
+
+- `hash` <Hash/>: hash of the block.

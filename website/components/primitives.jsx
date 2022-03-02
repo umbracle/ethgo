@@ -1,16 +1,17 @@
 
 import Link from 'next/link'
+import GodocLink from "./godoc"
 
 function Address({text='Address'}) {
-    return <Link href={`/#address`}>{`(${text})`}</Link>
+    return <GodocLink href='#Address'>{`(${text})`}</GodocLink>
 }
 
 function Hash({text='Hash'}) {
-    return <Link href={`/#hash`}>{`(${text})`}</Link>
+    return <GodocLink href='#Hash'>{`(${text})`}</GodocLink>
 }
 
 function Block() {
-    return <Link href={'/#block'}>{'(Block)'}</Link>
+    return <GodocLink href='#Block'>{'(Block)'}</GodocLink>
 }
 
 function Blocktag() {
@@ -18,11 +19,11 @@ function Blocktag() {
 }
 
 function Transaction() {
-    return <Link href={'/#transaction'}>{'(Transaction)'}</Link>
+    return <GodocLink href='#Transaction'>{'(Transaction)'}</GodocLink>
 }
 
 function Receipt() {
-    return <Link href={'/#receipt'}>{'(Receipt)'}</Link>
+    return <GodocLink href='#Receipt'>{'(Receipt)'}</GodocLink>
 }
 
 export {
