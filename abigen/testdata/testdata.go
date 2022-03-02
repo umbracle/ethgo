@@ -53,7 +53,7 @@ func (t *Testdata) CallBasicInput(block ...ethgo.BlockNumber) (retval0 *big.Int,
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
 	}
-
+	
 	return
 }
 

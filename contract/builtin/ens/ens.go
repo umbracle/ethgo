@@ -53,7 +53,7 @@ func (e *ENS) Owner(node [32]byte, block ...ethgo.BlockNumber) (retval0 ethgo.Ad
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -73,7 +73,7 @@ func (e *ENS) Resolver(node [32]byte, block ...ethgo.BlockNumber) (retval0 ethgo
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -93,7 +93,7 @@ func (e *ENS) Ttl(node [32]byte, block ...ethgo.BlockNumber) (retval0 uint64, er
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 

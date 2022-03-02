@@ -48,7 +48,7 @@ func (e *ERC20) Allowance(owner ethgo.Address, spender ethgo.Address, block ...e
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -68,7 +68,7 @@ func (e *ERC20) BalanceOf(owner ethgo.Address, block ...ethgo.BlockNumber) (retv
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -88,7 +88,7 @@ func (e *ERC20) Decimals(block ...ethgo.BlockNumber) (retval0 uint8, err error) 
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -108,7 +108,7 @@ func (e *ERC20) Name(block ...ethgo.BlockNumber) (retval0 string, err error) {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -128,7 +128,7 @@ func (e *ERC20) Symbol(block ...ethgo.BlockNumber) (retval0 string, err error) {
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -148,7 +148,7 @@ func (e *ERC20) TotalSupply(block ...ethgo.BlockNumber) (retval0 *big.Int, err e
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 

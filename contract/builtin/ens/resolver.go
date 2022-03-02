@@ -58,7 +58,7 @@ func (r *Resolver) ABI(node [32]byte, contentTypes *big.Int, block ...ethgo.Bloc
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
 	}
-
+	
 	return
 }
 
@@ -78,7 +78,7 @@ func (r *Resolver) Addr(node [32]byte, block ...ethgo.BlockNumber) (retval0 ethg
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -98,7 +98,7 @@ func (r *Resolver) Content(node [32]byte, block ...ethgo.BlockNumber) (retval0 [
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -118,7 +118,7 @@ func (r *Resolver) Name(node [32]byte, block ...ethgo.BlockNumber) (retval0 stri
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
@@ -143,7 +143,7 @@ func (r *Resolver) Pubkey(node [32]byte, block ...ethgo.BlockNumber) (retval0 [3
 		err = fmt.Errorf("failed to encode output at index 1")
 		return
 	}
-
+	
 	return
 }
 
@@ -163,7 +163,7 @@ func (r *Resolver) SupportsInterface(interfaceID [4]byte, block ...ethgo.BlockNu
 		err = fmt.Errorf("failed to encode output at index 0")
 		return
 	}
-
+	
 	return
 }
 
