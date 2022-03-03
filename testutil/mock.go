@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/umbracle/go-web3"
+	"github.com/umbracle/ethgo"
 )
 
 type mockCall int
@@ -23,9 +23,9 @@ const (
 type MockClient struct {
 	lock     sync.Mutex
 	num      uint64
-	blockNum map[uint64]web3.Hash
-	blocks   map[web3.Hash]*web3.Block
-	logs     map[web3.Hash][]*web3.Log
+	blockNum map[uint64]ethgo.Hash
+	blocks   map[ethgo.Hash]*ethgo.Block
+	logs     map[ethgo.Hash][]*ethgo.Log
 	chainID  *big.Int
 }
 
@@ -40,7 +40,7 @@ func (d *MockClient) ChainID() (*big.Int, error) {
 	return d.chainID, nil
 }
 
-func (d *MockClient) GetLastBlocks(n uint64) (res []*web3.Block) {
+func (d *MockClient) GetLastBlocks(n uint64) (res []*ethgo.Block) {
 	if d.num == 0 {
 		return
 	}
@@ -55,7 +55,7 @@ func (d *MockClient) GetLastBlocks(n uint64) (res []*web3.Block) {
 	return
 }
 
-func (d *MockClient) GetAllLogs() (res []*web3.Log) {
+func (d *MockClient) GetAllLogs() (res []*ethgo.Log) {
 	if d.num == 0 {
 		return
 	}
@@ -71,7 +71,7 @@ func (d *MockClient) AddScenario(m MockList) {
 
 	// add the logs
 	for _, b := range m {
-		block := &web3.Block{
+		block := &ethgo.Block{
 			Hash:   b.Hash(),
 			Number: uint64(b.num),
 		}
@@ -99,27 +99,27 @@ func (d *MockClient) AddScenario(m MockList) {
 	}
 }
 
-func (d *MockClient) AddLogs(logs []*web3.Log) {
+func (d *MockClient) AddLogs(logs []*ethgo.Log) {
 	if d.logs == nil {
-		d.logs = map[web3.Hash][]*web3.Log{}
+		d.logs = map[ethgo.Hash][]*ethgo.Log{}
 	}
 	for _, log := range logs {
 		entry, ok := d.logs[log.BlockHash]
 		if ok {
 			entry = append(entry, log)
 		} else {
-			entry = []*web3.Log{log}
+			entry = []*ethgo.Log{log}
 		}
 		d.logs[log.BlockHash] = entry
 	}
 }
 
-func (d *MockClient) addBlocks(bb ...*web3.Block) {
+func (d *MockClient) addBlocks(bb ...*ethgo.Block) {
 	if d.blocks == nil {
-		d.blocks = map[web3.Hash]*web3.Block{}
+		d.blocks = map[ethgo.Hash]*ethgo.Block{}
 	}
 	if d.blockNum == nil {
-		d.blockNum = map[uint64]web3.Hash{}
+		d.blockNum = map[uint64]ethgo.Hash{}
 	}
 	for _, b := range bb {
 		if b.Number > d.num {
@@ -137,7 +137,7 @@ func (d *MockClient) BlockNumber() (uint64, error) {
 	return d.num, nil
 }
 
-func (d *MockClient) GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, error) {
+func (d *MockClient) GetBlockByHash(hash ethgo.Hash, full bool) (*ethgo.Block, error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
@@ -148,7 +148,7 @@ func (d *MockClient) GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, err
 	return b, nil
 }
 
-func (d *MockClient) blockByNumberLock(i uint64) (*web3.Block, error) {
+func (d *MockClient) blockByNumberLock(i uint64) (*ethgo.Block, error) {
 	hash, ok := d.blockNum[i]
 	if !ok {
 		return nil, fmt.Errorf("number %d not found", i)
@@ -156,15 +156,15 @@ func (d *MockClient) blockByNumberLock(i uint64) (*web3.Block, error) {
 	return d.blocks[hash], nil
 }
 
-func (d *MockClient) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, error) {
+func (d *MockClient) GetBlockByNumber(i ethgo.BlockNumber, full bool) (*ethgo.Block, error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
 	if i < 0 {
 		switch i {
-		case web3.Latest:
+		case ethgo.Latest:
 			if d.num == 0 {
-				return &web3.Block{Number: 0}, nil
+				return &ethgo.Block{Number: 0}, nil
 			}
 			return d.blockByNumberLock(d.num)
 		default:
@@ -174,7 +174,7 @@ func (d *MockClient) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Bloc
 	return d.blockByNumberLock(uint64(i))
 }
 
-func (d *MockClient) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
+func (d *MockClient) GetLogs(filter *ethgo.LogFilter) ([]*ethgo.Log, error) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
@@ -190,7 +190,7 @@ func (d *MockClient) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
 		return nil, fmt.Errorf("out of bounds")
 	}
 
-	logs := []*web3.Log{}
+	logs := []*ethgo.Log{}
 	for i := from; i <= to; i++ {
 		b, err := d.blockByNumberLock(i)
 		if err != nil {
@@ -235,9 +235,9 @@ func (m *MockBlock) Extra(data string) *MockBlock {
 	return m
 }
 
-func (m *MockBlock) GetLogs() (logs []*web3.Log) {
+func (m *MockBlock) GetLogs() (logs []*ethgo.Log) {
 	for _, log := range m.logs {
-		logs = append(logs, &web3.Log{Data: mustDecodeHash(log.data), BlockNumber: uint64(m.num), BlockHash: m.Hash()})
+		logs = append(logs, &ethgo.Log{Data: mustDecodeHash(log.data), BlockNumber: uint64(m.num), BlockHash: m.Hash()})
 	}
 	return
 }
@@ -262,7 +262,7 @@ func (m *MockBlock) Parent(i int) *MockBlock {
 	return m
 }
 
-func encodeHash(str string) (h web3.Hash) {
+func encodeHash(str string) (h ethgo.Hash) {
 	tmp := ""
 	for i := 0; i < 64-len(str); i++ {
 		tmp += "0"
@@ -274,12 +274,12 @@ func encodeHash(str string) (h web3.Hash) {
 	return
 }
 
-func (m *MockBlock) Hash() web3.Hash {
+func (m *MockBlock) Hash() ethgo.Hash {
 	return encodeHash(m.extra + m.hash)
 }
 
-func (m *MockBlock) Block() *web3.Block {
-	b := &web3.Block{
+func (m *MockBlock) Block() *ethgo.Block {
+	b := &ethgo.Block{
 		Hash:   m.Hash(),
 		Number: uint64(m.num),
 	}
@@ -303,15 +303,15 @@ func (m *MockList) Create(from, to int, callback func(b *MockBlock)) {
 	}
 }
 
-func (m *MockList) GetLogs() (res []*web3.Log) {
+func (m *MockList) GetLogs() (res []*ethgo.Log) {
 	for _, log := range *m {
 		res = append(res, log.GetLogs()...)
 	}
 	return
 }
 
-func (m *MockList) ToBlocks() []*web3.Block {
-	e := []*web3.Block{}
+func (m *MockList) ToBlocks() []*ethgo.Block {
+	e := []*ethgo.Block{}
 	for _, i := range *m {
 		e = append(e, i.Block())
 	}

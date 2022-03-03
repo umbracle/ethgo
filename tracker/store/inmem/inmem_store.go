@@ -4,8 +4,8 @@ import (
 	"strings"
 	"sync"
 
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker/store"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/tracker/store"
 )
 
 var _ store.Store = (*InmemStore)(nil)
@@ -68,7 +68,7 @@ func (i *InmemStore) GetEntry(hash string) (store.Entry, error) {
 		return e, nil
 	}
 	e = &Entry{
-		logs: []*web3.Log{},
+		logs: []*ethgo.Log{},
 	}
 	i.entries[hash] = e
 	return e, nil
@@ -77,7 +77,7 @@ func (i *InmemStore) GetEntry(hash string) (store.Entry, error) {
 // Entry is a store.Entry implementation
 type Entry struct {
 	l    sync.RWMutex
-	logs []*web3.Log
+	logs []*ethgo.Log
 }
 
 // LastIndex implements the store interface
@@ -88,12 +88,12 @@ func (e *Entry) LastIndex() (uint64, error) {
 }
 
 // Logs returns the logs of the inmemory store
-func (e *Entry) Logs() []*web3.Log {
+func (e *Entry) Logs() []*ethgo.Log {
 	return e.logs
 }
 
 // StoreLogs implements the store interface
-func (e *Entry) StoreLogs(logs []*web3.Log) error {
+func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 	e.l.Lock()
 	defer e.l.Unlock()
 	for _, log := range logs {
@@ -111,7 +111,7 @@ func (e *Entry) RemoveLogs(indx uint64) error {
 }
 
 // GetLog implements the store interface
-func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
+func (e *Entry) GetLog(indx uint64, log *ethgo.Log) error {
 	*log = *e.logs[indx]
 	return nil
 }

@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/abi"
-	"github.com/umbracle/go-web3/blocktracker"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/jsonrpc/codec"
-	"github.com/umbracle/go-web3/testutil"
-	"github.com/umbracle/go-web3/tracker/store/inmem"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/abi"
+	"github.com/umbracle/ethgo/blocktracker"
+	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/jsonrpc/codec"
+	"github.com/umbracle/ethgo/testutil"
+	"github.com/umbracle/ethgo/tracker/store/inmem"
 )
 
 func testConfig() ConfigOption {
@@ -26,7 +26,7 @@ func testConfig() ConfigOption {
 	}
 }
 
-func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*web3.Log {
+func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*ethgo.Log {
 	filterConfig.Async = true
 	tt, _ := NewTracker(provider, WithFilter(filterConfig))
 
@@ -124,7 +124,7 @@ func TestFilterIntegration(t *testing.T) {
 	}
 
 	// filter by address
-	logs = testFilter(t, client.Eth(), &FilterConfig{Address: []web3.Address{addr0}})
+	logs = testFilter(t, client.Eth(), &FilterConfig{Address: []ethgo.Address{addr0}})
 	if len(logs) != 10 {
 		t.Fatal("bad")
 	}
@@ -133,7 +133,7 @@ func TestFilterIntegration(t *testing.T) {
 	typ, _ := abi.NewType("uint256")
 	topic, _ := abi.EncodeTopic(typ, 1)
 
-	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*web3.Hash{nil, {&topic}}})
+	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*ethgo.Hash{nil, {&topic}}})
 	if len(logs) != 20 {
 		t.Fatal("bad")
 	}
@@ -167,13 +167,13 @@ func TestFilterIntegrationEventHash(t *testing.T) {
 	}
 
 	eventTopicID := abi0.Events["A"].ID()
-	logs := testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*web3.Hash{{&eventTopicID}}})
+	logs := testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*ethgo.Hash{{&eventTopicID}}})
 	if len(logs) != 10 {
 		t.Fatal("bad")
 	}
 
 	eventTopicID[1] = 1
-	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*web3.Hash{{&eventTopicID}}})
+	logs = testFilter(t, client.Eth(), &FilterConfig{Topics: [][]*ethgo.Hash{{&eventTopicID}}})
 	if len(logs) != 0 {
 		t.Fatal("bad")
 	}
@@ -431,7 +431,7 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 			}
 		}()
 
-		var added, removed []*web3.Log
+		var added, removed []*ethgo.Log
 		for {
 			select {
 			case evnt := <-tt.EventCh:
@@ -762,7 +762,7 @@ type mockClientWithLimit struct {
 	testutil.MockClient
 }
 
-func (m *mockClientWithLimit) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
+func (m *mockClientWithLimit) GetLogs(filter *ethgo.LogFilter) ([]*ethgo.Log, error) {
 	if filter.BlockHash != nil {
 		return m.MockClient.GetLogs(filter)
 	}

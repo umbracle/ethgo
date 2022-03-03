@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/ory/dockertest"
-	"github.com/umbracle/go-web3/tracker/store"
+	"github.com/umbracle/ethgo/tracker/store"
 )
 
 func setupDB(t *testing.T) (store.Store, func()) {

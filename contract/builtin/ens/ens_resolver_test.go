@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/testutil"
 )
 
 var (
 	url         = "https://mainnet.infura.io"
-	mainnetAddr = web3.HexToAddress("0x314159265dD8dbb310642f98f50C066173C1259b")
+	mainnetAddr = ethgo.HexToAddress("0x314159265dD8dbb310642f98f50C066173C1259b")
 )
 
 func TestResolveAddr(t *testing.T) {

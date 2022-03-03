@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/ory/dockertest"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/compiler"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/compiler"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	DummyAddr = web3.HexToAddress("0x015f68893a39b3ba0681584387670ff8b00f4db2")
+	DummyAddr = ethgo.HexToAddress("0x015f68893a39b3ba0681584387670ff8b00f4db2")
 )
 
 func getOpenPort() string {
@@ -73,7 +73,7 @@ type TestServer struct {
 	resource *dockertest.Resource
 	config   *TestServerConfig
 	tmpDir   string
-	accounts []web3.Address
+	accounts []ethgo.Address
 	client   *ethClient
 	t        *testing.T
 }
@@ -150,7 +150,7 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 }
 
 // Account returns a specific account
-func (t *TestServer) Account(i int) web3.Address {
+func (t *TestServer) Account(i int) ethgo.Address {
 	return t.accounts[i]
 }
 
@@ -170,8 +170,8 @@ func (t *TestServer) HTTPAddr() string {
 }
 
 // ProcessBlock processes a new block
-func (t *TestServer) ProcessBlockWithReceipt() (*web3.Receipt, error) {
-	receipt, err := t.SendTxn(&web3.Transaction{
+func (t *TestServer) ProcessBlockWithReceipt() (*ethgo.Receipt, error) {
+	receipt, err := t.SendTxn(&ethgo.Transaction{
 		From:  t.accounts[0],
 		To:    &DummyAddr,
 		Value: big.NewInt(10),
@@ -184,14 +184,14 @@ func (t *TestServer) ProcessBlock() error {
 	return err
 }
 
-var emptyAddr web3.Address
+var emptyAddr ethgo.Address
 
-func isEmptyAddr(w web3.Address) bool {
+func isEmptyAddr(w ethgo.Address) bool {
 	return bytes.Equal(w[:], emptyAddr[:])
 }
 
 // Call sends a contract call
-func (t *TestServer) Call(msg *web3.CallMsg) (string, error) {
+func (t *TestServer) Call(msg *ethgo.CallMsg) (string, error) {
 	if isEmptyAddr(msg.From) {
 		msg.From = t.Account(0)
 	}
@@ -202,8 +202,8 @@ func (t *TestServer) Call(msg *web3.CallMsg) (string, error) {
 	return resp, nil
 }
 
-func (t *TestServer) Transfer(address web3.Address, value *big.Int) *web3.Receipt {
-	receipt, err := t.SendTxn(&web3.Transaction{
+func (t *TestServer) Transfer(address ethgo.Address, value *big.Int) *ethgo.Receipt {
+	receipt, err := t.SendTxn(&ethgo.Transaction{
 		From:  t.accounts[0],
 		To:    &address,
 		Value: value,
@@ -215,9 +215,9 @@ func (t *TestServer) Transfer(address web3.Address, value *big.Int) *web3.Receip
 }
 
 // TxnTo sends a transaction to a given method without any arguments
-func (t *TestServer) TxnTo(address web3.Address, method string) *web3.Receipt {
+func (t *TestServer) TxnTo(address ethgo.Address, method string) *ethgo.Receipt {
 	sig := MethodSig(method)
-	receipt, err := t.SendTxn(&web3.Transaction{
+	receipt, err := t.SendTxn(&ethgo.Transaction{
 		To:    &address,
 		Input: sig,
 	})
@@ -228,7 +228,7 @@ func (t *TestServer) TxnTo(address web3.Address, method string) *web3.Receipt {
 }
 
 // SendTxn sends a transaction
-func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
+func (t *TestServer) SendTxn(txn *ethgo.Transaction) (*ethgo.Receipt, error) {
 	if isEmptyAddr(txn.From) {
 		txn.From = t.Account(0)
 	}
@@ -239,7 +239,7 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 		txn.Gas = DefaultGasLimit
 	}
 
-	var hash web3.Hash
+	var hash ethgo.Hash
 	if err := t.client.call("eth_sendTransaction", &hash, txn); err != nil {
 		return nil, err
 	}
@@ -248,8 +248,8 @@ func (t *TestServer) SendTxn(txn *web3.Transaction) (*web3.Receipt, error) {
 }
 
 // WaitForReceipt waits for the receipt
-func (t *TestServer) WaitForReceipt(hash web3.Hash) (*web3.Receipt, error) {
-	var receipt *web3.Receipt
+func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
+	var receipt *ethgo.Receipt
 	var count uint64
 	for {
 		err := t.client.call("eth_getTransactionReceipt", &receipt, hash)
@@ -271,7 +271,7 @@ func (t *TestServer) WaitForReceipt(hash web3.Hash) (*web3.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, web3.Address) {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Address) {
 	// solcContract := compile(c.Print())
 	solcContract, err := c.Compile()
 	if err != nil {
@@ -282,7 +282,7 @@ func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, web3.Addre
 		panic(err)
 	}
 
-	receipt, err := t.SendTxn(&web3.Transaction{
+	receipt, err := t.SendTxn(&ethgo.Transaction{
 		Input: buf,
 	})
 	if err != nil {

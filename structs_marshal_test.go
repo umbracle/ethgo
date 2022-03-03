@@ -1,9 +1,10 @@
-package web3
+package ethgo
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func generateHashPtr(input string) *Hash {

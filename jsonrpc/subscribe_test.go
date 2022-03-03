@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/testutil"
 )
 
 func TestSubscribeNewHead(t *testing.T) {
@@ -40,7 +40,7 @@ func TestSubscribeNewHead(t *testing.T) {
 					t.Fatal("unexpected value")
 				}
 
-				var block web3.Block
+				var block ethgo.Block
 				if err := block.UnmarshalJSON(buf); err != nil {
 					t.Fatal(err)
 				}

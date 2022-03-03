@@ -1,0 +1,75 @@
+
+import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+
+# Etherscan
+
+[Etherscan](https://etherscan.io/) is a block explorer and it implements some read compatible endpoint with the [JsonRPC](/jsonrpc) spec. It requires an [apiKey](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics) to use the service and not be rate limited.
+
+Create an instance of Etherscan from a network id:
+
+```go
+package main
+
+import (
+    "github.com/umbracle/ethgo/etherscan"
+    "github.com/umbracle/ethgo"
+)
+
+func main() {
+    ethscan, err := etherscan.NewEtherscanFromNetwork(ethgo.Mainnet, "apiKey")
+}
+```
+
+The package will resolve the name of the network to the specific endpoint in Etherscan, at this point it only works for `Mainnet`, `Ropsten`, `Rinkeby` and `Goerli`.
+
+For a custom url use:
+
+```go
+ethscan, err := etherscan.NewEtherscan("https://api.polygonscan.com", "apiKey")
+```
+
+## BlockNumber
+
+<GoDocLink href="etherscan#Etherscan.BlockNumber">BlockNumber</GoDocLink> returns the current block number.
+
+```go
+num, err := ethscan.BlockNumber()
+```
+
+Output
+
+- `num` (`uint64`): Last block number.
+
+## GetBlockByNumber
+
+<GoDocLink href="etherscan#Etherscan.GetBlockByNumber">GetBlockByNumber</GoDocLink> returns a specific block by its number.
+
+```go
+block, err := ethscan.GetBlockByNumber(ethgo.BlockNumber(100), true)
+```
+
+Input:
+
+- `block number` <Blocktag/>: Block number selection
+- `full` (`bool`): Whether to return the full block with transactions.
+
+Output:
+
+- `block`: (): Block object
+
+## GetContractCode
+
+<GoDocLink href="etherscan#Etherscan.GetContractCode">GetContractCode</GoDocLink> returns the contract of a given address (if any).
+
+```go
+code, err := ethscan.GetContractCode(address)
+```
+
+Input:
+
+- `address` <Address/>: Address of the contract.
+
+Output:
+
+- `code` (`[]byte`): Code of the contract.

@@ -4,21 +4,21 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/contract/builtin/ens"
-	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/contract/builtin/ens"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 type EnsConfig struct {
 	Logger   *log.Logger
 	Client   *jsonrpc.Client
 	Addr     string
-	Resolver web3.Address
+	Resolver ethgo.Address
 }
 
 type EnsOption func(*EnsConfig)
 
-func WithResolver(resolver web3.Address) EnsOption {
+func WithResolver(resolver ethgo.Address) EnsOption {
 	return func(c *EnsConfig) {
 		c.Resolver = resolver
 	}
@@ -64,7 +64,7 @@ func NewENS(opts ...EnsOption) (*ENS, error) {
 		config.Client = client
 	}
 
-	if config.Resolver == web3.ZeroAddress {
+	if config.Resolver == ethgo.ZeroAddress {
 		// try to get the resolver address from the builtin list
 		chainID, err := config.Client.Eth().ChainID()
 		if err != nil {
@@ -82,7 +82,7 @@ func NewENS(opts ...EnsOption) (*ENS, error) {
 	return ens, nil
 }
 
-func (e *ENS) Resolve(name string) (web3.Address, error) {
+func (e *ENS) Resolve(name string) (ethgo.Address, error) {
 	resolver := ens.NewENSResolver(e.config.Resolver, e.config.Client)
 	return resolver.Resolve(name)
 }

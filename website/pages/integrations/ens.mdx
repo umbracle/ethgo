@@ -1,0 +1,48 @@
+
+import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+
+# Ethereum Name Service (ENS)
+
+The Ethereum Name Service ([ENS](https://ens.domains/)) is a distributed, open, and extensible naming system based on the Ethereum blockchain.
+
+The <GoDocLink href="">ENS</GoDocLink> object on the `ens` package is a module that abstracts the interaction with the ENS registry.
+
+```go
+package main
+
+import (
+    "github.com/umbracle/ethgo/ens"
+)
+
+func main() {
+	ensMod, err := ens.NewENS(ens.WithAddress("https://mainnet.infura.io"))
+	if err != nil {
+		panic(err)
+	}
+}
+```
+
+It will default to `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e` as the address for the ENS registry when connecting with one of the official Ethereum networks. However, this can be parametrized at creation time. This module also requires a JsonRPC connection to make the calls to the ENS registry contract.
+
+## Options
+
+- <GoDocLink href="ens#WithAddress">WithAddress</GoDocLink>: JsonRPC url of the endpoint to connect with.
+- <GoDocLink href="ens#WithClient">WithClient</GoDocLink>: [`JsonRPC`](/jsonrpc) object to make rpc calls. It takes preference over an address from `WithAddress`.
+- <GoDocLink href="ens#WithResolver">WithResolver</GoDocLink>: Custom resolver address to use rather than the default one.
+
+## Resolve
+
+<GoDocLink href="ens#ENS.Resolve">Resolve</GoDocLink> resolves an ENS name to its registered address.
+
+```go
+ensMod.Resolve("umbracle.eth")
+```
+
+Input:
+
+- `name` (string): ENS name to resolve.
+
+Output:
+
+- `address` <Address/>: Ethereum address that resolves to the input name.

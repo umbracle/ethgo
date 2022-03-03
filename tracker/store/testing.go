@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	web3 "github.com/umbracle/go-web3"
+	"github.com/umbracle/ethgo"
 )
 
 // SetupDB is a function that creates a backend
@@ -27,10 +27,10 @@ func testMultipleStores(t *testing.T, setup SetupDB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log := web3.Log{
+	log := ethgo.Log{
 		BlockNumber: 10,
 	}
-	if err := entry0.StoreLogs([]*web3.Log{&log}); err != nil {
+	if err := entry0.StoreLogs([]*ethgo.Log{&log}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -38,10 +38,10 @@ func testMultipleStores(t *testing.T, setup SetupDB) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	log = web3.Log{
+	log = ethgo.Log{
 		BlockNumber: 15,
 	}
-	if err := entry1.StoreLogs([]*web3.Log{&log}); err != nil {
+	if err := entry1.StoreLogs([]*ethgo.Log{&log}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -159,10 +159,10 @@ func testStoreLogs(t *testing.T, setup SetupDB) {
 		t.Fatal("index should be zero")
 	}
 
-	log := web3.Log{
+	log := ethgo.Log{
 		BlockNumber: 10,
 	}
-	if err := entry.StoreLogs([]*web3.Log{&log}); err != nil {
+	if err := entry.StoreLogs([]*ethgo.Log{&log}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -174,7 +174,7 @@ func testStoreLogs(t *testing.T, setup SetupDB) {
 		t.Fatal("index should be one")
 	}
 
-	var log2 web3.Log
+	var log2 ethgo.Log
 	if err := entry.GetLog(0, &log2); err != nil {
 		t.Fatal(err)
 	}
@@ -200,9 +200,9 @@ func testRemoveLogs(t *testing.T, setup SetupDB) {
 	store, close := setup(t)
 	defer close()
 
-	logs := []*web3.Log{}
+	logs := []*ethgo.Log{}
 	for i := uint64(0); i < 10; i++ {
-		logs = append(logs, &web3.Log{
+		logs = append(logs, &ethgo.Log{
 			BlockNumber: i,
 		})
 	}

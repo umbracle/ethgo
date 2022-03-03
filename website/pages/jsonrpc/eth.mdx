@@ -1,0 +1,190 @@
+
+import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+
+# Ethereum
+
+## GetCode
+
+<GoDocLink href="jsonrpc#Eth.GetCode">GetCode</GoDocLink> returns code at a given address.
+
+```go
+code, err := client.Eth().GetCode(address, block)
+```
+
+<b>Params</b>:
+
+- `address` <Address/>: Address of the contract to query.
+- `block` <Blocktag/>: Block reference to query the data.
+
+<b>Output</b>:
+
+- `code` `([]byte)`: Bytecode of the contract.
+
+## Accounts
+
+<GoDocLink href="jsonrpc#Eth.Accounts">Accounts</GoDocLink> returns a list of addresses owned by client. This endpoint is not enabled in infrastructure providers.
+
+```go
+accounts, err := client.Eth().Accounts()
+```
+
+<b>Output</b>:
+
+- `accounts` <Address text="[]Address"/>: List of addresses registered in the client. 
+
+## GetStorageAt
+
+<GoDocLink href="jsonrpc#Eth.GetStorageAt">GetStorageAt</GoDocLink> returns the value from a storage position at a given address.
+
+```go
+storage, err := client.Eth().GetStorageAt(addr, slot, block)
+```
+
+<b>Params</b>:
+
+- `addr` <Address />: Address to query.
+- `slot` <Hash />: Slot storage for the address.
+- `block` <Blocktag/>: Block reference to query the data.
+
+<b>Output</b>:
+
+- `storage` `([]byte)`: Content of the storage.
+
+## BlockNumber
+
+<GoDocLink href="jsonrpc#Eth.BlockNumber">BlockNumber</GoDocLink> returns the number of most recent block. 
+
+```go
+number, err := client.Eth().BlockNumber()
+```
+
+<b>Output</b>:
+
+- `number` (`uint`): Number of the most recent block.
+
+## GetBlockByNumber
+
+<GoDocLink href="jsonrpc#Eth.GetBlockByNumber">GetBlockByNumber</GoDocLink> returns information about a block by block number. 
+
+```go
+block, err := client.Eth().GetBlockByNumber(num, full)
+```
+
+<b>Params</b>:
+
+- `number` (`uint`): Number of the block to query.
+- `full` (`bool`): Whether the ouput block should include transactions.
+
+<b>Output</b>:
+
+- `block` <Block/>: Block queried.
+
+## GetBlockByHash
+
+<GoDocLink href="jsonrpc#Eth.GetBlockByHash">GetBlockByHash</GoDocLink> returns information about a block by hash. 
+
+```go
+block, err := client.Eth().GetBlockByHash(hash, full)
+```
+
+<b>Params</b>:
+
+- `hash` <Hash />: Hash of the block to query.
+- `full` (`bool`): Whether the ouput block should include transactions.
+
+<b>Output</b>:
+
+- `block` <Block/>: Block queried.
+
+## GetTransactionByHash
+
+<GoDocLink href="jsonrpc#Eth.GetTransactionByHash">GetTransactionByHash</GoDocLink> returns a transaction by his hash  
+
+```go
+transaction, err := client.Eth().GetTransactionByHash(hash)
+```
+
+<b>Params</b>:
+
+- `hash` <Hash />: Hash of the transaction to query.
+
+<b>Output</b>:
+
+- `transaction` <Transaction/>: Transaction being queried.
+
+## SendRawTransaction
+
+<GoDocLink href="jsonrpc#Eth.SendRawTransaction">SendRawTransaction</GoDocLink> creates new message call transaction or a contract creation for signed transactions.
+
+```go
+hash, err := client.Eth().SendRawTransaction(transaction)
+```
+
+<b>Params</b>:
+
+- `transaction` `([]byte)`: Signed transaction and encoded in RLP format.
+
+<b>Output</b>:
+
+- `hash` <Hash/>: Hash of the transaction created.
+
+## GetTransactionReceipt
+
+<GoDocLink href="jsonrpc#Eth.GetTransactionReceipt">GetTransactionReceipt</GoDocLink> returns the receipt of a transaction by transaction hash.
+
+```go
+receipt, err := client.Eth().GetTransactionReceipt(hash)
+```
+
+<b>Params</b>:
+
+- `hash` <Hash/>: Hash of the transaction being queried.
+
+<b>Output</b>:
+
+- `receipt` <Receipt/>: receipt being queried.
+
+## GetNonce
+
+<GoDocLink href="jsonrpc#Eth.GetNonce">GetNonce</GoDocLink> returns the number of transactions sent from an address.
+
+```go
+nonce, err := client.Eth().GetNonce(address)
+```
+
+<b>Params</b>:
+
+- `address` <Address/>: address of the account to query.
+
+<b>Output</b>:
+
+- `nonce` `(uint64)`: next valid nonce for the account.
+
+## GetBalance 
+
+<GoDocLink href="jsonrpc#Eth.GetBalance">GetBalance</GoDocLink> returns the balance of the account of given address.
+
+```go
+balance, err := client.Eth().GetBalance(address)
+```
+
+<b>Params</b>:
+
+- `address` <Address/>: address of the account to query.
+
+<b>Output</b>:
+
+- `balance` `(big.Int)`: balance of the account in big format.
+
+## GasPrice
+
+<GoDocLink href="jsonrpc#Eth.GasPrice">GasPrice</GoDocLink> returns the current price per gas in wei.
+
+```go
+price, err := client.Eth().GasPrice()
+```
+
+<b>Output</b>:
+
+- `price` `(big.Int)`: gas price in wei.

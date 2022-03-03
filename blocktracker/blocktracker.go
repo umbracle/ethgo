@@ -8,14 +8,14 @@ import (
 	"sync"
 	"time"
 
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 // BlockProvider are the eth1x methods required by the block tracker
 type BlockProvider interface {
-	GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, error)
-	GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, error)
+	GetBlockByHash(hash ethgo.Hash, full bool) (*ethgo.Block, error)
+	GetBlockByNumber(i ethgo.BlockNumber, full bool) (*ethgo.Block, error)
 }
 
 const (
@@ -25,7 +25,7 @@ const (
 // BlockTracker is an interface to track new blocks on the chain
 type BlockTracker struct {
 	config       *Config
-	blocks       []*web3.Block
+	blocks       []*ethgo.Block
 	blocksLock   sync.Mutex
 	subscriber   BlockTrackerInterface
 	blockChs     []chan *BlockEvent
@@ -70,7 +70,7 @@ func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) *BlockTracker
 		tracker = NewJSONBlockTracker(log.New(os.Stderr, "", log.LstdFlags), provider)
 	}
 	return &BlockTracker{
-		blocks:     []*web3.Block{},
+		blocks:     []*ethgo.Block{},
 		blockChs:   []chan *BlockEvent{},
 		config:     config,
 		subscriber: tracker,
@@ -93,9 +93,9 @@ func (b *BlockTracker) AcquireLock() Lock {
 }
 
 func (t *BlockTracker) Init() (err error) {
-	var block *web3.Block
+	var block *ethgo.Block
 	t.once.Do(func() {
-		block, err = t.provider.GetBlockByNumber(web3.Latest, false)
+		block, err = t.provider.GetBlockByNumber(ethgo.Latest, false)
 		if err != nil {
 			return
 		}
@@ -103,7 +103,7 @@ func (t *BlockTracker) Init() (err error) {
 			return
 		}
 
-		blocks := make([]*web3.Block, t.config.MaxBlockBacklog)
+		blocks := make([]*ethgo.Block, t.config.MaxBlockBacklog)
 
 		var i uint64
 		for i = 0; i < t.config.MaxBlockBacklog; i++ {
@@ -130,7 +130,7 @@ func (b *BlockTracker) MaxBlockBacklog() uint64 {
 	return b.config.MaxBlockBacklog
 }
 
-func (b *BlockTracker) LastBlocked() *web3.Block {
+func (b *BlockTracker) LastBlocked() *ethgo.Block {
 	target := b.blocks[len(b.blocks)-1]
 	if target == nil {
 		return nil
@@ -138,8 +138,8 @@ func (b *BlockTracker) LastBlocked() *web3.Block {
 	return target.Copy()
 }
 
-func (b *BlockTracker) BlocksBlocked() []*web3.Block {
-	res := []*web3.Block{}
+func (b *BlockTracker) BlocksBlocked() []*ethgo.Block {
+	res := []*ethgo.Block{}
 	for _, i := range b.blocks {
 		res = append(res, i.Copy())
 	}
@@ -162,7 +162,7 @@ func (b *BlockTracker) Start() error {
 		cancelFn()
 	}()
 	// start the polling
-	err := b.subscriber.Track(ctx, func(block *web3.Block) error {
+	err := b.subscriber.Track(ctx, func(block *ethgo.Block) error {
 		return b.HandleReconcile(block)
 	})
 	if err != nil {
@@ -171,7 +171,7 @@ func (b *BlockTracker) Start() error {
 	return err
 }
 
-func (t *BlockTracker) AddBlockLocked(block *web3.Block) error {
+func (t *BlockTracker) AddBlockLocked(block *ethgo.Block) error {
 	if uint64(len(t.blocks)) == t.config.MaxBlockBacklog {
 		// remove past blocks if there are more than maxReconcileBlocks
 		t.blocks = t.blocks[1:]
@@ -186,7 +186,7 @@ func (t *BlockTracker) AddBlockLocked(block *web3.Block) error {
 	return nil
 }
 
-func (t *BlockTracker) blockAtIndex(hash web3.Hash) int {
+func (t *BlockTracker) blockAtIndex(hash ethgo.Hash) int {
 	for indx, b := range t.blocks {
 		if b.Hash == hash {
 			return indx
@@ -195,7 +195,7 @@ func (t *BlockTracker) blockAtIndex(hash web3.Hash) int {
 	return -1
 }
 
-func (t *BlockTracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, int, error) {
+func (t *BlockTracker) handleReconcileImpl(block *ethgo.Block) ([]*ethgo.Block, int, error) {
 	// The block already exists
 	if t.blockAtIndex(block.Hash) != -1 {
 		return nil, -1, nil
@@ -203,23 +203,23 @@ func (t *BlockTracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, in
 
 	// The state is empty
 	if len(t.blocks) == 0 {
-		return []*web3.Block{block}, -1, nil
+		return []*ethgo.Block{block}, -1, nil
 	}
 
 	// Append to the head of the chain
 	if t.blocks[len(t.blocks)-1].Hash == block.ParentHash {
-		return []*web3.Block{block}, -1, nil
+		return []*ethgo.Block{block}, -1, nil
 	}
 
 	// Fork in the middle of the chain
 	if indx := t.blockAtIndex(block.ParentHash); indx != -1 {
-		return []*web3.Block{block}, indx, nil
+		return []*ethgo.Block{block}, indx, nil
 	}
 
 	// Backfill. We dont know the parent of the block.
 	// Need to query the chain untill we find a known block
 
-	added := []*web3.Block{block}
+	added := []*ethgo.Block{block}
 	var indx int
 
 	count := uint64(0)
@@ -242,14 +242,14 @@ func (t *BlockTracker) handleReconcileImpl(block *web3.Block) ([]*web3.Block, in
 	}
 
 	// need the blocks in reverse order
-	blocks := []*web3.Block{}
+	blocks := []*ethgo.Block{}
 	for i := len(added) - 1; i >= 0; i-- {
 		blocks = append(blocks, added[i])
 	}
 	return blocks, indx, nil
 }
 
-func (t *BlockTracker) HandleBlockEvent(block *web3.Block) (*BlockEvent, error) {
+func (t *BlockTracker) HandleBlockEvent(block *ethgo.Block) (*BlockEvent, error) {
 	t.blocksLock.Lock()
 	defer t.blocksLock.Unlock()
 
@@ -281,7 +281,7 @@ func (t *BlockTracker) HandleBlockEvent(block *web3.Block) (*BlockEvent, error) 
 	return blockEvnt, nil
 }
 
-func (t *BlockTracker) HandleReconcile(block *web3.Block) error {
+func (t *BlockTracker) HandleReconcile(block *ethgo.Block) error {
 	blockEvnt, err := t.HandleBlockEvent(block)
 	if err != nil {
 		return err
@@ -303,7 +303,7 @@ func (t *BlockTracker) HandleReconcile(block *web3.Block) error {
 }
 
 type BlockTrackerInterface interface {
-	Track(context.Context, func(block *web3.Block) error) error
+	Track(context.Context, func(block *ethgo.Block) error) error
 }
 
 const (
@@ -328,9 +328,9 @@ func NewJSONBlockTracker(logger *log.Logger, provider BlockProvider) *JSONBlockT
 }
 
 // Track implements the BlockTracker interface
-func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *web3.Block) error) error {
+func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
 	go func() {
-		var lastBlock *web3.Block
+		var lastBlock *ethgo.Block
 
 		for {
 			select {
@@ -338,7 +338,7 @@ func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *web3.Bl
 				return
 
 			case <-time.After(k.PollInterval):
-				block, err := k.provider.GetBlockByNumber(web3.Latest, false)
+				block, err := k.provider.GetBlockByNumber(ethgo.Latest, false)
 				if err != nil {
 					k.logger.Printf("[ERR]: Tracker failed to get last block: %v", err)
 					continue
@@ -380,7 +380,7 @@ func NewSubscriptionBlockTracker(logger *log.Logger, client *jsonrpc.Client) (*S
 }
 
 // Track implements the BlockTracker interface
-func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *web3.Block) error) error {
+func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
 	data := make(chan []byte)
 	cancel, err := s.client.Subscribe("newHeads", func(b []byte) {
 		data <- b
@@ -393,9 +393,9 @@ func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block 
 		for {
 			select {
 			case buf := <-data:
-				var block web3.Block
+				var block ethgo.Block
 				if err := block.UnmarshalJSON(buf); err != nil {
-					s.logger.Printf("[ERR]: Tracker failed to parse web3.Block: %v", err)
+					s.logger.Printf("[ERR]: Tracker failed to parse ethgo.Block: %v", err)
 				} else {
 					handle(&block)
 				}
@@ -437,13 +437,13 @@ const (
 // Event is an event emitted when a new log is included
 type Event struct {
 	Type    EventType
-	Added   []*web3.Log
-	Removed []*web3.Log
+	Added   []*ethgo.Log
+	Removed []*ethgo.Log
 }
 
 // BlockEvent is an event emitted when a new block is included
 type BlockEvent struct {
 	Type    EventType
-	Added   []*web3.Block
-	Removed []*web3.Block
+	Added   []*ethgo.Block
+	Removed []*ethgo.Block
 }

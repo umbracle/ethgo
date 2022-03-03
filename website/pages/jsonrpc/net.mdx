@@ -1,0 +1,17 @@
+
+import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+
+# Net
+
+## PeerCount
+
+<GoDocLink href="jsonrpc#Net.PeerCount">PeerCount</GoDocLink> returns number of peers currently connected to the client.
+
+```go
+count, err := client.Net().PeerCount()
+```
+
+<b>Output</b>:
+
+- `count` `(uint64)`: Number of peers connected.

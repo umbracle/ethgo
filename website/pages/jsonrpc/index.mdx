@@ -1,0 +1,59 @@
+
+import GoDocLink from '../../components/godoc'
+import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+
+# JsonRPC
+
+Ethereum uses `JsonRPC` as the main interface to interact with the client and the network.
+
+## Overview
+
+```go
+package main
+
+import (
+	"github.com/umbracle/ethgo/jsonrpc"
+)
+
+func main() {
+	client, err := jsonrpc.NewClient("https://mainnet.infura.io")
+	if err != nil {
+		panic(err)
+	}
+}
+```
+
+`Ethgo` supports different transport protocols besides `http` depending on the endpoint:
+
+Use the endpoint with `wss://` prefix to connect with [`websockets`](https://en.wikipedia.org/wiki/WebSocket):
+
+```go
+client, err := jsonrpc.NewClient("wss://mainnet.infura.io")
+```
+
+or the endpoint with `ipc://` prefix to use [`ipc`](https://en.wikipedia.org/wiki/Inter-process_communication):
+
+```go
+client, err := jsonrpc.NewClient("ipc://path/geth.ipc")
+```
+
+## Endpoints
+
+Once the JsonRPC client has been created, the endpoints are available on different namespaces following the spec:
+
+```go
+eth := client.Eth()
+```
+
+The available namespaces are:
+
+- [Eth](./jsonrpc/eth): Ethereum network endpoints.
+- [Net](./jsonrpc/net): Client information.
+
+## Block tag
+
+Some endpoints of the `eth` namespace can be queried at a specific block. There exists three ways to specify this block:
+
+- `number` or `tag` <GoDocLink href="#BlockNumber">(BlockNumber)</GoDocLink>: integer block number or the tag `latest`, `pending` or `earliest`.
+
+- `hash` <Hash/>: hash of the block.

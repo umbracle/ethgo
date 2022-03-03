@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/umbracle/go-web3"
+	"github.com/umbracle/ethgo"
 )
 
 // Eth is the eth namespace
@@ -20,7 +20,7 @@ func (c *Client) Eth() *Eth {
 }
 
 // GetCode returns the code of a contract
-func (e *Eth) GetCode(addr web3.Address, block web3.BlockNumberOrHash) (string, error) {
+func (e *Eth) GetCode(addr ethgo.Address, block ethgo.BlockNumberOrHash) (string, error) {
 	var res string
 	if err := e.c.Call("eth_getCode", &res, addr, block.Location()); err != nil {
 		return "", err
@@ -29,8 +29,8 @@ func (e *Eth) GetCode(addr web3.Address, block web3.BlockNumberOrHash) (string, 
 }
 
 // Accounts returns a list of addresses owned by client.
-func (e *Eth) Accounts() ([]web3.Address, error) {
-	var out []web3.Address
+func (e *Eth) Accounts() ([]ethgo.Address, error) {
+	var out []ethgo.Address
 	if err := e.c.Call("eth_accounts", &out); err != nil {
 		return nil, err
 	}
@@ -38,8 +38,8 @@ func (e *Eth) Accounts() ([]web3.Address, error) {
 }
 
 // GetStorageAt returns the value from a storage position at a given address.
-func (e *Eth) GetStorageAt(addr web3.Address, slot web3.Hash, block web3.BlockNumberOrHash) (web3.Hash, error) {
-	var hash web3.Hash
+func (e *Eth) GetStorageAt(addr ethgo.Address, slot ethgo.Hash, block ethgo.BlockNumberOrHash) (ethgo.Hash, error) {
+	var hash ethgo.Hash
 	err := e.c.Call("eth_getStorageAt", &hash, addr, slot, block.Location())
 	return hash, err
 }
@@ -54,8 +54,8 @@ func (e *Eth) BlockNumber() (uint64, error) {
 }
 
 // GetBlockByNumber returns information about a block by block number.
-func (e *Eth) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, error) {
-	var b *web3.Block
+func (e *Eth) GetBlockByNumber(i ethgo.BlockNumber, full bool) (*ethgo.Block, error) {
+	var b *ethgo.Block
 	if err := e.c.Call("eth_getBlockByNumber", &b, i.String(), full); err != nil {
 		return nil, err
 	}
@@ -63,8 +63,8 @@ func (e *Eth) GetBlockByNumber(i web3.BlockNumber, full bool) (*web3.Block, erro
 }
 
 // GetBlockByHash returns information about a block by hash.
-func (e *Eth) GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, error) {
-	var b *web3.Block
+func (e *Eth) GetBlockByHash(hash ethgo.Hash, full bool) (*ethgo.Block, error) {
+	var b *ethgo.Block
 	if err := e.c.Call("eth_getBlockByHash", &b, hash, full); err != nil {
 		return nil, err
 	}
@@ -72,13 +72,13 @@ func (e *Eth) GetBlockByHash(hash web3.Hash, full bool) (*web3.Block, error) {
 }
 
 // GetFilterChanges returns the filter changes for log filters
-func (e *Eth) GetFilterChanges(id string) ([]*web3.Log, error) {
+func (e *Eth) GetFilterChanges(id string) ([]*ethgo.Log, error) {
 	var raw string
 	err := e.c.Call("eth_getFilterChanges", &raw, id)
 	if err != nil {
 		return nil, err
 	}
-	var res []*web3.Log
+	var res []*ethgo.Log
 	if err := json.Unmarshal([]byte(raw), &res); err != nil {
 		return nil, err
 	}
@@ -86,20 +86,20 @@ func (e *Eth) GetFilterChanges(id string) ([]*web3.Log, error) {
 }
 
 // GetTransactionByHash returns a transaction by his hash
-func (e *Eth) GetTransactionByHash(hash web3.Hash) (*web3.Transaction, error) {
-	var txn *web3.Transaction
+func (e *Eth) GetTransactionByHash(hash ethgo.Hash) (*ethgo.Transaction, error) {
+	var txn *ethgo.Transaction
 	err := e.c.Call("eth_getTransactionByHash", &txn, hash)
 	return txn, err
 }
 
 // GetFilterChangesBlock returns the filter changes for block filters
-func (e *Eth) GetFilterChangesBlock(id string) ([]web3.Hash, error) {
+func (e *Eth) GetFilterChangesBlock(id string) ([]ethgo.Hash, error) {
 	var raw string
 	err := e.c.Call("eth_getFilterChanges", &raw, id)
 	if err != nil {
 		return nil, err
 	}
-	var res []web3.Hash
+	var res []ethgo.Hash
 	if err := json.Unmarshal([]byte(raw), &res); err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (e *Eth) GetFilterChangesBlock(id string) ([]web3.Hash, error) {
 }
 
 // NewFilter creates a new log filter
-func (e *Eth) NewFilter(filter *web3.LogFilter) (string, error) {
+func (e *Eth) NewFilter(filter *ethgo.LogFilter) (string, error) {
 	var id string
 	err := e.c.Call("eth_newFilter", &id, filter)
 	return id, err
@@ -128,29 +128,29 @@ func (e *Eth) UninstallFilter(id string) (bool, error) {
 }
 
 // SendRawTransaction sends a signed transaction in rlp format.
-func (e *Eth) SendRawTransaction(data []byte) (web3.Hash, error) {
-	var hash web3.Hash
+func (e *Eth) SendRawTransaction(data []byte) (ethgo.Hash, error) {
+	var hash ethgo.Hash
 	hexData := "0x" + hex.EncodeToString(data)
 	err := e.c.Call("eth_sendRawTransaction", &hash, hexData)
 	return hash, err
 }
 
 // SendTransaction creates new message call transaction or a contract creation.
-func (e *Eth) SendTransaction(txn *web3.Transaction) (web3.Hash, error) {
-	var hash web3.Hash
+func (e *Eth) SendTransaction(txn *ethgo.Transaction) (ethgo.Hash, error) {
+	var hash ethgo.Hash
 	err := e.c.Call("eth_sendTransaction", &hash, txn)
 	return hash, err
 }
 
 // GetTransactionReceipt returns the receipt of a transaction by transaction hash.
-func (e *Eth) GetTransactionReceipt(hash web3.Hash) (*web3.Receipt, error) {
-	var receipt *web3.Receipt
+func (e *Eth) GetTransactionReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
+	var receipt *ethgo.Receipt
 	err := e.c.Call("eth_getTransactionReceipt", &receipt, hash)
 	return receipt, err
 }
 
 // GetNonce returns the nonce of the account
-func (e *Eth) GetNonce(addr web3.Address, blockNumber web3.BlockNumberOrHash) (uint64, error) {
+func (e *Eth) GetNonce(addr ethgo.Address, blockNumber ethgo.BlockNumberOrHash) (uint64, error) {
 	var nonce string
 	if err := e.c.Call("eth_getTransactionCount", &nonce, addr, blockNumber.Location()); err != nil {
 		return 0, err
@@ -159,7 +159,7 @@ func (e *Eth) GetNonce(addr web3.Address, blockNumber web3.BlockNumberOrHash) (u
 }
 
 // GetBalance returns the balance of the account of given address.
-func (e *Eth) GetBalance(addr web3.Address, blockNumber web3.BlockNumberOrHash) (*big.Int, error) {
+func (e *Eth) GetBalance(addr ethgo.Address, blockNumber ethgo.BlockNumberOrHash) (*big.Int, error) {
 	var out string
 	if err := e.c.Call("eth_getBalance", &out, addr, blockNumber.Location()); err != nil {
 		return nil, err
@@ -181,7 +181,7 @@ func (e *Eth) GasPrice() (uint64, error) {
 }
 
 // Call executes a new message call immediately without creating a transaction on the block chain.
-func (e *Eth) Call(msg *web3.CallMsg, block web3.BlockNumber) (string, error) {
+func (e *Eth) Call(msg *ethgo.CallMsg, block ethgo.BlockNumber) (string, error) {
 	var out string
 	if err := e.c.Call("eth_call", &out, msg, block.String()); err != nil {
 		return "", err
@@ -202,7 +202,7 @@ func (e *Eth) EstimateGasContract(bin []byte) (uint64, error) {
 }
 
 // EstimateGas generates and returns an estimate of how much gas is necessary to allow the transaction to complete.
-func (e *Eth) EstimateGas(msg *web3.CallMsg) (uint64, error) {
+func (e *Eth) EstimateGas(msg *ethgo.CallMsg) (uint64, error) {
 	var out string
 	if err := e.c.Call("eth_estimateGas", &out, msg); err != nil {
 		return 0, err
@@ -211,8 +211,8 @@ func (e *Eth) EstimateGas(msg *web3.CallMsg) (uint64, error) {
 }
 
 // GetLogs returns an array of all logs matching a given filter object
-func (e *Eth) GetLogs(filter *web3.LogFilter) ([]*web3.Log, error) {
-	var out []*web3.Log
+func (e *Eth) GetLogs(filter *ethgo.LogFilter) ([]*ethgo.Log, error) {
+	var out []*ethgo.Log
 	if err := e.c.Call("eth_getLogs", &out, filter); err != nil {
 		return nil, err
 	}

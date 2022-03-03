@@ -8,17 +8,17 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	web3 "github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/testutil"
 )
 
 func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTrackerInterface) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	blocks := make(chan *web3.Block)
-	err := tracker.Track(ctx, func(block *web3.Block) error {
+	blocks := make(chan *ethgo.Block)
+	err := tracker.Track(ctx, func(block *ethgo.Block) error {
 		blocks <- block
 		return nil
 	})

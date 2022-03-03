@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/umbracle/go-web3"
+	"github.com/umbracle/ethgo"
 )
 
 // EncryptV3 encrypts data in v3 format
@@ -42,7 +42,7 @@ func EncryptV3(content []byte, password string, customScrypt ...int) ([]byte, er
 	}
 
 	// generate mac
-	mac := web3.Keccak256(kdf[16:32], cipherText)
+	mac := ethgo.Keccak256(kdf[16:32], cipherText)
 
 	v3 := &v3Encoding{
 		Version: 3,
@@ -85,7 +85,7 @@ func DecryptV3(content []byte, password string) ([]byte, error) {
 	}
 
 	// validate mac
-	mac := web3.Keccak256(kdf[16:32], encoding.Crypto.CipherText)
+	mac := ethgo.Keccak256(kdf[16:32], encoding.Crypto.CipherText)
 	if !bytes.Equal(mac, encoding.Crypto.Mac) {
 		return nil, fmt.Errorf("incorrect mac")
 	}

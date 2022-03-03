@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 
 	"github.com/boltdb/bolt"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker/store"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/tracker/store"
 )
 
 var _ store.Store = (*BoltStore)(nil)
@@ -144,12 +144,12 @@ func (e *Entry) LastIndex() (uint64, error) {
 }
 
 // StoreLog implements the store interface
-func (e *Entry) StoreLog(log *web3.Log) error {
-	return e.StoreLogs([]*web3.Log{log})
+func (e *Entry) StoreLog(log *ethgo.Log) error {
+	return e.StoreLogs([]*ethgo.Log{log})
 }
 
 // StoreLogs implements the store interface
-func (e *Entry) StoreLogs(logs []*web3.Log) error {
+func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 	tx, err := e.conn.Begin(true)
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func (e *Entry) RemoveLogs(indx uint64) error {
 }
 
 // GetLog implements the store interface
-func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
+func (e *Entry) GetLog(indx uint64, log *ethgo.Log) error {
 	txn, err := e.conn.Begin(false)
 	if err != nil {
 		return err

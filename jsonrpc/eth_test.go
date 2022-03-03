@@ -8,13 +8,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/testutil"
 )
 
 var (
-	addr0 = web3.Address{0x1}
-	addr1 = web3.Address{0x2}
+	addr0 = ethgo.Address{0x1}
+	addr1 = ethgo.Address{0x2}
 )
 
 func TestEthAccounts(t *testing.T) {
@@ -59,11 +59,11 @@ func TestEthGetCode(t *testing.T) {
 
 	_, addr := s.DeployContract(cc)
 
-	code, err := c.Eth().GetCode(addr, web3.Latest)
+	code, err := c.Eth().GetCode(addr, ethgo.Latest)
 	assert.NoError(t, err)
 	assert.NotEqual(t, code, "0x")
 
-	code2, err := c.Eth().GetCode(addr, web3.BlockNumber(0))
+	code2, err := c.Eth().GetCode(addr, ethgo.BlockNumber(0))
 	assert.NoError(t, err)
 	assert.Equal(t, code2, "0x")
 }
@@ -74,11 +74,11 @@ func TestEthGetBalance(t *testing.T) {
 
 	c, _ := NewClient(s.HTTPAddr())
 
-	before, err := c.Eth().GetBalance(s.Account(0), web3.Latest)
+	before, err := c.Eth().GetBalance(s.Account(0), ethgo.Latest)
 	assert.NoError(t, err)
 
 	amount := big.NewInt(10)
-	txn := &web3.Transaction{
+	txn := &ethgo.Transaction{
 		From:  s.Account(0),
 		To:    &testutil.DummyAddr,
 		Value: amount,
@@ -86,23 +86,23 @@ func TestEthGetBalance(t *testing.T) {
 	receipt, err := s.SendTxn(txn)
 	assert.NoError(t, err)
 
-	after, err := c.Eth().GetBalance(s.Account(0), web3.Latest)
+	after, err := c.Eth().GetBalance(s.Account(0), ethgo.Latest)
 	assert.NoError(t, err)
 
 	// the balance in 'after' must be 'before' - 'amount'
 	assert.Equal(t, new(big.Int).Add(after, amount).Cmp(before), 0)
 
 	// get balance at block 0
-	before2, err := c.Eth().GetBalance(s.Account(0), web3.BlockNumber(0))
+	before2, err := c.Eth().GetBalance(s.Account(0), ethgo.BlockNumber(0))
 	assert.NoError(t, err)
 	assert.Equal(t, before, before2)
 
 	{
 		// query the balance with different options
-		cases := []web3.BlockNumberOrHash{
-			web3.Latest,
+		cases := []ethgo.BlockNumberOrHash{
+			ethgo.Latest,
 			receipt.BlockHash,
-			web3.BlockNumber(receipt.BlockNumber),
+			ethgo.BlockNumber(receipt.BlockNumber),
 		}
 		for _, ca := range cases {
 			res, err := c.Eth().GetBalance(s.Account(0), ca)
@@ -169,7 +169,7 @@ func TestEthSendTransaction(t *testing.T) {
 
 	c, _ := NewClient(s.HTTPAddr())
 
-	txn := &web3.Transaction{
+	txn := &ethgo.Transaction{
 		From:     s.Account(0),
 		GasPrice: testutil.DefaultGasPrice,
 		Gas:      testutil.DefaultGasLimit,
@@ -179,7 +179,7 @@ func TestEthSendTransaction(t *testing.T) {
 	hash, err := c.Eth().SendTransaction(txn)
 	assert.NoError(t, err)
 
-	var receipt *web3.Receipt
+	var receipt *ethgo.Receipt
 	for {
 		receipt, err = c.Eth().GetTransactionReceipt(hash)
 		if err != nil {
@@ -214,7 +214,7 @@ func TestEthEstimateGas(t *testing.T) {
 
 	_, addr := s.DeployContract(cc)
 
-	msg := &web3.CallMsg{
+	msg := &ethgo.CallMsg{
 		From: s.Account(0),
 		To:   &addr,
 		Data: testutil.MethodSig("setA"),
@@ -243,7 +243,7 @@ func TestEthGetLogs(t *testing.T) {
 
 	r := s.TxnTo(addr, "setA2")
 
-	filter := &web3.LogFilter{
+	filter := &ethgo.LogFilter{
 		BlockHash: &r.BlockHash,
 	}
 	logs, err := c.Eth().GetLogs(filter)
@@ -280,7 +280,7 @@ func TestEthGetNonce(t *testing.T) {
 
 	c, _ := NewClient(s.HTTPAddr())
 
-	num, err := c.Eth().GetNonce(s.Account(0), web3.Latest)
+	num, err := c.Eth().GetNonce(s.Account(0), ethgo.Latest)
 	assert.NoError(t, err)
 	assert.Equal(t, num, uint64(0))
 
@@ -288,10 +288,10 @@ func TestEthGetNonce(t *testing.T) {
 	assert.NoError(t, err)
 
 	// query the balance with different options
-	cases := []web3.BlockNumberOrHash{
-		web3.Latest,
+	cases := []ethgo.BlockNumberOrHash{
+		ethgo.Latest,
 		receipt.BlockHash,
-		web3.BlockNumber(receipt.BlockNumber),
+		ethgo.BlockNumber(receipt.BlockNumber),
 	}
 	for _, ca := range cases {
 		num, err = c.Eth().GetNonce(s.Account(0), ca)
@@ -352,13 +352,13 @@ func TestEthGetStorageAt(t *testing.T) {
 	_, addr := s.DeployContract(cc)
 	receipt := s.TxnTo(addr, "setValue")
 
-	cases := []web3.BlockNumberOrHash{
-		web3.Latest,
+	cases := []ethgo.BlockNumberOrHash{
+		ethgo.Latest,
 		receipt.BlockHash,
-		web3.BlockNumber(receipt.BlockNumber),
+		ethgo.BlockNumber(receipt.BlockNumber),
 	}
 	for _, ca := range cases {
-		res, err := c.Eth().GetStorageAt(addr, web3.Hash{}, ca)
+		res, err := c.Eth().GetStorageAt(addr, ethgo.Hash{}, ca)
 		assert.NoError(t, err)
 		assert.True(t, strings.HasSuffix(res.String(), "a"))
 	}

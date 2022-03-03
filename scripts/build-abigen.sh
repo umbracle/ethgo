@@ -28,7 +28,7 @@ echo "==> Building..."
     -os="${XC_OS}" \
     -arch="${XC_ARCH}" \
     -osarch="!darwin/arm !darwin/arm64" \
-    -output "pkg/{{.OS}}_{{.Arch}}/go-web3" \
+    -output "pkg/{{.OS}}_{{.Arch}}/ethgo" \
     -tags="${GOTAGS}" \
     .
 

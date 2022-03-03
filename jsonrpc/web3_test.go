@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/ethgo/testutil"
 	"golang.org/x/crypto/sha3"
 )
 

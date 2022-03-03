@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/tracker/store"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/tracker/store"
 
 	// Enable postgres for sqlx
 	_ "github.com/lib/pq"
@@ -107,7 +107,7 @@ func (e *Entry) LastIndex() (uint64, error) {
 }
 
 // StoreLogs implements the store interface
-func (e *Entry) StoreLogs(logs []*web3.Log) error {
+func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 	lastIndex, err := e.LastIndex()
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func (e *Entry) RemoveLogs(indx uint64) error {
 }
 
 // GetLog implements the store interface
-func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
+func (e *Entry) GetLog(indx uint64, log *ethgo.Log) error {
 	obj := logObj{}
 	if err := e.db.Get(&obj, "SELECT * FROM "+e.table+" WHERE indx=$1", indx); err != nil {
 		return err
@@ -177,9 +177,9 @@ func (e *Entry) GetLog(indx uint64, log *web3.Log) error {
 	}
 
 	if obj.Topics != "" {
-		log.Topics = []web3.Hash{}
+		log.Topics = []ethgo.Hash{}
 		for _, item := range strings.Split(obj.Topics, ",") {
-			var topic web3.Hash
+			var topic ethgo.Hash
 			if err := topic.UnmarshalText([]byte(item)); err != nil {
 				return err
 			}

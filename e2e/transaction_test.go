@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/testutil"
-	"github.com/umbracle/go-web3/wallet"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/testutil"
+	"github.com/umbracle/ethgo/wallet"
 )
 
 func TestSendSignedTransaction(t *testing.T) {
@@ -24,23 +24,23 @@ func TestSendSignedTransaction(t *testing.T) {
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 
-	found, _ := c.Eth().GetBalance(key.Address(), web3.Latest)
+	found, _ := c.Eth().GetBalance(key.Address(), ethgo.Latest)
 	assert.Equal(t, found, value)
 
 	chainID, err := c.Eth().ChainID()
 	assert.NoError(t, err)
 
 	// send a signed transaction
-	to := web3.Address{0x1}
+	to := ethgo.Address{0x1}
 	transferVal := big.NewInt(1000)
 
-	txn := &web3.Transaction{
+	txn := &ethgo.Transaction{
 		To:    &to,
 		Value: transferVal,
 	}
 
 	{
-		msg := &web3.CallMsg{
+		msg := &ethgo.CallMsg{
 			From:  key.Address(),
 			To:    &to,
 			Value: transferVal,
@@ -66,7 +66,7 @@ func TestSendSignedTransaction(t *testing.T) {
 	_, err = s.WaitForReceipt(hash)
 	assert.NoError(t, err)
 
-	balance, err := c.Eth().GetBalance(to, web3.Latest)
+	balance, err := c.Eth().GetBalance(to, ethgo.Latest)
 	assert.NoError(t, err)
 	assert.Equal(t, balance, transferVal)
 }
