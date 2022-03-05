@@ -6,11 +6,15 @@ require("prismjs/components/prism-go")
 
 import Head from 'next/head';
 
+const prod = process.env.NODE_ENV === 'production'
+
 export default function Nextra({ Component, pageProps }) {
   return (
     <>
       <Head>
-        <script defer data-domain="ethgo.dev" src="https://plausible.io/js/plausible.js"></script>
+        {prod &&
+          <script defer data-domain="ethgo.dev" src="https://plausible.io/js/plausible.js"></script>
+        }
       </Head>
       <Component {...pageProps} />
     </>

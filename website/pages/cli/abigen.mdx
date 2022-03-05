@@ -1,0 +1,23 @@
+
+# Abigen
+
+The `abigen` command generates bindings to interact with smart contracts using Go. It requires as input the ABI specification of the smart contract in JSON format.
+
+## Usage
+
+```shell
+$ ethgo abigen --source ./erc20.json --package erc20
+```
+
+## Options
+
+- `source`: Path of the ABI contract file.
+- `package`: Name of the Go package.
+- `output`: Output directory. It defaults to the current location.
+
+## Output
+
+It generates two output files.
+
+- `[name].go`: It contains the bindings for the contract.
+- `[name]_artifacts.go`. It contains the artifacts for the contract (ABI and deploy binary).
