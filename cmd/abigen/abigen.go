@@ -1,10 +1,9 @@
-package main
+package abigen
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,23 +14,7 @@ import (
 	"github.com/umbracle/ethgo/compiler"
 )
 
-const (
-	version = "0.1.0"
-)
-
-func main() {
-	var sources string
-	var pckg string
-	var output string
-	var name string
-
-	flag.StringVar(&sources, "source", "", "List of abi files")
-	flag.StringVar(&pckg, "package", "main", "Name of the package")
-	flag.StringVar(&output, "output", "", "Output directory")
-	flag.StringVar(&name, "name", "", "name of the contract")
-
-	flag.Parse()
-
+func Parse(sources string, pckg string, output string, name string) error {
 	config := &config{
 		Package: pckg,
 		Output:  output,
@@ -39,8 +22,7 @@ func main() {
 	}
 
 	if sources == "" {
-		fmt.Println(version)
-		os.Exit(0)
+		return fmt.Errorf("no source")
 	}
 
 	for _, source := range strings.Split(sources, ",") {
@@ -70,10 +52,10 @@ func main() {
 			}
 		}
 	}
+	return nil
 }
 
 const (
-	vyExt   = 0
 	solExt  = 1
 	abiExt  = 2
 	jsonExt = 3
@@ -93,8 +75,6 @@ func process(sources string, config *config) (map[string]*compiler.Artifact, err
 			ext = abiExt
 		case ".sol":
 			ext = solExt
-		case ".vy", ".py":
-			ext = vyExt
 		case ".json":
 			ext = jsonExt
 		default:
