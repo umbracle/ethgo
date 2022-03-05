@@ -6,3 +6,5 @@ pkg/
 # website
 node_modules
 .next
+
+dist/
