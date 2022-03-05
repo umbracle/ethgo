@@ -3,5 +3,6 @@
     "jsonrpc": "JsonRPC",
     "abi": "Application Binary Interface",
     "signers": "Signers",
-    "integrations": "Integrations"
+    "integrations": "Integrations",
+    "cli": "Command Line Interface"
 }

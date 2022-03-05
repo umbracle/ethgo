@@ -12,7 +12,6 @@ type AbigenCommand struct {
 	source string
 	pckg   string
 	output string
-	name   string
 }
 
 // Help implements the cli.Command interface
@@ -34,7 +33,6 @@ func (c *AbigenCommand) Flags() *flag.FlagSet {
 	flags.StringVar(&c.source, "source", "", "Source data")
 	flags.StringVar(&c.pckg, "package", "main", "Name of the package")
 	flags.StringVar(&c.output, "output", ".", "Output directory")
-	flags.StringVar(&c.name, "name", "", "name of the contract")
 
 	return flags
 }
@@ -47,7 +45,7 @@ func (c *AbigenCommand) Run(args []string) int {
 		return 1
 	}
 
-	if err := abigen.Parse(c.source, c.pckg, c.output, c.name); err != nil {
+	if err := abigen.Parse(c.source, c.pckg, c.output); err != nil {
 		c.UI.Error(err.Error())
 		return 1
 	}

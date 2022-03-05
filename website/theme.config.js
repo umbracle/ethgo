@@ -8,7 +8,11 @@ export default {
     customSearch: null, // customizable, you can use algolia for example
     darkMode: true,
     footer: true,
-    footerText: `Powered by Umbracle`,
+    footerText: (
+      <>
+        Powered by <a href="https://umbracle.io">Umbracle</a>
+      </>
+    ),
     footerEditLink: `Edit this page on GitHub`,
     floatTOC: true,
     logo: (

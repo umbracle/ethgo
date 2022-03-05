@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/mitchellh/cli"
+	"github.com/umbracle/ethgo/cmd/version"
 )
 
 // VersionCommand is the command to show the version of the agent
@@ -23,5 +24,6 @@ func (c *VersionCommand) Synopsis() string {
 
 // Run implements the cli.Command interface
 func (c *VersionCommand) Run(args []string) int {
+	c.UI.Output(version.GetVersion())
 	return 0
 }

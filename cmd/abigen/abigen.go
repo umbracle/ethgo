@@ -14,11 +14,10 @@ import (
 	"github.com/umbracle/ethgo/compiler"
 )
 
-func Parse(sources string, pckg string, output string, name string) error {
+func Parse(sources string, pckg string, output string) error {
 	config := &config{
 		Package: pckg,
 		Output:  output,
-		Name:    name,
 	}
 
 	if sources == "" {
@@ -133,9 +132,6 @@ func processAbi(sources []string, config *config) (map[string]*compiler.Artifact
 		if err != nil {
 			// bin not found
 			bin = []byte{}
-		}
-		if len(sources) == 1 && config.Name != "" {
-			name = config.Name
 		}
 		artifacts[strings.Title(name)] = &compiler.Artifact{
 			Abi: string(content),
