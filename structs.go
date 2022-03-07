@@ -37,6 +37,16 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
+// Address implements the ethgo.Key interface Address method.
+func (a Address) Address() Address {
+	return a
+}
+
+// Sign implements the ethgo.Key interface Sign method.
+func (a Address) Sign(hash []byte) ([]byte, error) {
+	panic("an address cannot sign messages")
+}
+
 // UnmarshalText implements the unmarshal interface
 func (a *Address) UnmarshalText(b []byte) error {
 	return unmarshalTextByte(a[:], b, 20)

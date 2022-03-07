@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/contract/builtin/ens"
+	"github.com/umbracle/ethgo/builtin/ens"
 	"github.com/umbracle/ethgo/jsonrpc"
 )
 
