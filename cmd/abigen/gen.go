@@ -193,7 +193,7 @@ var (
 
 // {{.Name}} is a solidity contract
 type {{.Name}} struct {
-	c *contract.Contract
+	*contract.AbiCaller
 }
 {{if .Contract.Bin}}
 // Deploy{{.Name}} deploys a new {{.Name}} contract
@@ -202,13 +202,8 @@ func Deploy{{.Name}}(provider *jsonrpc.Client, from ethgo.Address, args ...inter
 }
 {{end}}
 // New{{.Name}} creates a new instance of the contract at a specific address
-func New{{.Name}}(addr ethgo.Address, provider *jsonrpc.Client) *{{.Name}} {
-	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, provider)}
-}
-
-// Contract returns the contract object
-func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
-	return {{.Ptr}}.c
+func New{{.Name}}(addr ethgo.Address, provider contract.NodeProvider) *{{.Name}} {
+	return &{{.Name}}{AbiCaller: contract.NewAbiCaller(addr, abi{{.Name}}, provider)}
 }
 
 // calls
@@ -218,7 +213,7 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElem
 	var out map[string]interface{}
 	{{ $length := tupleLen .Outputs }}{{ if ne $length 0 }}var ok bool{{ end }}
 
-	out, err = {{$.Ptr}}.c.Call("{{$key}}", ethgo.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
+	out, err = {{$.Ptr}}.Call("{{$key}}", ethgo.EncodeBlock(block...){{range $index, $val := tupleElems .Inputs}}, {{if .Name}}{{clean .Name}}{{else}}val{{$index}}{{end}}{{end}})
 	if err != nil {
 		return
 	}
@@ -237,13 +232,13 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElem
 {{range $key, $value := .Abi.Methods}}{{if not .Const}}
 // {{funcName $key}} sends a {{$key}} transaction in the solidity contract
 func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := tupleElems .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
-	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := tupleElems .Inputs}}, {{clean $elem.Name}}{{end}})
+	return {{$.Ptr}}.Txn("{{$key}}"{{range $index, $elem := tupleElems .Inputs}}, {{clean $elem.Name}}{{end}})
 }
 {{end}}{{end}}
 // events
 {{range $key, $value := .Abi.Events}}
 func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}EventSig() ethgo.Hash {
-	return {{$.Ptr}}.c.ABI().Events["{{funcName $key}}"].ID()
+	return {{$.Ptr}}.ABI().Events["{{funcName $key}}"].ID()
 }
 {{end}}`
 

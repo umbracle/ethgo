@@ -18,17 +18,16 @@ var (
 
 // Testdata is a solidity contract
 type Testdata struct {
-	c *contract.Contract
+	*contract.AbiCaller
 }
 
 // NewTestdata creates a new instance of the contract at a specific address
-func NewTestdata(addr ethgo.Address, provider *jsonrpc.Client) *Testdata {
-	return &Testdata{c: contract.NewContract(addr, abiTestdata, provider)}
+func NewTestdata(addr ethgo.Address, provider contract.NodeProvider) *Testdata {
+	return &Testdata{AbiCaller: contract.NewAbiCaller(addr, abiTestdata, provider)}
 }
 
-// Contract returns the contract object
-func (t *Testdata) Contract() *contract.Contract {
-	return t.c
+func (t *Testdata) WithSender() {
+
 }
 
 // calls
@@ -38,7 +37,7 @@ func (t *Testdata) CallBasicInput(block ...ethgo.BlockNumber) (retval0 *big.Int,
 	var out map[string]interface{}
 	var ok bool
 
-	out, err = t.c.Call("callBasicInput", ethgo.EncodeBlock(block...))
+	out, err = t.Call("callBasicInput", ethgo.EncodeBlock(block...))
 	if err != nil {
 		return
 	}
@@ -62,11 +61,11 @@ func (t *Testdata) CallBasicInput(block ...ethgo.BlockNumber) (retval0 *big.Int,
 
 // TxnBasicInput sends a txnBasicInput transaction in the solidity contract
 func (t *Testdata) TxnBasicInput(val1 ethgo.Address, val2 *big.Int) *contract.Txn {
-	return t.c.Txn("txnBasicInput", val1, val2)
+	return t.Txn("txnBasicInput", val1, val2)
 }
 
 // events
 
 func (t *Testdata) EventBasicEventSig() ethgo.Hash {
-	return t.c.ABI().Events["EventBasic"].ID()
+	return t.ABI().Events["EventBasic"].ID()
 }
