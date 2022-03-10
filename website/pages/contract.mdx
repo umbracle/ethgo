@@ -1,0 +1,83 @@
+
+import GoDocLink from '../components/godoc'
+import {Address, ABI} from '../components/primitives'
+
+# Contract
+
+The <GoDocLink href="contract#Contract">Contract</GoDocLink> struct represents a deployed Solidity contract.
+
+To instantiate a `Contract` object use:
+
+```go
+contract.NewContract(addr, abi)
+```
+
+with:
+
+- `addr` <Address/>: Address of the contract.
+- `abi` <ABI/>: ABI of the contract.
+
+By default, it connects to the `https://localhost:8545` JsonRPC endpoint.
+
+## Options
+
+Besides `addr` and `abi`, you can use the option pattern to parametrize the contract, the available options are:
+
+- <GoDocLink href="contract#WithJsonRPCEndpoint">WithJsonRPCEndpoint</GoDocLink>: JsonRPC url of the endpoint to connect with.
+- <GoDocLink href="contract#WithJsonRPCClient">WithJsonRPCClient</GoDocLink>: [`JsonRPC`](/jsonrpc) object to make rpc calls. It takes preference over an address from `WithAddress`.
+- <GoDocLink href="contract#WithSigner">WithSigner</GoDocLink>: [`Signer`](/signers/signer) object to send transactions or use a custom `from` address.
+- <GoDocLink href="contract#WithProvider">WithProvider</GoDocLink>: Custom <GoDocLink href="contract#NodeProvider">NodeProvider</GoDocLink> implementation to resolve calls and transactions.
+
+## Examples
+
+Check [examples](https://github.com/umbracle/ethgo/tree/master/examples) for a list of examples on how to interact with a smart contract.
+
+### Call a contract
+
+```go
+package main
+
+import (
+	"fmt"
+	"math/big"
+
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/abi"
+	"github.com/umbracle/ethgo/contract"
+	"github.com/umbracle/ethgo/jsonrpc"
+)
+
+func handleErr(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+// call a contract
+func main() {
+	var functions = []string{
+		"function totalSupply() view returns (uint256)",
+	}
+
+	abiContract, err := abi.NewABIFromList(functions)
+	handleErr(err)
+
+	// Matic token
+	addr := ethgo.HexToAddress("0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0")
+
+	client, err := jsonrpc.NewClient("https://mainnet.infura.io")
+	handleErr(err)
+
+	c := contract.NewContract(addr, abiContract, contract.WithJsonRPC(client.Eth()))
+	res, err := c.Call("totalSupply", ethgo.Latest)
+	handleErr(err)
+
+	fmt.Printf("TotalSupply: %s", res["totalSupply"].(*big.Int))
+}
+```
+
+## Abigen
+
+One small limitation of `Contract` is that works with `interface` objects since the input and outputs of a smart contract are arbitrary. As an alternative, you can use [Abigen](./cli/abigen) to generate Go bindings that wrap the `Contract` object and provide native and typed Go functions to interact with the contracts.
+
+By default, `ethgo` includes builtin `abigen` contracts for `ens` and `erc20` tokens.
