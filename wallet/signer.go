@@ -12,7 +12,7 @@ type Signer interface {
 	RecoverSender(tx *ethgo.Transaction) (ethgo.Address, error)
 
 	// SignTx signs a transaction
-	SignTx(tx *ethgo.Transaction, key *Key) (*ethgo.Transaction, error)
+	SignTx(tx *ethgo.Transaction, key ethgo.Key) (*ethgo.Transaction, error)
 }
 
 type EIP1155Signer struct {
@@ -40,7 +40,7 @@ func (e *EIP1155Signer) RecoverSender(tx *ethgo.Transaction) (ethgo.Address, err
 	return addr, nil
 }
 
-func (e *EIP1155Signer) SignTx(tx *ethgo.Transaction, key *Key) (*ethgo.Transaction, error) {
+func (e *EIP1155Signer) SignTx(tx *ethgo.Transaction, key ethgo.Key) (*ethgo.Transaction, error) {
 	hash := signHash(tx, e.chainID)
 
 	sig, err := key.Sign(hash)

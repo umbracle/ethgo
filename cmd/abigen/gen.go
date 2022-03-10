@@ -189,6 +189,7 @@ import (
 
 var (
 	_ = big.NewInt
+	_ = jsonrpc.NewClient
 )
 
 // {{.Name}} is a solidity contract
@@ -197,18 +198,13 @@ type {{.Name}} struct {
 }
 {{if .Contract.Bin}}
 // Deploy{{.Name}} deploys a new {{.Name}} contract
-func Deploy{{.Name}}(provider *jsonrpc.Client, from ethgo.Address, args ...interface{}) *contract.Txn {
-	return contract.DeployContract(provider, from, abi{{.Name}}, bin{{.Name}}, args...)
+func Deploy{{.Name}}(provider *jsonrpc.Client, from ethgo.Address, args []interface{}, opts ...contract.ContractOption) (contract.Txn, error) {
+	return contract.DeployContract(abi{{.Name}}, bin{{.Name}}, args, opts...)
 }
 {{end}}
 // New{{.Name}} creates a new instance of the contract at a specific address
-func New{{.Name}}(addr ethgo.Address, provider *jsonrpc.Client) *{{.Name}} {
-	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, provider)}
-}
-
-// Contract returns the contract object
-func ({{.Ptr}} *{{.Name}}) Contract() *contract.Contract {
-	return {{.Ptr}}.c
+func New{{.Name}}(addr ethgo.Address, opts ...contract.ContractOption) *{{.Name}} {
+	return &{{.Name}}{c: contract.NewContract(addr, abi{{.Name}}, opts...)}
 }
 
 // calls
@@ -236,14 +232,14 @@ func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $val := tupleElem
 // txns
 {{range $key, $value := .Abi.Methods}}{{if not .Const}}
 // {{funcName $key}} sends a {{$key}} transaction in the solidity contract
-func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := tupleElems .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) *contract.Txn {
+func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}({{range $index, $input := tupleElems .Inputs}}{{if $index}}, {{end}}{{clean .Name}} {{arg .}}{{end}}) (contract.Txn, error) {
 	return {{$.Ptr}}.c.Txn("{{$key}}"{{range $index, $elem := tupleElems .Inputs}}, {{clean $elem.Name}}{{end}})
 }
 {{end}}{{end}}
 // events
 {{range $key, $value := .Abi.Events}}
 func ({{$.Ptr}} *{{$.Name}}) {{funcName $key}}EventSig() ethgo.Hash {
-	return {{$.Ptr}}.c.ABI().Events["{{funcName $key}}"].ID()
+	return {{$.Ptr}}.c.GetABI().Events["{{funcName $key}}"].ID()
 }
 {{end}}`
 

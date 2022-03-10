@@ -18,6 +18,10 @@ function Blocktag() {
     return <Link href={'/jsonrpc#block-tag'}>{'(BlockTag)'}</Link>
 }
 
+function ABI() {
+    return <Link href={'/abi'}>{'(ABI)'}</Link>
+}
+
 function Transaction() {
     return <GodocLink href='#Transaction'>{'(Transaction)'}</GodocLink>
 }
@@ -33,4 +37,5 @@ export {
     Blocktag,
     Transaction,
     Receipt,
+    ABI,
 }

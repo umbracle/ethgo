@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	url         = "https://mainnet.infura.io"
 	mainnetAddr = ethgo.HexToAddress("0x314159265dD8dbb310642f98f50C066173C1259b")
 )
 

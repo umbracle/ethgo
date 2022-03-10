@@ -8,59 +8,292 @@ import (
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/wallet"
 )
 
-// Contract is an Ethereum contract
-type Contract struct {
-	addr     ethgo.Address
-	from     *ethgo.Address
-	abi      *abi.ABI
-	provider *jsonrpc.Client
+// Provider handles the interactions with the Ethereum 1x node
+type Provider interface {
+	Call(ethgo.Address, []byte, *CallOpts) ([]byte, error)
+	Txn(ethgo.Address, ethgo.Key, []byte, *TxnOpts) (Txn, error)
 }
 
-// DeployContract deploys a contract
-func DeployContract(provider *jsonrpc.Client, from ethgo.Address, abi *abi.ABI, bin []byte, args ...interface{}) *Txn {
-	return &Txn{
-		from:     from,
-		provider: provider,
-		method:   abi.Constructor,
-		args:     args,
-		bin:      bin,
+type jsonRPCNodeProvider struct {
+	client *jsonrpc.Eth
+}
+
+func (j *jsonRPCNodeProvider) Call(addr ethgo.Address, input []byte, opts *CallOpts) ([]byte, error) {
+	msg := &ethgo.CallMsg{
+		To:   &addr,
+		Data: input,
+	}
+	if opts.From != ethgo.ZeroAddress {
+		msg.From = opts.From
+	}
+	rawStr, err := j.client.Call(msg, opts.Block)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := hex.DecodeString(rawStr[2:])
+	if err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
+func (j *jsonRPCNodeProvider) Txn(addr ethgo.Address, key ethgo.Key, input []byte, opts *TxnOpts) (Txn, error) {
+	var err error
+
+	from := key.Address()
+
+	// estimate gas price
+	if opts.GasPrice == 0 {
+		opts.GasPrice, err = j.client.GasPrice()
+		if err != nil {
+			return nil, err
+		}
+	}
+	// estimate gas limit
+	if opts.GasLimit == 0 {
+		msg := &ethgo.CallMsg{
+			From:     from,
+			To:       nil,
+			Data:     input,
+			Value:    opts.Value,
+			GasPrice: opts.GasPrice,
+		}
+		if addr != ethgo.ZeroAddress {
+			msg.To = &addr
+		}
+		opts.GasLimit, err = j.client.EstimateGas(msg)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	chainID, err := j.client.ChainID()
+	if err != nil {
+		return nil, err
+	}
+
+	// send transaction
+	rawTxn := &ethgo.Transaction{
+		From:     from,
+		Input:    input,
+		GasPrice: opts.GasPrice,
+		Gas:      opts.GasLimit,
+		Value:    opts.Value,
+	}
+	if addr != ethgo.ZeroAddress {
+		rawTxn.To = &addr
+	}
+
+	signer := wallet.NewEIP155Signer(chainID.Uint64())
+	signedTxn, err := signer.SignTx(rawTxn, key)
+	if err != nil {
+		return nil, err
+	}
+	txnRaw, err := signedTxn.MarshalRLPTo(nil)
+	if err != nil {
+		return nil, err
+	}
+
+	txn := &jsonrpcTransaction{
+		txn:    signedTxn,
+		txnRaw: txnRaw,
+		client: j.client,
+	}
+	return txn, nil
+}
+
+type jsonrpcTransaction struct {
+	hash   ethgo.Hash
+	client *jsonrpc.Eth
+	txn    *ethgo.Transaction
+	txnRaw []byte
+}
+
+func (j *jsonrpcTransaction) Hash() ethgo.Hash {
+	return j.hash
+}
+
+func (j *jsonrpcTransaction) EstimatedGas() uint64 {
+	return j.txn.Gas
+}
+
+func (j *jsonrpcTransaction) GasPrice() uint64 {
+	return j.txn.GasPrice
+}
+
+func (j *jsonrpcTransaction) Do() error {
+	hash, err := j.client.SendRawTransaction(j.txnRaw)
+	if err != nil {
+		return err
+	}
+	j.hash = hash
+	return nil
+}
+
+func (j *jsonrpcTransaction) Wait() (*ethgo.Receipt, error) {
+	if (j.hash == ethgo.Hash{}) {
+		panic("transaction not executed")
+	}
+
+	for {
+		receipt, err := j.client.GetTransactionReceipt(j.hash)
+		if err != nil {
+			if err.Error() != "not found" {
+				return nil, err
+			}
+		}
+		if receipt != nil {
+			return receipt, nil
+		}
 	}
 }
 
-// NewContract creates a new contract instance
-func NewContract(addr ethgo.Address, abi *abi.ABI, provider *jsonrpc.Client) *Contract {
-	return &Contract{
+// Txn is the transaction object returned
+type Txn interface {
+	Hash() ethgo.Hash
+	EstimatedGas() uint64
+	GasPrice() uint64
+	Do() error
+	Wait() (*ethgo.Receipt, error)
+}
+
+type Opts struct {
+	JsonRPCEndpoint string
+	JsonRPCClient   *jsonrpc.Eth
+	Provider        Provider
+	Sender          ethgo.Key
+}
+
+type ContractOption func(*Opts)
+
+func WithJsonRPCEndpoint(endpoint string) ContractOption {
+	return func(o *Opts) {
+		o.JsonRPCEndpoint = endpoint
+	}
+}
+
+func WithJsonRPC(client *jsonrpc.Eth) ContractOption {
+	return func(o *Opts) {
+		o.JsonRPCClient = client
+	}
+}
+
+func WithProvider(provider Provider) ContractOption {
+	return func(o *Opts) {
+		o.Provider = provider
+	}
+}
+
+func WithSender(sender ethgo.Key) ContractOption {
+	return func(o *Opts) {
+		o.Sender = sender
+	}
+}
+
+func DeployContract(abi *abi.ABI, bin []byte, args []interface{}, opts ...ContractOption) (Txn, error) {
+	a := NewContract(ethgo.Address{}, abi, opts...)
+	a.bin = bin
+	return a.Txn("constructor", args...)
+}
+
+func NewContract(addr ethgo.Address, abi *abi.ABI, opts ...ContractOption) *Contract {
+	opt := &Opts{
+		JsonRPCEndpoint: "http://localhost:8545",
+	}
+	for _, c := range opts {
+		c(opt)
+	}
+
+	var provider Provider
+	if opt.Provider != nil {
+		provider = opt.Provider
+	} else if opt.JsonRPCClient != nil {
+		provider = &jsonRPCNodeProvider{client: opt.JsonRPCClient}
+	} else {
+		client, _ := jsonrpc.NewClient(opt.JsonRPCEndpoint)
+		provider = &jsonRPCNodeProvider{client: client.Eth()}
+	}
+
+	a := &Contract{
 		addr:     addr,
 		abi:      abi,
 		provider: provider,
+		key:      opt.Sender,
 	}
+
+	return a
 }
 
-// ABI returns the abi of the contract
-func (c *Contract) ABI() *abi.ABI {
-	return c.abi
+// Contract is a wrapper to make abi calls to contract with a state provider
+type Contract struct {
+	addr     ethgo.Address
+	abi      *abi.ABI
+	bin      []byte
+	provider Provider
+	key      ethgo.Key
 }
 
-// Addr returns the address of the contract
-func (c *Contract) Addr() ethgo.Address {
-	return c.addr
+func (a *Contract) GetABI() *abi.ABI {
+	return a.abi
 }
 
-// SetFrom sets the origin of the calls
-func (c *Contract) SetFrom(addr ethgo.Address) {
-	c.from = &addr
+type TxnOpts struct {
+	Value    *big.Int
+	GasPrice uint64
+	GasLimit uint64
 }
 
-// EstimateGas estimates the gas for a contract call
-func (c *Contract) EstimateGas(method string, args ...interface{}) (uint64, error) {
-	return c.Txn(method, args).EstimateGas()
+func (a *Contract) Txn(method string, args ...interface{}) (Txn, error) {
+	if a.key == nil {
+		return nil, fmt.Errorf("no key selected")
+	}
+
+	isContractDeployment := method == "constructor"
+
+	var input []byte
+	if isContractDeployment {
+		input = append(input, a.bin...)
+	}
+
+	var abiMethod *abi.Method
+	if isContractDeployment {
+		if a.abi.Constructor != nil {
+			abiMethod = a.abi.Constructor
+		}
+	} else {
+		if abiMethod = a.abi.GetMethod(method); abiMethod == nil {
+			return nil, fmt.Errorf("method %s not found", method)
+		}
+	}
+	if abiMethod != nil {
+		data, err := abi.Encode(args, abiMethod.Inputs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode arguments: %v", err)
+		}
+		if isContractDeployment {
+			input = append(input, data...)
+		} else {
+			input = append(abiMethod.ID(), data...)
+		}
+	}
+
+	txn, err := a.provider.Txn(a.addr, a.key, input, &TxnOpts{})
+	if err != nil {
+		return nil, err
+	}
+	return txn, nil
 }
 
-// Call calls a method in the contract
-func (c *Contract) Call(method string, block ethgo.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
-	m := c.abi.GetMethod(method)
+type CallOpts struct {
+	Block ethgo.BlockNumber
+	From  ethgo.Address
+}
+
+func (a *Contract) Call(method string, block ethgo.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
+	m := a.abi.GetMethod(method)
 	if m == nil {
 		return nil, fmt.Errorf("method %s not found", method)
 	}
@@ -70,236 +303,20 @@ func (c *Contract) Call(method string, block ethgo.BlockNumber, args ...interfac
 		return nil, err
 	}
 
-	// Call function
-	msg := &ethgo.CallMsg{
-		To:   &c.addr,
-		Data: data,
+	opts := &CallOpts{
+		Block: ethgo.Latest,
 	}
-	if c.from != nil {
-		msg.From = *c.from
+	if a.key != nil {
+		opts.From = a.key.Address()
 	}
-
-	rawStr, err := c.provider.Eth().Call(msg, block)
+	rawOutput, err := a.provider.Call(a.addr, data, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	// Decode output
-	raw, err := hex.DecodeString(rawStr[2:])
-	if err != nil {
-		return nil, err
-	}
-	resp, err := m.Decode(raw)
+	resp, err := m.Decode(rawOutput)
 	if err != nil {
 		return nil, err
 	}
 	return resp, nil
-}
-
-// Txn creates a new transaction object
-func (c *Contract) Txn(method string, args ...interface{}) *Txn {
-	m, ok := c.abi.Methods[method]
-	if !ok {
-		// TODO, return error
-		panic(fmt.Errorf("method %s not found", method))
-	}
-
-	return &Txn{
-		from:     *c.from,
-		addr:     &c.addr,
-		provider: c.provider,
-		method:   m,
-		args:     args,
-	}
-}
-
-// Txn is a transaction object
-type Txn struct {
-	from     ethgo.Address
-	addr     *ethgo.Address
-	provider *jsonrpc.Client
-	method   *abi.Method
-	args     []interface{}
-	data     []byte
-	bin      []byte
-	gasLimit uint64
-	gasPrice uint64
-	value    *big.Int
-	hash     ethgo.Hash
-	receipt  *ethgo.Receipt
-}
-
-func (t *Txn) isContractDeployment() bool {
-	return t.bin != nil
-}
-
-// AddArgs is used to set the arguments of the transaction
-func (t *Txn) AddArgs(args ...interface{}) *Txn {
-	t.args = args
-	return t
-}
-
-// SetValue sets the value for the txn
-func (t *Txn) SetValue(v *big.Int) *Txn {
-	t.value = new(big.Int).Set(v)
-	return t
-}
-
-// EstimateGas estimates the gas for the call
-func (t *Txn) EstimateGas() (uint64, error) {
-	if err := t.Validate(); err != nil {
-		return 0, err
-	}
-	return t.estimateGas()
-}
-
-func (t *Txn) estimateGas() (uint64, error) {
-	if t.isContractDeployment() {
-		return t.provider.Eth().EstimateGasContract(t.data)
-	}
-
-	msg := &ethgo.CallMsg{
-		From:  t.from,
-		To:    t.addr,
-		Data:  t.data,
-		Value: t.value,
-	}
-	return t.provider.Eth().EstimateGas(msg)
-}
-
-// DoAndWait is a blocking query that combines
-// both Do and Wait functions
-func (t *Txn) DoAndWait() error {
-	if err := t.Do(); err != nil {
-		return err
-	}
-	if err := t.Wait(); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Do sends the transaction to the network
-func (t *Txn) Do() error {
-	err := t.Validate()
-	if err != nil {
-		return err
-	}
-
-	// estimate gas price
-	if t.gasPrice == 0 {
-		t.gasPrice, err = t.provider.Eth().GasPrice()
-		if err != nil {
-			return err
-		}
-	}
-	// estimate gas limit
-	if t.gasLimit == 0 {
-		t.gasLimit, err = t.estimateGas()
-		if err != nil {
-			return err
-		}
-	}
-
-	// send transaction
-	txn := &ethgo.Transaction{
-		From:     t.from,
-		Input:    t.data,
-		GasPrice: t.gasPrice,
-		Gas:      t.gasLimit,
-		Value:    t.value,
-	}
-	if t.addr != nil {
-		txn.To = t.addr
-	}
-	t.hash, err = t.provider.Eth().SendTransaction(txn)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Validate validates the arguments of the transaction
-func (t *Txn) Validate() error {
-	if t.data != nil {
-		// Already validated
-		return nil
-	}
-	if t.isContractDeployment() {
-		t.data = append(t.data, t.bin...)
-	}
-	if t.method != nil {
-		data, err := abi.Encode(t.args, t.method.Inputs)
-		if err != nil {
-			return fmt.Errorf("failed to encode arguments: %v", err)
-		}
-		if !t.isContractDeployment() {
-			t.data = append(t.method.ID(), data...)
-		} else {
-			t.data = append(t.data, data...)
-		}
-	}
-	return nil
-}
-
-// SetGasPrice sets the gas price of the transaction
-func (t *Txn) SetGasPrice(gasPrice uint64) *Txn {
-	t.gasPrice = gasPrice
-	return t
-}
-
-// SetGasLimit sets the gas limit of the transaction
-func (t *Txn) SetGasLimit(gasLimit uint64) *Txn {
-	t.gasLimit = gasLimit
-	return t
-}
-
-// Wait waits till the transaction is mined
-func (t *Txn) Wait() error {
-	if (t.hash == ethgo.Hash{}) {
-		panic("transaction not executed")
-	}
-
-	var err error
-	for {
-		t.receipt, err = t.provider.Eth().GetTransactionReceipt(t.hash)
-		if err != nil {
-			if err.Error() != "not found" {
-				return err
-			}
-		}
-		if t.receipt != nil {
-			break
-		}
-	}
-	return nil
-}
-
-// Receipt returns the receipt of the transaction after wait
-func (t *Txn) Receipt() *ethgo.Receipt {
-	return t.receipt
-}
-
-// Event is a solidity event
-type Event struct {
-	event *abi.Event
-}
-
-// Encode encodes an event
-func (e *Event) Encode() ethgo.Hash {
-	return e.event.ID()
-}
-
-// ParseLog parses a log
-func (e *Event) ParseLog(log *ethgo.Log) (map[string]interface{}, error) {
-	return abi.ParseLog(e.event.Inputs, log)
-}
-
-// Event returns a specific event
-func (c *Contract) Event(name string) (*Event, bool) {
-	event, ok := c.abi.Events[name]
-	if !ok {
-		return nil, false
-	}
-	return &Event{event}, true
 }
