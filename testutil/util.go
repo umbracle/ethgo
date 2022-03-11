@@ -26,9 +26,15 @@ func CompareBlocks(one, two []*ethgo.Block) bool {
 	}
 	// difficulty is hard to check, set the values to zero
 	for _, i := range one {
+		if i.Transactions == nil {
+			i.Transactions = []*ethgo.Transaction{}
+		}
 		i.Difficulty = big.NewInt(0)
 	}
 	for _, i := range two {
+		if i.Transactions == nil {
+			i.Transactions = []*ethgo.Transaction{}
+		}
 		i.Difficulty = big.NewInt(0)
 	}
 	return reflect.DeepEqual(one, two)
