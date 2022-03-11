@@ -111,9 +111,6 @@ func TestIntegrationTopics(t *testing.T) {
 		assert.NoError(t, err)
 
 		if !reflect.DeepEqual(found, result) {
-			fmt.Println(found)
-			fmt.Println(result)
-
 			t.Fatal("not equal")
 		}
 	}
