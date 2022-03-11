@@ -6,10 +6,10 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/tracker/store"
+	tracker "github.com/umbracle/ethgo/event-tracker"
 )
 
-var _ store.Store = (*BoltStore)(nil)
+//var _ tracker.Store = (*BoltStore)(nil)
 
 var (
 	dbLogs = []byte("logs")
@@ -101,7 +101,7 @@ func (b *BoltStore) Set(k, v string) error {
 }
 
 // GetEntry implements the store interface
-func (b *BoltStore) GetEntry(hash string) (store.Entry, error) {
+func (b *BoltStore) GetEntry(hash string) (tracker.Entry, error) {
 	txn, err := b.conn.Begin(true)
 	if err != nil {
 		return nil, err
@@ -126,6 +126,18 @@ func (b *BoltStore) GetEntry(hash string) (store.Entry, error) {
 type Entry struct {
 	conn   *bolt.DB
 	bucket []byte
+}
+
+func (e *Entry) Close() error {
+	return nil
+}
+
+func (e *Entry) GetLastBlock() (*ethgo.Block, error) {
+	panic("TODO")
+}
+
+func (e *Entry) StoreEvent(evnt *tracker.Event) error {
+	panic("TODO")
 }
 
 // LastIndex implements the store interface
