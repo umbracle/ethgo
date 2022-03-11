@@ -90,8 +90,11 @@ func ParseTopic(t *Type, topic ethgo.Hash) (interface{}, error) {
 	case KindAddress:
 		return readAddr(topic[:])
 
+	case KindFixedBytes:
+		return readFixedBytes(t, topic[:])
+
 	default:
-		return nil, fmt.Errorf("Topic parsing for type %s not supported", t.String())
+		return nil, fmt.Errorf("topic parsing for type %s not supported", t.String())
 	}
 }
 
@@ -149,8 +152,4 @@ func encodeTopicBool(v reflect.Value) (res ethgo.Hash, err error) {
 		return topicTrue, nil
 	}
 	return topicFalse, nil
-}
-
-func encodeTopicErr(val reflect.Value, str string) error {
-	return fmt.Errorf("cannot encode %s as %s", val.Type().String(), str)
 }
