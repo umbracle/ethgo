@@ -1,6 +1,8 @@
 package ethgo
 
 import (
+	"math/big"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,4 +43,50 @@ func TestAddress_HexToString(t *testing.T) {
 
 func TestHash_HexToString(t *testing.T) {
 	assert.Equal(t, HexToHash("1").String(), "0x0000000000000000000000000000000000000000000000000000000000000001")
+}
+
+func TestBlock_Copy(t *testing.T) {
+	b := &Block{
+		Difficulty:   big.NewInt(1),
+		Transactions: []*Transaction{},
+		ExtraData:    []byte{0x1, 0x2},
+	}
+	b1 := b.Copy()
+	if !reflect.DeepEqual(b, b1) {
+		t.Fatal("incorrect block copy")
+	}
+}
+
+func TestTransaction_Copy(t *testing.T) {
+	txn := &Transaction{
+		Input: []byte{0x1, 0x2},
+		V:     []byte{0x1, 0x2},
+		R:     []byte{0x1, 0x2},
+		S:     []byte{0x1, 0x2},
+	}
+	txn1 := txn.Copy()
+	if !reflect.DeepEqual(txn, txn1) {
+		t.Fatal("incorrect transaction")
+	}
+}
+
+func TestReceipt_Copy(t *testing.T) {
+	r := &Receipt{
+		LogsBloom: []byte{0x1, 0x2},
+		Logs:      []*Log{},
+	}
+	rr := r.Copy()
+	if !reflect.DeepEqual(r, rr) {
+		t.Fatal("incorrect receipt")
+	}
+}
+
+func TestLog_Copy(t *testing.T) {
+	l := &Log{
+		Data: []byte{0x1, 0x2},
+	}
+	ll := l.Copy()
+	if !reflect.DeepEqual(l, ll) {
+		t.Fatal("incorrect receipt")
+	}
 }
