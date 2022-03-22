@@ -30,6 +30,14 @@ function Receipt() {
     return <GodocLink href='#Receipt'>{'(Receipt)'}</GodocLink>
 }
 
+function LogFilter() {
+    return <GodocLink href='#LogFilter'>{'(LogFilter)'}</GodocLink>
+}
+
+function Log({text='Log'}) {
+    return <GodocLink href='#Log'>{`(${text})`}</GodocLink>
+}
+
 export {
     Address,
     Hash,
@@ -38,4 +46,6 @@ export {
     Transaction,
     Receipt,
     ABI,
+    Log,
+    LogFilter,
 }
