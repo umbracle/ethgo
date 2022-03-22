@@ -37,5 +37,22 @@ func TestContract(t *testing.T) {
 	code, err := e.GetContractCode(ethgo.HexToAddress("0x7a250d5630b4cf539739df2c5dacb4c659f2488d"))
 	assert.NoError(t, err)
 	assert.Equal(t, code.Runs, "999999")
+}
 
+func TestGetLogs(t *testing.T) {
+	e := testEtherscanMainnet(t)
+
+	from := ethgo.BlockNumber(379224)
+	to := ethgo.Latest
+
+	filter := &ethgo.LogFilter{
+		From: &from,
+		To:   &to,
+		Address: []ethgo.Address{
+			ethgo.HexToAddress("0x33990122638b9132ca29c723bdf037f1a891a70c"),
+		},
+	}
+	logs, err := e.GetLogs(filter)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, logs)
 }

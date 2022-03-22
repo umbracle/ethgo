@@ -1,6 +1,6 @@
 
 import GoDocLink from '../../components/godoc'
-import {Address, Hash, Blocktag, Block, Transaction, Receipt} from '../../components/primitives'
+import {Log, Address, Hash, Blocktag, Block, Transaction, Receipt, LogFilter} from '../../components/primitives'
 
 # Etherscan
 
@@ -73,3 +73,24 @@ Input:
 Output:
 
 - `code` (`[]byte`): Code of the contract.
+
+## GetLogs
+
+<GoDocLink href="etherscan#Etherscan.GetLogs">GetLogs</GoDocLink> returns the logs given a log filter.
+
+```go
+filter := &ethgo.LogFilter{
+    Address: []ethgo.Address{
+        ethgo.HexToAddress("..."),
+    },
+}
+logs, err := ethscan.GetLogs(filter)
+```
+
+Input:
+
+- `filter` <LogFilter/>: Filter for the logs to return.
+
+Output:
+
+- `logs` <Log text="[]Log"/>: List of logs that match the filter.

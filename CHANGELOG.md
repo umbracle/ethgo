@@ -1,6 +1,7 @@
 
 # 0.1.1 (Not released)
 
+- Add `GetLogs` function Etherscan to return logs by filter [[GH-170](https://github.com/umbracle/ethgo/issues/170)]
 - Add `Copy` function to major data types [[GH-169](https://github.com/umbracle/ethgo/issues/169)]
 - Parse `fixed bytes` type in event topic [[GH-168](https://github.com/umbracle/ethgo/issues/168)]
 - Introduce `NodeProvider` and update `Contract` and `abigen` format. [[GH-167](https://github.com/umbracle/ethgo/issues/167)]
