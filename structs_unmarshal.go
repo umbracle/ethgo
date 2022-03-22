@@ -453,8 +453,11 @@ func (r *Log) UnmarshalJSON(buf []byte) error {
 
 func (r *Log) unmarshalJSON(v *fastjson.Value) error {
 	var err error
-	if r.Removed, err = decodeBool(v, "removed"); err != nil {
-		return err
+	if v.Exists("removed") {
+		// it is empty in etherscan API endpoint
+		if r.Removed, err = decodeBool(v, "removed"); err != nil {
+			return err
+		}
 	}
 	if r.LogIndex, err = decodeUint(v, "logIndex"); err != nil {
 		return err
@@ -468,8 +471,11 @@ func (r *Log) unmarshalJSON(v *fastjson.Value) error {
 	if err := decodeHash(&r.TransactionHash, v, "transactionHash"); err != nil {
 		return err
 	}
-	if err := decodeHash(&r.BlockHash, v, "blockHash"); err != nil {
-		return err
+	if v.Exists("blockHash") {
+		// it is empty in etherscan API endpoint
+		if err := decodeHash(&r.BlockHash, v, "blockHash"); err != nil {
+			return err
+		}
 	}
 	if err := decodeAddr(&r.Address, v, "address"); err != nil {
 		return err
@@ -564,7 +570,16 @@ func decodeUint(v *fastjson.Value, key string) (uint64, error) {
 	if !strings.HasPrefix(str, "0x") {
 		return 0, fmt.Errorf("field '%s' does not have 0x prefix: '%s'", key, str)
 	}
-	return strconv.ParseUint(str[2:], 16, 64)
+	str = str[2:]
+	if str == "" {
+		str = "0"
+	}
+
+	num, err := strconv.ParseUint(str, 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("field '%s' failed to decode uint: %s", key, str)
+	}
+	return num, nil
 }
 
 func decodeInt64(v *fastjson.Value, key string) (int64, error) {
@@ -578,8 +593,16 @@ func decodeInt64(v *fastjson.Value, key string) (int64, error) {
 	if !strings.HasPrefix(str, "0x") {
 		return 0, fmt.Errorf("field '%s' does not have 0x prefix: '%s'", key, str)
 	}
+	str = str[2:]
+	if str == "" {
+		str = "0"
+	}
 
-	return strconv.ParseInt(str[2:], 16, 64)
+	num, err := strconv.ParseInt(str, 16, 64)
+	if err != nil {
+		return 0, fmt.Errorf("field '%s' failed to decode int64: %s", key, str)
+	}
+	return num, nil
 }
 
 func decodeHash(h *Hash, v *fastjson.Value, key string) error {
