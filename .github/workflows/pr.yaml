@@ -6,6 +6,11 @@ jobs:
     name: Go test
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install ethers testcases
+        run: cd ./testsuite && npm install
       - name: Setup go
         uses: actions/setup-go@v1
         with:
