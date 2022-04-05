@@ -1,0 +1,24 @@
+
+import GoDocLink from '../../components/godoc'
+
+# 4Byte
+
+[4Byte](https://www.4byte.directory/) is a public directory that indexes signatures for Ethereum functions and events.
+
+Run <GoDocLink href="4byte#Resolve">Resolve</GoDocLink> to resolve a signature in string format to its name:
+
+```go
+package main
+
+import (
+    fourbyte "github.com/umbracle/ethgo/4byte"
+)
+
+func main() {
+    found, err := fourbyte.Resolve("0xddf252ad")
+    if err != nil {
+        panic(err)
+    }
+    // Transfer(address,address,uint256)
+}
+```
