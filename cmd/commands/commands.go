@@ -24,6 +24,11 @@ func Commands() map[string]cli.CommandFactory {
 				baseCommand: baseCommand,
 			}, nil
 		},
+		"4byte": func() (cli.Command, error) {
+			return &FourByteCommand{
+				UI: ui,
+			}, nil
+		},
 		"version": func() (cli.Command, error) {
 			return &VersionCommand{
 				UI: ui,
