@@ -1,6 +1,7 @@
 
 # 0.1.1 (Not released)
 
+- Add `4byte` package and cli [[GH-178](https://github.com/umbracle/ethgo/issues/178)]
 - Install and use `ethers.js` spec tests for wallet private key decoding [[GH-177](https://github.com/umbracle/ethgo/issues/177)]
 - Add `GetLogs` function Etherscan to return logs by filter [[GH-170](https://github.com/umbracle/ethgo/issues/170)]
 - Add `Copy` function to major data types [[GH-169](https://github.com/umbracle/ethgo/issues/169)]
