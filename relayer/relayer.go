@@ -1,13 +1,17 @@
 package relayer
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/contract"
 	"github.com/umbracle/ethgo/jsonrpc"
 	"github.com/umbracle/ethgo/relayer/gaspricer"
 )
+
+var _ contract.Provider = (*Relayer)(nil)
 
 type Config struct {
 	Logger    *log.Logger
@@ -74,12 +78,22 @@ func NewRelayer(configOpts ...RelayerOption) (*Relayer, error) {
 		closeCh: make(chan struct{}),
 	}
 
-	// fill in the pending queue with the pending transactions
-	// from the storage
-
 	go r.run()
 
 	return r, nil
+}
+
+type stateTxn struct {
+	To    ethgo.Address
+	key   ethgo.Key
+	input []byte
+	opts  *contract.TxnOpts
+}
+
+func (r *Relayer) Txn(to ethgo.Address, key ethgo.Key, input []byte, opts *contract.TxnOpts) (contract.Txn, error) {
+	txn := &stateTxn{}
+	fmt.Println(txn)
+	return nil, nil
 }
 
 func (r *Relayer) SendTransaction(txn *ethgo.Transaction) (ethgo.Hash, error) {
@@ -95,4 +109,8 @@ func (r *Relayer) run() {
 			return
 		}
 	}
+}
+
+func (r *Relayer) Call(to ethgo.Address, input []byte, opts *contract.CallOpts) ([]byte, error) {
+	panic("relayer does not make calls")
 }
