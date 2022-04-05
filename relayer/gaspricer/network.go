@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/ethgo/jsonrpc"
 )
 
 func NewNetworkGasPricer(logger *log.Logger, client *jsonrpc.Eth, interval ...time.Duration) (GasPricer, error) {

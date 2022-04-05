@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/umbracle/go-web3"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/relayer/gaspricer"
+	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/relayer/gaspricer"
 )
 
 type Config struct {
@@ -82,8 +82,8 @@ func NewRelayer(configOpts ...RelayerOption) (*Relayer, error) {
 	return r, nil
 }
 
-func (r *Relayer) SendTransaction(txn *web3.Transaction) (web3.Hash, error) {
-	return web3.Hash{}, nil
+func (r *Relayer) SendTransaction(txn *ethgo.Transaction) (ethgo.Hash, error) {
+	return ethgo.Hash{}, nil
 }
 
 func (r *Relayer) run() {

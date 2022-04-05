@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/go-web3/jsonrpc"
-	"github.com/umbracle/go-web3/testutil"
+	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/umbracle/ethgo/testutil"
 )
 
 func TestGasPricer_Network(t *testing.T) {
