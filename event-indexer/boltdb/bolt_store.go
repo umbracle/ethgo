@@ -6,7 +6,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/umbracle/ethgo"
-	tracker "github.com/umbracle/ethgo/event-tracker"
+	tracker "github.com/umbracle/ethgo/event-indexer"
 )
 
 //var _ tracker.Store = (*BoltStore)(nil)

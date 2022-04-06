@@ -383,146 +383,87 @@ func TestTracker_Reconcile(t *testing.T) {
 		Removed testutil.MockList
 	}
 
-	type Reconcile struct {
-		block *testutil.MockBlock
-		event *TestEvent
-	}
-
 	cases := []struct {
 		Name      string
 		Scenario  testutil.MockList
 		History   testutil.MockList
-		Reconcile []Reconcile
+		Reconcile *TestEvent
 		Expected  testutil.MockList
 	}{
-		/*
-			{
-				Name: "Empty history",
-				Reconcile: []Reconcile{
-					{
-						block: testutil.Mock(0x1).Log("0x1"),
-						event: &TestEvent{
-							Added: testutil.MockList{
-								testutil.Mock(0x1).Log("0x1"),
-							},
-						},
-					},
-				},
-				Expected: []*testutil.MockBlock{
-					testutil.Mock(1).Log("0x1"),
+		{
+			Name: "Empty history",
+			Scenario: testutil.MockList{
+				testutil.Mock(0x1).Log("0x1"),
+			},
+			Reconcile: &TestEvent{
+				Added: testutil.MockList{
+					testutil.Mock(0x1).Log("0x1"),
 				},
 			},
-		*/
-		/*
-			{
-				Name: "Repeated header",
-				History: []*testutil.MockBlock{
-					testutil.Mock(0x1),
-				},
-				Reconcile: []Reconcile{
-					{
-						block: testutil.Mock(0x1),
-					},
-				},
-				Expected: []*testutil.MockBlock{
-					testutil.Mock(0x1),
-				},
+			Expected: []*testutil.MockBlock{
+				testutil.Mock(1).Log("0x1"),
 			},
-		*/
-		/*
-			{
-				Name: "New head",
-				History: testutil.MockList{
-					testutil.Mock(0x1),
-				},
-				Reconcile: []Reconcile{
-					{
-						block: testutil.Mock(0x2),
-						event: &TestEvent{
-							Added: testutil.MockList{
-								testutil.Mock(0x2),
-							},
-						},
-					},
-				},
-				Expected: testutil.MockList{
-					testutil.Mock(0x1),
+		},
+		{
+			Name: "New head",
+			History: testutil.MockList{
+				testutil.Mock(0x1),
+			},
+			Scenario: testutil.MockList{
+				testutil.Mock(0x2),
+			},
+			Reconcile: &TestEvent{
+				Added: testutil.MockList{
 					testutil.Mock(0x2),
 				},
 			},
-		*/
-		/*
-			{
-				Name: "Ignore block already on history",
-				History: testutil.MockList{
-					testutil.Mock(0x1),
-					testutil.Mock(0x2),
-					testutil.Mock(0x3),
-				},
-				Reconcile: []Reconcile{
-					{
-						block: testutil.Mock(0x2),
-						event: &TestEvent{},
-					},
-				},
-				Expected: testutil.MockList{
-					testutil.Mock(0x1),
-					testutil.Mock(0x2),
-					testutil.Mock(0x3),
-				},
+			Expected: testutil.MockList{
+				testutil.Mock(0x1),
+				testutil.Mock(0x2),
 			},
-		*/
-		/*
-			{
-				Name: "Multi Roll back",
-				History: testutil.MockList{
-					testutil.Mock(0x1),
-					testutil.Mock(0x2),
+		},
+		{
+			Name: "Multi Roll back",
+			Scenario: testutil.MockList{
+				testutil.Mock(0x30).Parent(0x2).Log("0x30"),
+			},
+			History: testutil.MockList{
+				testutil.Mock(0x1),
+				testutil.Mock(0x2),
+				testutil.Mock(0x3).Log("0x3"),
+				testutil.Mock(0x4).Log("0x4"),
+			},
+			Reconcile: &TestEvent{
+				Added: testutil.MockList{
+					testutil.Mock(0x30).Parent(0x2).Log("0x30"),
+				},
+				Removed: testutil.MockList{
 					testutil.Mock(0x3).Log("0x3"),
 					testutil.Mock(0x4).Log("0x4"),
 				},
-				Reconcile: []Reconcile{
-					{
-						block: testutil.Mock(0x30).Parent(0x2).Log("0x30"),
-						event: &TestEvent{
-							Added: testutil.MockList{
-								testutil.Mock(0x30).Parent(0x2).Log("0x30"),
-							},
-							Removed: testutil.MockList{
-								testutil.Mock(0x3).Log("0x3"),
-								testutil.Mock(0x4).Log("0x4"),
-							},
-						},
-					},
-				},
-				Expected: testutil.MockList{
-					testutil.Mock(0x1),
-					testutil.Mock(0x2),
-					testutil.Mock(0x30).Parent(0x2).Log("0x30"),
-				},
 			},
-		*/
-
+			Expected: testutil.MockList{
+				testutil.Mock(0x1),
+				testutil.Mock(0x2),
+				testutil.Mock(0x30).Parent(0x2).Log("0x30"),
+			},
+		},
 		{
 			Name: "Backfills missing blocks",
 			Scenario: testutil.MockList{
 				testutil.Mock(0x3),
 				testutil.Mock(0x4).Log("0x2"),
+				testutil.Mock(0x5).Log("0x3"),
 			},
 			History: testutil.MockList{
 				testutil.Mock(0x1).Log("0x1"),
 				testutil.Mock(0x2),
 			},
-			Reconcile: []Reconcile{
-				{
-					block: testutil.Mock(0x5).Log("0x3"),
-					event: &TestEvent{
-						Added: testutil.MockList{
-							testutil.Mock(0x3),
-							testutil.Mock(0x4).Log("0x2"),
-							testutil.Mock(0x5).Log("0x3"),
-						},
-					},
+			Reconcile: &TestEvent{
+				Added: testutil.MockList{
+					testutil.Mock(0x3),
+					testutil.Mock(0x4).Log("0x2"),
+					testutil.Mock(0x5).Log("0x3"),
 				},
 			},
 			Expected: testutil.MockList{
@@ -533,60 +474,47 @@ func TestTracker_Reconcile(t *testing.T) {
 				testutil.Mock(0x5).Log("0x3"),
 			},
 		},
-		/*
-			{
-				Name: "Rolls back and backfills",
-				Scenario: testutil.MockList{
-					testutil.Mock(0x30).Parent(0x2).Num(3).Log("0x5"),
-					testutil.Mock(0x40).Parent(0x30).Num(4),
-				},
-				History: testutil.MockList{
-					testutil.Mock(0x1),
-					testutil.Mock(0x2).Log("0x3"),
-					testutil.Mock(0x3).Log("0x2"),
-					testutil.Mock(0x4).Log("0x1"),
-				},
-				Reconcile: []Reconcile{
-					{
-						block: testutil.Mock(0x50).Parent(0x40).Num(5),
-						event: &TestEvent{
-							Added: testutil.MockList{
-								testutil.Mock(0x30).Parent(0x2).Num(3).Log("0x5"),
-								testutil.Mock(0x40).Parent(0x30).Num(4),
-								testutil.Mock(0x50).Parent(0x40).Num(5),
-							},
-							Removed: testutil.MockList{
-								testutil.Mock(0x3).Log("0x2"),
-								testutil.Mock(0x4).Log("0x1"),
-							},
-						},
-					},
-				},
-				Expected: testutil.MockList{
-					testutil.Mock(0x1),
-					testutil.Mock(0x2).Log("0x3"),
+
+		{
+			Name: "Rolls back and backfills",
+			Scenario: testutil.MockList{
+				testutil.Mock(0x30).Parent(0x2).Num(3).Log("0x5"),
+				testutil.Mock(0x40).Parent(0x30).Num(4),
+				testutil.Mock(0x50).Parent(0x40).Num(5),
+			},
+			History: testutil.MockList{
+				testutil.Mock(0x1),
+				testutil.Mock(0x2).Log("0x3"),
+				testutil.Mock(0x3).Log("0x2"),
+				testutil.Mock(0x4).Log("0x1"),
+			},
+			Reconcile: &TestEvent{
+				Added: testutil.MockList{
 					testutil.Mock(0x30).Parent(0x2).Num(3).Log("0x5"),
 					testutil.Mock(0x40).Parent(0x30).Num(4),
 					testutil.Mock(0x50).Parent(0x40).Num(5),
 				},
+				Removed: testutil.MockList{
+					testutil.Mock(0x3).Log("0x2"),
+					testutil.Mock(0x4).Log("0x1"),
+				},
 			},
-		*/
+			Expected: testutil.MockList{
+				testutil.Mock(0x1),
+				testutil.Mock(0x2).Log("0x3"),
+				testutil.Mock(0x30).Parent(0x2).Num(3).Log("0x5"),
+				testutil.Mock(0x40).Parent(0x30).Num(4),
+				testutil.Mock(0x50).Parent(0x40).Num(5),
+			},
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-			// safe check for now, we ma need to restart the tracker and mock client for every reconcile scenario?
-			if len(c.Reconcile) != 1 {
-				t.Fatal("only one reconcile supported so far")
-			}
-
 			m := &testutil.MockClient{}
 
-			// add the full scenario with the logs
+			// add the full scenario with the logs so that it is reachable from the tracker
 			m.AddScenario(c.Scenario)
-
-			// add the logs of the reconcile block because those are also unknown for the tracker
-			m.AddLogs(c.Reconcile[0].block.GetLogs())
 
 			store := NewInmemStore().(*inmemEntry)
 
@@ -596,106 +524,35 @@ func TestTracker_Reconcile(t *testing.T) {
 			assert.NoError(t, err)
 
 			for _, b := range c.History {
-				// add all the history blocks to the tracker
-				err = btracker.AddBlocksLocked(b.Block())
-				assert.NoError(t, err)
-
 				// add all the logs to the store
 				store.storeLogs(b.GetLogs())
 			}
 
 			// compute the reconcile and check the result
-			for _, b := range c.Reconcile {
-				bEvent, err := btracker.HandleBlockEvent(b.block.Block())
-				assert.NoError(t, err)
+			{
+				bEvent := &blocktracker.BlockEvent{
+					Added:   c.Reconcile.Added.ToBlocks(),
+					Removed: c.Reconcile.Removed.ToBlocks(),
+				}
 
 				event, err := tt.handleBlockEvent(bEvent)
 				assert.NoError(t, err)
 
 				if event == nil {
-					continue
+					return
 				}
 
-				if !testutil.CompareLogs(b.event.Added.GetLogs(), event.Added) {
+				if !testutil.CompareLogs(c.Reconcile.Added.GetLogs(), event.Added) {
 					t.Fatal("incorrect added logs")
 				}
-				if !testutil.CompareLogs(b.event.Removed.GetLogs(), event.Removed) {
+				if !testutil.CompareLogs(c.Reconcile.Removed.GetLogs(), event.Removed) {
 
-					fmt.Println(b.event.Removed.GetLogs())
+					fmt.Println(c.Reconcile.Removed.GetLogs())
 					fmt.Println(event.Removed)
 
 					t.Fatal("incorrect removed logs")
 				}
 			}
-
-			/*
-				// important to set a buffer here, otherwise everything is blocked
-				tt.EventCh = make(chan *Event, 1)
-
-				// set the filter as synced since we only want to
-				// try reconciliation
-				tt.synced = 1
-
-				// build past block history
-				for _, b := range c.History.ToBlocks() {
-					tt.blockTracker.AddBlockLocked(b)
-				}
-				// add the history to the store
-				for _, b := range c.History {
-					tt.entry.StoreLogs(b.GetLogs())
-				}
-
-				for _, b := range c.Reconcile {
-					aux, err := tt.blockTracker.HandleBlockEvent(b.block.Block())
-					if err != nil {
-						t.Fatal(err)
-					}
-					if aux == nil {
-						continue
-					}
-					if err := tt.handleBlockEvnt(aux); err != nil {
-						t.Fatal(err)
-					}
-
-					var evnt *Event
-					select {
-					case evnt = <-tt.EventCh:
-					case <-time.After(1 * time.Second):
-						t.Fatal("log event timeout")
-					}
-
-					// check logs
-					if !testutil.CompareLogs(b.event.Added.GetLogs(), evnt.Added) {
-						t.Fatal("err")
-					}
-					if !testutil.CompareLogs(b.event.Removed.GetLogs(), evnt.Removed) {
-						t.Fatal("err")
-					}
-
-					var blockEvnt *blocktracker.BlockEvent
-					select {
-					case blockEvnt = <-tt.BlockCh:
-					case <-time.After(1 * time.Second):
-						t.Fatal("block event timeout")
-					}
-
-					// check blocks
-					if !testutil.CompareBlocks(b.event.Added.ToBlocks(), blockEvnt.Added) {
-						t.Fatal("err")
-					}
-					if !testutil.CompareBlocks(b.event.Removed.ToBlocks(), blockEvnt.Removed) {
-						t.Fatal("err")
-					}
-				}
-
-				// check the post state (logs and blocks) after all the reconcile events
-				if !testutil.CompareLogs(tt.entry.(*inmemEntry).Logs(), c.Expected.GetLogs()) {
-					t.Fatal("bad3")
-				}
-				if !testutil.CompareBlocks(tt.blockTracker.BlocksBlocked(), c.Expected.ToBlocks()) {
-					t.Fatal("bad")
-				}
-			*/
 		})
 	}
 }

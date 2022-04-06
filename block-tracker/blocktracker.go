@@ -129,7 +129,7 @@ func (b *BlockTracker) Start() error {
 	return err
 }
 
-func (t *BlockTracker) addBlocks(block *ethgo.Block) error {
+func (t *BlockTracker) AddBlocks(block *ethgo.Block) error {
 	if uint64(len(t.blocks)) == t.config.MaxBlockBacklog {
 		// remove past blocks if there are more than maxReconcileBlocks
 		t.blocks = t.blocks[1:]
@@ -232,7 +232,7 @@ func (t *BlockTracker) HandleBlockEvent(block *ethgo.Block) (*BlockEvent, error)
 	// include the new blocks
 	for _, block := range blocks {
 		blockEvnt.Added = append(blockEvnt.Added, block)
-		if err := t.addBlocks(block); err != nil {
+		if err := t.AddBlocks(block); err != nil {
 			return nil, err
 		}
 	}
