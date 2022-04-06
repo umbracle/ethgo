@@ -1,4 +1,4 @@
-package trackerboltdb
+package indexerboltdb
 
 import (
 	"bytes"
@@ -6,10 +6,10 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/umbracle/ethgo"
-	tracker "github.com/umbracle/ethgo/event-indexer"
+	indexer "github.com/umbracle/ethgo/event-indexer"
 )
 
-//var _ tracker.Store = (*BoltStore)(nil)
+//var _ indexer.Store = (*BoltStore)(nil)
 
 var (
 	dbLogs = []byte("logs")
@@ -101,7 +101,7 @@ func (b *BoltStore) Set(k, v string) error {
 }
 
 // GetEntry implements the store interface
-func (b *BoltStore) GetEntry(hash string) (tracker.Entry, error) {
+func (b *BoltStore) GetEntry(hash string) (indexer.Entry, error) {
 	txn, err := b.conn.Begin(true)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (e *Entry) GetLastBlock() (*ethgo.Block, error) {
 	panic("TODO")
 }
 
-func (e *Entry) StoreEvent(evnt *tracker.Event) error {
+func (e *Entry) StoreEvent(evnt *indexer.Event) error {
 	panic("TODO")
 }
 

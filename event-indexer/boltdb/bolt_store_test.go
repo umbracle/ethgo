@@ -1,4 +1,4 @@
-package trackerboltdb
+package indexerboltdb
 
 /*
 import (

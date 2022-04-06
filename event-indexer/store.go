@@ -1,4 +1,4 @@
-package tracker
+package indexer
 
 import "github.com/umbracle/ethgo"
 
