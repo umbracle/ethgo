@@ -148,6 +148,20 @@ func (e *Etherscan) GetContractCode(addr ethgo.Address) (*ContractCode, error) {
 	return out[0], nil
 }
 
+func (e *Etherscan) GasPrice() (uint64, error) {
+	var out struct {
+		LastBlock string `json:"LastBlock"`
+	}
+	if err := e.Query("gastracker", "gasoracle", &out, map[string]string{}); err != nil {
+		return 0, err
+	}
+	num, err := strconv.Atoi(out.LastBlock)
+	if err != nil {
+		return 0, err
+	}
+	return uint64(num), nil
+}
+
 func (e *Etherscan) GetLogs(filter *ethgo.LogFilter) ([]*ethgo.Log, error) {
 	if len(filter.Address) == 0 {
 		return nil, fmt.Errorf("an address to filter is required")

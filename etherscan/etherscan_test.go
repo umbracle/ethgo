@@ -56,3 +56,11 @@ func TestGetLogs(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, logs)
 }
+
+func TestGasPrice(t *testing.T) {
+	e := testEtherscanMainnet(t)
+
+	gas, err := e.GasPrice()
+	assert.NoError(t, err)
+	assert.NotZero(t, gas)
+}
