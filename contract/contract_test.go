@@ -149,15 +149,18 @@ func TestContract_Transaction(t *testing.T) {
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
 
-	// create a transaction
-	i := NewContract(addr, abi, WithJsonRPCEndpoint(s.HTTPAddr()), WithSender(key))
-	txn, err := i.Txn("setA")
-	assert.NoError(t, err)
+	// send multiple transactions
+	contract := NewContract(addr, abi, WithJsonRPCEndpoint(s.HTTPAddr()), WithSender(key))
 
-	err = txn.Do()
-	assert.NoError(t, err)
+	for i := 0; i < 10; i++ {
+		txn, err := contract.Txn("setA")
+		assert.NoError(t, err)
 
-	receipt, err := txn.Wait()
-	assert.NoError(t, err)
-	assert.Len(t, receipt.Logs, 1)
+		err = txn.Do()
+		assert.NoError(t, err)
+
+		receipt, err := txn.Wait()
+		assert.NoError(t, err)
+		assert.Len(t, receipt.Logs, 1)
+	}
 }

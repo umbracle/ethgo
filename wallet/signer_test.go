@@ -35,3 +35,9 @@ func TestSigner_EIP1155(t *testing.T) {
 		assert.NotEqual(t, from, from2)
 	*/
 }
+
+func TestTrimBytesZeros(t *testing.T) {
+	assert.Equal(t, trimBytesZeros([]byte{0x1, 0x2}), []byte{0x1, 0x2})
+	assert.Equal(t, trimBytesZeros([]byte{0x0, 0x1}), []byte{0x1})
+	assert.Equal(t, trimBytesZeros([]byte{0x0, 0x0}), []byte{})
+}

@@ -1,6 +1,7 @@
 
 # 0.1.1 (Not released)
 
+- Retrieve latest nonce when sending a transaction on `contract` [[GH-185](https://github.com/umbracle/ethgo/issues/185)]
 - Add `etherscan.GasPrice` function to return last block gas price [[GH-182](https://github.com/umbracle/ethgo/issues/182)]
 - Add `4byte` package and cli [[GH-178](https://github.com/umbracle/ethgo/issues/178)]
 - Install and use `ethers.js` spec tests for wallet private key decoding [[GH-177](https://github.com/umbracle/ethgo/issues/177)]

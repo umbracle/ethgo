@@ -69,6 +69,13 @@ func (j *jsonRPCNodeProvider) Txn(addr ethgo.Address, key ethgo.Key, input []byt
 			return nil, err
 		}
 	}
+	// calculate the nonce
+	if opts.Nonce == 0 {
+		opts.Nonce, err = j.client.GetNonce(from, ethgo.Latest)
+		if err != nil {
+			return nil, fmt.Errorf("failed to calculate nonce: %v", err)
+		}
+	}
 
 	chainID, err := j.client.ChainID()
 	if err != nil {
@@ -82,6 +89,7 @@ func (j *jsonRPCNodeProvider) Txn(addr ethgo.Address, key ethgo.Key, input []byt
 		GasPrice: opts.GasPrice,
 		Gas:      opts.GasLimit,
 		Value:    opts.Value,
+		Nonce:    opts.Nonce,
 	}
 	if addr != ethgo.ZeroAddress {
 		rawTxn.To = &addr
@@ -244,6 +252,7 @@ type TxnOpts struct {
 	Value    *big.Int
 	GasPrice uint64
 	GasLimit uint64
+	Nonce    uint64
 }
 
 func (a *Contract) Txn(method string, args ...interface{}) (Txn, error) {
