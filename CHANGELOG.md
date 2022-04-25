@@ -1,5 +1,5 @@
 
-# 0.1.1 (Not released)
+# 0.1.1 (25 April, 2022)
 
 - Retrieve latest nonce when sending a transaction on `contract` [[GH-185](https://github.com/umbracle/ethgo/issues/185)]
 - Add `etherscan.GasPrice` function to return last block gas price [[GH-182](https://github.com/umbracle/ethgo/issues/182)]
