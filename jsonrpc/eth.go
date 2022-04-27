@@ -227,3 +227,53 @@ func (e *Eth) ChainID() (*big.Int, error) {
 	}
 	return parseBigInt(out), nil
 }
+
+// FeeHistory is the result of the eth_feeHistory endpoint
+type FeeHistory struct {
+	OldestBlock  *big.Int     `json:"oldestBlock"`
+	Reward       [][]*big.Int `json:"reward,omitempty"`
+	BaseFee      []*big.Int   `json:"baseFeePerGas,omitempty"`
+	GasUsedRatio []float64    `json:"gasUsedRatio"`
+}
+
+func (f *FeeHistory) UnmarshalJSON(data []byte) error {
+	var raw struct {
+		OldestBlock  *ArgBig     `json:"oldestBlock"`
+		Reward       [][]*ArgBig `json:"reward,omitempty"`
+		BaseFee      []*ArgBig   `json:"baseFeePerGas,omitempty"`
+		GasUsedRatio []float64   `json:"gasUsedRatio"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if raw.OldestBlock != nil {
+		f.OldestBlock = raw.OldestBlock.Big()
+	}
+	if raw.Reward != nil {
+		f.Reward = [][]*big.Int{}
+		for _, r := range raw.Reward {
+			elem := []*big.Int{}
+			for _, i := range r {
+				elem = append(elem, i.Big())
+			}
+			f.Reward = append(f.Reward, elem)
+		}
+	}
+	if raw.BaseFee != nil {
+		f.BaseFee = []*big.Int{}
+		for _, i := range raw.BaseFee {
+			f.BaseFee = append(f.BaseFee, i.Big())
+		}
+	}
+	f.GasUsedRatio = raw.GasUsedRatio
+	return nil
+}
+
+// FeeHistory returns base fee per gas and transaction effective priority fee
+func (e *Eth) FeeHistory(from, to ethgo.BlockNumber) (*FeeHistory, error) {
+	var out *FeeHistory
+	if err := e.c.Call("eth_feeHistory", &out, from.String(), to.String(), nil); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
