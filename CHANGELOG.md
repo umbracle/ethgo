@@ -1,6 +1,7 @@
 
 # 0.1.2 (Unreleased)
 
+- Add `eth_feeHistory` rpc endpoint [[GH-192](https://github.com/umbracle/ethgo/issues/192)]
 - Update `testserver` to `go-ethereum:v1.10.15` [[GH-191](https://github.com/umbracle/ethgo/issues/191)]
 - Do not decode `to` in `Transaction` if not exists [[GH-190](https://github.com/umbracle/ethgo/issues/190)]
 

@@ -367,3 +367,17 @@ func TestEthGetStorageAt(t *testing.T) {
 		assert.True(t, strings.HasSuffix(res.String(), "a"))
 	}
 }
+
+func TestEthFeeHistory(t *testing.T) {
+	c, _ := NewClient(testutil.TestInfuraEndpoint(t))
+
+	lastBlock, err := c.Eth().BlockNumber()
+	assert.NoError(t, err)
+
+	from := ethgo.BlockNumber(lastBlock - 2)
+	to := ethgo.BlockNumber(lastBlock)
+
+	fee, err := c.Eth().FeeHistory(from, to)
+	assert.NoError(t, err)
+	assert.NotNil(t, fee)
+}
