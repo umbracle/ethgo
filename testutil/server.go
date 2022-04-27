@@ -109,9 +109,12 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 	// enable ws
 	args = append(args, "--ws", "--ws.addr", "0.0.0.0")
 
+	// enable debug verbosity
+	args = append(args, "--verbosity", "4")
+
 	opts := &dockertest.RunOptions{
 		Repository: "ethereum/client-go",
-		Tag:        "v1.9.25",
+		Tag:        "v1.10.15",
 		Cmd:        args,
 		Mounts: []string{
 			tmpDir + ":/eth1data",
@@ -264,7 +267,7 @@ func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
 		if count > 100 {
 			return nil, fmt.Errorf("timeout")
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		count++
 	}
 	return receipt, nil
