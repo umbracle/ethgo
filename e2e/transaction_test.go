@@ -13,7 +13,7 @@ import (
 
 func TestSendSignedTransaction(t *testing.T) {
 	s := testutil.NewTestServer(t, nil)
-	//defer s.Close()
+	defer s.Close()
 
 	key, err := wallet.GenerateKey()
 	assert.NoError(t, err)
