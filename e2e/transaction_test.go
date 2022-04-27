@@ -19,7 +19,7 @@ func TestSendSignedTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	// add value to the new key
-	value := big.NewInt(10000000000)
+	value := big.NewInt(1000000000000000000)
 	s.Transfer(key.Address(), value)
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
@@ -34,16 +34,22 @@ func TestSendSignedTransaction(t *testing.T) {
 	to := ethgo.Address{0x1}
 	transferVal := big.NewInt(1000)
 
+	gasPrice, err := c.Eth().GasPrice()
+	assert.NoError(t, err)
+
 	txn := &ethgo.Transaction{
-		To:    &to,
-		Value: transferVal,
+		To:       &to,
+		Value:    transferVal,
+		Nonce:    0,
+		GasPrice: gasPrice,
 	}
 
 	{
 		msg := &ethgo.CallMsg{
-			From:  key.Address(),
-			To:    &to,
-			Value: transferVal,
+			From:     key.Address(),
+			To:       &to,
+			Value:    transferVal,
+			GasPrice: gasPrice,
 		}
 		limit, err := c.Eth().EstimateGas(msg)
 		assert.NoError(t, err)
@@ -59,7 +65,9 @@ func TestSendSignedTransaction(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, from, key.Address())
 
-	data, _ := txn.MarshalRLPTo(nil)
+	data, err := txn.MarshalRLPTo(nil)
+	assert.NoError(t, err)
+
 	hash, err := c.Eth().SendRawTransaction(data)
 	assert.NoError(t, err)
 

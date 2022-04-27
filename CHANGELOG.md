@@ -1,4 +1,9 @@
 
+# 0.1.2 (Unreleased)
+
+- Update `testserver` to `go-ethereum:v1.10.15` [[GH-191](https://github.com/umbracle/ethgo/issues/191)]
+- Do not decode `to` in `Transaction` if not exists [[GH-190](https://github.com/umbracle/ethgo/issues/190)]
+
 # 0.1.1 (25 April, 2022)
 
 - Retrieve latest nonce when sending a transaction on `contract` [[GH-185](https://github.com/umbracle/ethgo/issues/185)]
