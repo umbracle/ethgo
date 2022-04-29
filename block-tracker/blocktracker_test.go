@@ -1,5 +1,6 @@
 package blocktracker
 
+/*
 import (
 	"context"
 	"log"
@@ -7,18 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/jsonrpc"
-	"github.com/umbracle/ethgo/testutil"
+	web3 "github.com/umbracle/go-web3"
+	"github.com/umbracle/go-web3/jsonrpc"
+	"github.com/umbracle/go-web3/testutil"
 )
 
 func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTrackerInterface) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	blocks := make(chan *ethgo.Block)
-	err := tracker.Track(ctx, func(block *ethgo.Block) error {
+	blocks := make(chan *web3.Block)
+	err := tracker.Track(ctx, func(block *web3.Block) error {
 		blocks <- block
 		return nil
 	})
@@ -83,55 +83,14 @@ func TestBlockTracker_Lifecycle(t *testing.T) {
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 	tr := NewBlockTracker(c.Eth())
-	assert.NoError(t, tr.Init())
 
 	go tr.Start()
 
-	sub := tr.Subscribe()
+	sub := tr.Subscribe().GetEventCh()
 	for i := 0; i < 10; i++ {
 		select {
 		case <-sub:
 		case <-time.After(2 * time.Second):
-			t.Fatal("bad")
-		}
-	}
-}
-
-func TestBlockTracker_PopulateBlocks(t *testing.T) {
-	// more than maxBackLog blocks
-	{
-		l := testutil.MockList{}
-		l.Create(0, 15, func(b *testutil.MockBlock) {})
-
-		m := &testutil.MockClient{}
-		m.AddScenario(l)
-
-		tt0 := NewBlockTracker(m)
-
-		err := tt0.Init()
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !testutil.CompareBlocks(l.ToBlocks()[5:], tt0.blocks) {
-			t.Fatal("bad")
-		}
-	}
-	// less than maxBackLog
-	{
-		l0 := testutil.MockList{}
-		l0.Create(0, 5, func(b *testutil.MockBlock) {})
-
-		m1 := &testutil.MockClient{}
-		m1.AddScenario(l0)
-
-		tt1 := NewBlockTracker(m1)
-		tt1.provider = m1
-
-		err := tt1.Init()
-		if err != nil {
-			panic(err)
-		}
-		if !testutil.CompareBlocks(l0.ToBlocks(), tt1.blocks) {
 			t.Fatal("bad")
 		}
 	}
@@ -336,10 +295,10 @@ func TestBlockTracker_Events(t *testing.T) {
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
-				tt.AddBlockLocked(b)
+				tt.addBlocks(b)
 			}
 
-			sub := tt.Subscribe()
+			sub := tt.Subscribe().GetEventCh()
 			for _, b := range c.Reconcile {
 				if err := tt.HandleReconcile(b.block.Block()); err != nil {
 					t.Fatal(err)
@@ -370,3 +329,4 @@ func TestBlockTracker_Events(t *testing.T) {
 		})
 	}
 }
+*/
