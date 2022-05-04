@@ -58,7 +58,10 @@ func (e *EIP1155Signer) SignTx(tx *ethgo.Transaction, key ethgo.Key) (*ethgo.Tra
 		return nil, err
 	}
 
-	vv := uint64(sig[64]) + 35 + e.chainID*2
+	vv := uint64(sig[64])
+	if tx.Type == 0 {
+		vv = vv + 35 + e.chainID*2
+	}
 
 	tx.R = trimBytesZeros(sig[:32])
 	tx.S = trimBytesZeros(sig[32:64])
@@ -70,8 +73,23 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	a := fastrlp.DefaultArenaPool.Get()
 
 	v := a.NewArray()
+
+	if tx.Type != 0 {
+		// either dynamic and access type
+		v.Set(a.NewBigInt(tx.ChainID))
+	}
+
 	v.Set(a.NewUint(tx.Nonce))
-	v.Set(a.NewUint(tx.GasPrice))
+
+	if tx.Type == ethgo.TransactionDynamicFee {
+		// dynamic fee uses
+		v.Set(a.NewBigInt(tx.MaxPriorityFeePerGas))
+		v.Set(a.NewBigInt(tx.MaxFeePerGas))
+	} else {
+		// legacy and access type use gas price
+		v.Set(a.NewUint(tx.GasPrice))
+	}
+
 	v.Set(a.NewUint(tx.Gas))
 	if tx.To == nil {
 		v.Set(a.NewNull())
@@ -81,14 +99,32 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	v.Set(a.NewBigInt(tx.Value))
 	v.Set(a.NewCopyBytes(tx.Input))
 
+	if tx.Type != 0 {
+		// either dynamic and access type
+		accessList, err := tx.AccessList.MarshalRLPWith(a)
+		if err != nil {
+			panic(err)
+		}
+		v.Set(accessList)
+	}
+
 	// EIP155
-	if chainID != 0 {
+	if chainID != 0 && tx.Type == 0 {
 		v.Set(a.NewUint(chainID))
 		v.Set(a.NewUint(0))
 		v.Set(a.NewUint(0))
 	}
 
-	hash := ethgo.Keccak256(v.MarshalTo(nil))
+	dst := v.MarshalTo(nil)
+
+	// append the tx type byte
+	if tx.Type == ethgo.TransactionAccessList {
+		dst = append([]byte{0x1}, dst...)
+	} else if tx.Type == ethgo.TransactionDynamicFee {
+		dst = append([]byte{0x2}, dst...)
+	}
+
+	hash := ethgo.Keccak256(dst)
 	fastrlp.DefaultArenaPool.Put(a)
 	return hash
 }

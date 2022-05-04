@@ -81,8 +81,6 @@ func TestTransactions(t *testing.T) {
 }
 
 func TestTypedTransactions(t *testing.T) {
-	t.Skip()
-
 	var transactions []struct {
 		Name           string         `json:"name"`
 		AccountAddress ethgo.Address  `json:"address"`
@@ -91,62 +89,68 @@ func TestTypedTransactions(t *testing.T) {
 
 		Tx struct {
 			Type                 ethgo.TransactionType
-			Data                 *ethgo.ArgBytes `json:"data,omitempty"`
-			GasLimit             *ethgo.ArgBig   `json:"gasLimit,omitempty"`
-			MaxPriorityFeePerGas *ethgo.ArgBig   `json:"maxPriorityFeePerGas,omitempty"`
-			MaxFeePerGas         *ethgo.ArgBig   `json:"maxFeePerGas,omitempty"`
-			Nonce                uint64          `json:"nonce,omitempty"`
-			To                   *ethgo.Address  `json:"to,omitempty"`
-			Value                *ethgo.ArgBig   `json:"value,omitempty"`
-			GasPrice             *ethgo.ArgBig   `json:"gasPrice,omitempty"`
-			ChainID              uint64          `json:"chainId,omitempty"`
+			Data                 *ethgo.ArgBytes  `json:"data,omitempty"`
+			GasLimit             *ethgo.ArgBig    `json:"gasLimit,omitempty"`
+			MaxPriorityFeePerGas *ethgo.ArgBig    `json:"maxPriorityFeePerGas,omitempty"`
+			MaxFeePerGas         *ethgo.ArgBig    `json:"maxFeePerGas,omitempty"`
+			Nonce                uint64           `json:"nonce,omitempty"`
+			To                   *ethgo.Address   `json:"to,omitempty"`
+			Value                *ethgo.ArgBig    `json:"value,omitempty"`
+			GasPrice             *ethgo.ArgBig    `json:"gasPrice,omitempty"`
+			ChainID              uint64           `json:"chainId,omitempty"`
+			AccessList           ethgo.AccessList `json:"accessList,omitempty"`
 		}
 	}
 	ReadTestCase(t, "typed-transactions", &transactions)
 
 	for _, c := range transactions {
-		key, err := wallet.NewWalletFromPrivKey(c.Key)
-		assert.NoError(t, err)
-		assert.Equal(t, key.Address(), c.AccountAddress)
+		t.Run(c.Name, func(t *testing.T) {
+			key, err := wallet.NewWalletFromPrivKey(c.Key)
+			assert.NoError(t, err)
+			assert.Equal(t, key.Address(), c.AccountAddress)
 
-		txn := &ethgo.Transaction{
-			ChainID:              big.NewInt(0),
-			Type:                 c.Tx.Type,
-			MaxPriorityFeePerGas: (*big.Int)(c.Tx.MaxPriorityFeePerGas),
-			MaxFeePerGas:         (*big.Int)(c.Tx.MaxFeePerGas),
-		}
-		if c.Tx.Data != nil {
-			txn.Input = *c.Tx.Data
-		}
-		if c.Tx.Value != nil {
-			txn.Value = (*big.Int)(c.Tx.Value)
-		}
-		if c.Tx.To != nil {
-			txn.To = c.Tx.To
-		}
-		if c.Tx.GasLimit != nil {
-			gasLimit, isUint64 := getUint64FromBigInt(c.Tx.GasLimit)
-			if !isUint64 {
-				return
+			chainID := big.NewInt(int64(c.Tx.ChainID))
+
+			txn := &ethgo.Transaction{
+				ChainID:              chainID,
+				Type:                 c.Tx.Type,
+				MaxPriorityFeePerGas: (*big.Int)(c.Tx.MaxPriorityFeePerGas),
+				MaxFeePerGas:         (*big.Int)(c.Tx.MaxFeePerGas),
+				AccessList:           c.Tx.AccessList,
 			}
-			txn.Gas = gasLimit
-		}
-		txn.Nonce = c.Tx.Nonce
-		if c.Tx.GasPrice != nil {
-			gasPrice, isUint64 := getUint64FromBigInt(c.Tx.GasPrice)
-			if !isUint64 {
-				return
+			if c.Tx.Data != nil {
+				txn.Input = *c.Tx.Data
 			}
-			txn.GasPrice = gasPrice
-		}
+			if c.Tx.Value != nil {
+				txn.Value = (*big.Int)(c.Tx.Value)
+			}
+			if c.Tx.To != nil {
+				txn.To = c.Tx.To
+			}
+			if c.Tx.GasLimit != nil {
+				gasLimit, isUint64 := getUint64FromBigInt(c.Tx.GasLimit)
+				if !isUint64 {
+					return
+				}
+				txn.Gas = gasLimit
+			}
+			txn.Nonce = c.Tx.Nonce
+			if c.Tx.GasPrice != nil {
+				gasPrice, isUint64 := getUint64FromBigInt(c.Tx.GasPrice)
+				if !isUint64 {
+					return
+				}
+				txn.GasPrice = gasPrice
+			}
 
-		signer := wallet.NewEIP155Signer(0)
-		signedTxn, err := signer.SignTx(txn, key)
-		assert.NoError(t, err)
+			signer := wallet.NewEIP155Signer(chainID.Uint64())
+			signedTxn, err := signer.SignTx(txn, key)
+			assert.NoError(t, err)
 
-		txnRaw, err := signedTxn.MarshalRLPTo(nil)
-		assert.NoError(t, err)
+			txnRaw, err := signedTxn.MarshalRLPTo(nil)
+			assert.NoError(t, err)
 
-		t.Log(txnRaw)
+			assert.Equal(t, txnRaw, c.Signed.Bytes())
+		})
 	}
 }
