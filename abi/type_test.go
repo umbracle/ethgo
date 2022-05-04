@@ -265,6 +265,45 @@ func TestType(t *testing.T) {
 			},
 		},
 		{
+			// hidden tuple token
+			s: "tuple((int32))",
+			a: &ArgumentStr{
+				Type: "tuple",
+				Components: []*ArgumentStr{
+					{
+						Type: "tuple",
+						Components: []*ArgumentStr{
+							{
+								Type: "int32",
+							},
+						},
+					},
+				},
+			},
+			t: &Type{
+				kind: KindTuple,
+				t:    tupleT,
+				tuple: []*TupleElem{
+					{
+						Elem: &Type{
+							kind: KindTuple,
+							t:    tupleT,
+							tuple: []*TupleElem{
+								{
+									Elem: &Type{
+										kind: KindInt,
+										size: 32,
+										t:    int32T,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			r: "tuple(tuple(int32))",
+		},
+		{
 			s:   "int[[",
 			err: true,
 		},

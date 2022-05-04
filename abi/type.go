@@ -165,7 +165,9 @@ func (t *Type) Format(includeArgs bool) string {
 				name += " indexed"
 			}
 			if includeArgs {
-				name += " " + i.Name
+				if i.Name != "" {
+					name += " " + i.Name
+				}
 			}
 			rawAux = append(rawAux, name)
 		}
@@ -328,11 +330,17 @@ func readType(l *lexer) (*Type, error) {
 	var tt *Type
 
 	tok := l.nextToken()
+
+	isTuple := false
 	if tok.typ == tupleToken {
 		if l.nextToken().typ != lparenToken {
 			return nil, expectedToken(lparenToken)
 		}
-
+		isTuple = true
+	} else if tok.typ == lparenToken {
+		isTuple = true
+	}
+	if isTuple {
 		var next token
 		elems := []*TupleElem{}
 		for {
