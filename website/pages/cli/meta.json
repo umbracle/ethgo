@@ -1,4 +1,5 @@
 {
     "abigen": "Abigen",
-    "version": "Version"
+    "version": "Version",
+    "ens_resolve": "ENS Resolve"
 }

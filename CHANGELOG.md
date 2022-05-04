@@ -1,6 +1,7 @@
 
 # 0.1.2 (Unreleased)
 
+- Add `ens resolve` command to resolve an ENS name [[GH-196](https://github.com/umbracle/ethgo/issues/196)]
 - Fix signing of typed transactions [[GH-197](https://github.com/umbracle/ethgo/issues/197)]
 - Fix. Use `ethgo.BlockNumber` input to make `Call` in contract [[GH-194](https://github.com/umbracle/ethgo/issues/194)]
 - Add `testcases` for contract signature and transaction signing [[GH-193](https://github.com/umbracle/ethgo/issues/193)]
