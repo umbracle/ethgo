@@ -99,7 +99,7 @@ func TestContract_Deploy(t *testing.T) {
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
-	s.Transfer(key.Address(), big.NewInt(1000000000000000000))
+	s.Fund(key.Address())
 
 	p, _ := jsonrpc.NewClient(s.HTTPAddr())
 
@@ -138,7 +138,7 @@ func TestContract_Transaction(t *testing.T) {
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
-	s.Transfer(key.Address(), big.NewInt(1000000000000000000))
+	s.Fund(key.Address())
 
 	cc := &testutil.Contract{}
 	cc.AddEvent(testutil.NewEvent("A").Add("uint256", true))
@@ -171,7 +171,7 @@ func TestContract_CallAtBlock(t *testing.T) {
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
-	s.Transfer(key.Address(), big.NewInt(1000000000000000000))
+	s.Fund(key.Address())
 
 	cc := &testutil.Contract{}
 	cc.AddCallback(func() string {
@@ -222,4 +222,43 @@ func TestContract_CallAtBlock(t *testing.T) {
 		// value at previous block is 1
 		checkVal(ethgo.BlockNumber(receipt.BlockNumber-1), big.NewInt(1))
 	}
+}
+
+func TestContract_SendValueContractCall(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	key, _ := wallet.GenerateKey()
+	s.Fund(key.Address())
+
+	cc := &testutil.Contract{}
+	cc.AddCallback(func() string {
+		return `
+		function deposit() public payable {
+		}`
+	})
+
+	artifact, addr := s.DeployContract(cc)
+
+	abi, err := abi.NewABI(artifact.Abi)
+	assert.NoError(t, err)
+
+	contract := NewContract(addr, abi, WithJsonRPCEndpoint(s.HTTPAddr()), WithSender(key))
+
+	balance := big.NewInt(1)
+
+	txn, err := contract.Txn("deposit")
+	txn.WithOpts(&TxnOpts{Value: balance})
+	assert.NoError(t, err)
+
+	err = txn.Do()
+	assert.NoError(t, err)
+
+	_, err = txn.Wait()
+	assert.NoError(t, err)
+
+	client, _ := jsonrpc.NewClient(s.HTTPAddr())
+	found, err := client.Eth().GetBalance(addr, ethgo.Latest)
+	assert.NoError(t, err)
+	assert.Equal(t, found, balance)
 }
