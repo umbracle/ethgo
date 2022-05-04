@@ -21,9 +21,9 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-const (
-	DefaultGasPrice = 1879048192 // 0x70000000
-	DefaultGasLimit = 5242880    // 0x500000
+var (
+	DefaultGasPrice = uint64(1879048192) // 0x70000000
+	DefaultGasLimit = uint64(5242880)    // 0x500000
 )
 
 var (
@@ -292,15 +292,6 @@ func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Addr
 		panic(err)
 	}
 	return solcContract, receipt.ContractAddress
-}
-
-func (t *TestServer) testHTTPEndpoint() bool {
-	resp, err := http.Post(t.HTTPAddr(), "application/json", nil)
-	if err != nil {
-		return false
-	}
-	defer resp.Body.Close()
-	return true
 }
 
 func (t *TestServer) exit(err error) {
