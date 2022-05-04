@@ -313,7 +313,7 @@ func (a *Contract) Call(method string, block ethgo.BlockNumber, args ...interfac
 	}
 
 	opts := &CallOpts{
-		Block: ethgo.Latest,
+		Block: block,
 	}
 	if a.key != nil {
 		opts.From = a.key.Address()
