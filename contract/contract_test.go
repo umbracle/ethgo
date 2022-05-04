@@ -164,3 +164,62 @@ func TestContract_Transaction(t *testing.T) {
 		assert.Len(t, receipt.Logs, 1)
 	}
 }
+
+func TestContract_CallAtBlock(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	// create an address and fund it
+	key, _ := wallet.GenerateKey()
+	s.Transfer(key.Address(), big.NewInt(1000000000000000000))
+
+	cc := &testutil.Contract{}
+	cc.AddCallback(func() string {
+		return `
+		uint256 val = 1;
+		function getVal() public view returns (uint256) {
+			return val;
+		}
+		function change() public payable {
+			val = 2;
+		}`
+	})
+
+	artifact, addr := s.DeployContract(cc)
+
+	abi, err := abi.NewABI(artifact.Abi)
+	assert.NoError(t, err)
+
+	contract := NewContract(addr, abi, WithJsonRPCEndpoint(s.HTTPAddr()), WithSender(key))
+
+	checkVal := func(block ethgo.BlockNumber, expected *big.Int) {
+		resp, err := contract.Call("getVal", block)
+		assert.NoError(t, err)
+		assert.Equal(t, resp["0"], expected)
+	}
+
+	// initial value is 1
+	checkVal(ethgo.Latest, big.NewInt(1))
+
+	// send a transaction to update the state
+	var receipt *ethgo.Receipt
+	{
+		txn, err := contract.Txn("change")
+		assert.NoError(t, err)
+
+		err = txn.Do()
+		assert.NoError(t, err)
+
+		receipt, err = txn.Wait()
+		assert.NoError(t, err)
+	}
+
+	// validate the state at different blocks
+	{
+		// value at receipt block is 2
+		checkVal(ethgo.BlockNumber(receipt.BlockNumber), big.NewInt(2))
+
+		// value at previous block is 1
+		checkVal(ethgo.BlockNumber(receipt.BlockNumber-1), big.NewInt(1))
+	}
+}
