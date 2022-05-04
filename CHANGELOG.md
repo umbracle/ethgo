@@ -1,6 +1,7 @@
 
 # 0.1.2 (Unreleased)
 
+- Fix. Use `ethgo.BlockNumber` input to make `Call` in contract [[GH-194](https://github.com/umbracle/ethgo/issues/194)]
 - Add `testcases` for contract signature and transaction signing [[GH-193](https://github.com/umbracle/ethgo/issues/193)]
 - Add `eth_feeHistory` rpc endpoint [[GH-192](https://github.com/umbracle/ethgo/issues/192)]
 - Update `testserver` to `go-ethereum:v1.10.15` [[GH-191](https://github.com/umbracle/ethgo/issues/191)]
