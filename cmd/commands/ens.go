@@ -13,7 +13,7 @@ type EnsCommand struct {
 func (c *EnsCommand) Help() string {
 	return `Usage: ethgo ens
 
-	Interact with ens`
+  Interact with ens`
 }
 
 // Synopsis implements the cli.Command interface
