@@ -29,6 +29,16 @@ func Commands() map[string]cli.CommandFactory {
 				UI: ui,
 			}, nil
 		},
+		"ens": func() (cli.Command, error) {
+			return &EnsCommand{
+				UI: ui,
+			}, nil
+		},
+		"ens resolve": func() (cli.Command, error) {
+			return &EnsResolveCommand{
+				UI: ui,
+			}, nil
+		},
 		"version": func() (cli.Command, error) {
 			return &VersionCommand{
 				UI: ui,
