@@ -205,6 +205,10 @@ func (t *TestServer) Call(msg *ethgo.CallMsg) (string, error) {
 	return resp, nil
 }
 
+func (t *TestServer) Fund(address ethgo.Address) *ethgo.Receipt {
+	return t.Transfer(address, big.NewInt(1000000000000000000))
+}
+
 func (t *TestServer) Transfer(address ethgo.Address, value *big.Int) *ethgo.Receipt {
 	receipt, err := t.SendTxn(&ethgo.Transaction{
 		From:  t.accounts[0],
