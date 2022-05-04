@@ -10,7 +10,7 @@ jobs:
         with:
           node-version: '14'
       - name: Install ethers testcases
-        run: cd ./testsuite && npm install
+        run: cd ./testcases && npm install
       - name: Setup go
         uses: actions/setup-go@v1
         with:
