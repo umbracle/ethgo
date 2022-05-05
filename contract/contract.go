@@ -18,7 +18,8 @@ type Provider interface {
 }
 
 type jsonRPCNodeProvider struct {
-	client *jsonrpc.Eth
+	client  *jsonrpc.Eth
+	eip1559 bool
 }
 
 func (j *jsonRPCNodeProvider) Call(addr ethgo.Address, input []byte, opts *CallOpts) ([]byte, error) {
@@ -42,24 +43,26 @@ func (j *jsonRPCNodeProvider) Call(addr ethgo.Address, input []byte, opts *CallO
 
 func (j *jsonRPCNodeProvider) Txn(addr ethgo.Address, key ethgo.Key, input []byte) (Txn, error) {
 	txn := &jsonrpcTransaction{
-		opts:   &TxnOpts{},
-		input:  input,
-		client: j.client,
-		key:    key,
-		to:     addr,
+		opts:    &TxnOpts{},
+		input:   input,
+		client:  j.client,
+		key:     key,
+		to:      addr,
+		eip1559: j.eip1559,
 	}
 	return txn, nil
 }
 
 type jsonrpcTransaction struct {
-	to     ethgo.Address
-	input  []byte
-	hash   ethgo.Hash
-	opts   *TxnOpts
-	key    ethgo.Key
-	client *jsonrpc.Eth
-	txn    *ethgo.Transaction
-	txnRaw []byte
+	to      ethgo.Address
+	input   []byte
+	hash    ethgo.Hash
+	opts    *TxnOpts
+	key     ethgo.Key
+	client  *jsonrpc.Eth
+	txn     *ethgo.Transaction
+	txnRaw  []byte
+	eip1559 bool
 }
 
 func (j *jsonrpcTransaction) Hash() ethgo.Hash {
@@ -75,7 +78,7 @@ func (j *jsonrpcTransaction) Build() error {
 	from := j.key.Address()
 
 	// estimate gas price
-	if j.opts.GasPrice == 0 {
+	if j.opts.GasPrice == 0 && !j.eip1559 {
 		j.opts.GasPrice, err = j.client.GasPrice()
 		if err != nil {
 			return err
@@ -124,6 +127,19 @@ func (j *jsonrpcTransaction) Build() error {
 	if j.to != ethgo.ZeroAddress {
 		rawTxn.To = &j.to
 	}
+
+	if j.eip1559 {
+		rawTxn.Type = ethgo.TransactionDynamicFee
+
+		// use gas price as fee data
+		gasPrice, err := j.client.GasPrice()
+		if err != nil {
+			return err
+		}
+		rawTxn.MaxFeePerGas = new(big.Int).SetUint64(gasPrice)
+		rawTxn.MaxPriorityFeePerGas = new(big.Int).SetUint64(gasPrice)
+	}
+
 	j.txn = rawTxn
 	return nil
 }
@@ -185,6 +201,7 @@ type Opts struct {
 	JsonRPCClient   *jsonrpc.Eth
 	Provider        Provider
 	Sender          ethgo.Key
+	EIP1559         bool
 }
 
 type ContractOption func(*Opts)
@@ -213,6 +230,12 @@ func WithSender(sender ethgo.Key) ContractOption {
 	}
 }
 
+func WithEIP1559() ContractOption {
+	return func(o *Opts) {
+		o.EIP1559 = true
+	}
+}
+
 func DeployContract(abi *abi.ABI, bin []byte, args []interface{}, opts ...ContractOption) (Txn, error) {
 	a := NewContract(ethgo.Address{}, abi, opts...)
 	a.bin = bin
@@ -231,10 +254,10 @@ func NewContract(addr ethgo.Address, abi *abi.ABI, opts ...ContractOption) *Cont
 	if opt.Provider != nil {
 		provider = opt.Provider
 	} else if opt.JsonRPCClient != nil {
-		provider = &jsonRPCNodeProvider{client: opt.JsonRPCClient}
+		provider = &jsonRPCNodeProvider{client: opt.JsonRPCClient, eip1559: opt.EIP1559}
 	} else {
 		client, _ := jsonrpc.NewClient(opt.JsonRPCEndpoint)
-		provider = &jsonRPCNodeProvider{client: client.Eth()}
+		provider = &jsonRPCNodeProvider{client: client.Eth(), eip1559: opt.EIP1559}
 	}
 
 	a := &Contract{
