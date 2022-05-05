@@ -23,7 +23,7 @@ func (d *DerivationPath) Derive(master *hdkeychain.ExtendedKey) (*ecdsa.PrivateK
 	var err error
 	key := master
 	for _, n := range *d {
-		key, err = key.Child(n)
+		key, err = key.Derive(n)
 		if err != nil {
 			return nil, err
 		}
