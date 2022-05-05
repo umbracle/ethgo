@@ -7,6 +7,7 @@ import (
 )
 
 func Test4Byte(t *testing.T) {
+	t.Skip("http api not stable, skip for now")
 
 	var cases = []struct {
 		in, out string
