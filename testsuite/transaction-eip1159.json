@@ -4,6 +4,7 @@
     "input": "0x00",
     "value": "0x0",
     "gasPrice": "0x0",
+    "gas": "0x10",
     "maxPriorityFeePerGas": "0x10",
     "maxFeePerGas": "0x10",
     "nonce": "0x10",
