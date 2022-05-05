@@ -262,3 +262,40 @@ func TestContract_SendValueContractCall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, found, balance)
 }
+
+func TestContract_EIP1559(t *testing.T) {
+	s := testutil.NewTestServer(t, nil)
+	defer s.Close()
+
+	key, _ := wallet.GenerateKey()
+	s.Fund(key.Address())
+
+	cc := &testutil.Contract{}
+	cc.AddOutputCaller("example")
+
+	artifact, addr := s.DeployContract(cc)
+
+	abi, err := abi.NewABI(artifact.Abi)
+	assert.NoError(t, err)
+
+	client, _ := jsonrpc.NewClient(s.HTTPAddr())
+	contract := NewContract(addr, abi, WithJsonRPC(client.Eth()), WithSender(key), WithEIP1559())
+
+	txn, err := contract.Txn("example")
+	assert.NoError(t, err)
+
+	err = txn.Do()
+	assert.NoError(t, err)
+
+	_, err = txn.Wait()
+	assert.NoError(t, err)
+
+	// get transaction from rpc endpoint
+	txnObj, err := client.Eth().GetTransactionByHash(txn.Hash())
+	assert.NoError(t, err)
+
+	assert.NotZero(t, txnObj.Gas)
+	assert.NotZero(t, txnObj.GasPrice)
+	assert.NotZero(t, txnObj.MaxFeePerGas)
+	assert.NotZero(t, txnObj.MaxPriorityFeePerGas)
+}

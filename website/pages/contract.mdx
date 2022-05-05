@@ -1,5 +1,6 @@
 
 import GoDocLink from '../components/godoc'
+import EIPLink from '../components/eip'
 import {Address, ABI} from '../components/primitives'
 
 # Contract
@@ -27,6 +28,7 @@ Besides `addr` and `abi`, you can use the option pattern to parametrize the cont
 - <GoDocLink href="contract#WithJsonRPCClient">WithJsonRPCClient</GoDocLink>: [`JsonRPC`](/jsonrpc) object to make rpc calls. It takes preference over an address from `WithAddress`.
 - <GoDocLink href="contract#WithSigner">WithSigner</GoDocLink>: [`Signer`](/signers/signer) object to send transactions or use a custom `from` address.
 - <GoDocLink href="contract#WithProvider">WithProvider</GoDocLink>: Custom <GoDocLink href="contract#NodeProvider">NodeProvider</GoDocLink> implementation to resolve calls and transactions.
+- <GoDocLink href="contract#WithEIP1559">WithEIP1559</GoDocLink>: Send transactions with EIP-1559 pricing.
 
 ## Examples
 
