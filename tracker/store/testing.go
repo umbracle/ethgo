@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/umbracle/ethgo"
+	"github.com/cloudwalk/ethgo"
 )
 
 // SetupDB is a function that creates a backend

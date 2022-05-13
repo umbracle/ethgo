@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"reflect"
 
-	"github.com/umbracle/ethgo"
+	"github.com/cloudwalk/ethgo"
 )
 
 func CompareLogs(one, two []*ethgo.Log) bool {

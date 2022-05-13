@@ -4,8 +4,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/cloudwalk/ethgo"
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/ethgo"
 )
 
 func TestSigner_EIP1155(t *testing.T) {

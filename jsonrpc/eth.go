@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/umbracle/ethgo"
+	"github.com/cloudwalk/ethgo"
 )
 
 // Eth is the eth namespace

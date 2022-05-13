@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/umbracle/ethgo/tracker/store"
+	"github.com/cloudwalk/ethgo/tracker/store"
 )
 
 func setupDB(t *testing.T) (store.Store, func()) {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/umbracle/ethgo"
+	"github.com/cloudwalk/ethgo"
 )
 
 // ParseLog parses an event log

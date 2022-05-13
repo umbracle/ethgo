@@ -4,9 +4,9 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/cloudwalk/ethgo"
+	"github.com/cloudwalk/ethgo/wallet"
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/wallet"
 )
 
 func getUint64FromBigInt(b *ethgo.ArgBig) (uint64, bool) {

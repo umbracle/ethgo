@@ -11,7 +11,7 @@ import (
 
 	"path/filepath"
 
-	"github.com/umbracle/ethgo/compiler"
+	"github.com/cloudwalk/ethgo/compiler"
 )
 
 func Parse(sources string, pckg string, output string) error {

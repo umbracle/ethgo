@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/cloudwalk/ethgo"
+	"github.com/cloudwalk/ethgo/jsonrpc"
+	"github.com/cloudwalk/ethgo/testutil"
+	"github.com/cloudwalk/ethgo/wallet"
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/jsonrpc"
-	"github.com/umbracle/ethgo/testutil"
-	"github.com/umbracle/ethgo/wallet"
 )
 
 func TestSendSignedTransaction(t *testing.T) {

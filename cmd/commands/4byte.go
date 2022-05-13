@@ -1,8 +1,8 @@
 package commands
 
 import (
+	fourbyte "github.com/cloudwalk/ethgo/4byte"
 	"github.com/mitchellh/cli"
-	fourbyte "github.com/umbracle/ethgo/4byte"
 )
 
 // FourByteCommand is the command to resolve 4byte actions
