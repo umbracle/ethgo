@@ -71,9 +71,15 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 		val = readInteger(t, data)
 
 	case KindString:
+		if len(input) < 32+length {
+			return nil, nil, fmt.Errorf("incorrect length")
+		}
 		val = string(input[32 : 32+length])
 
 	case KindBytes:
+		if len(input) < 32+length {
+			return nil, nil, fmt.Errorf("incorrect length")
+		}
 		val = input[32 : 32+length]
 
 	case KindAddress:
@@ -153,6 +159,9 @@ func readInteger(t *Type, b []byte) interface{} {
 
 func readFunctionType(t *Type, word []byte) ([24]byte, error) {
 	res := [24]byte{}
+	if len(word) < 32 {
+		return res, fmt.Errorf("function type expects 32 bytes but %d given", len(word))
+	}
 	if !allZeros(word[24:32]) {
 		return res, fmt.Errorf("function type expects the last 8 bytes to be empty but found: %b", word[24:32])
 	}
@@ -189,6 +198,9 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 		if !arg.Elem.isDynamicType() {
 			data = tail
 		} else {
+			if len(data) < 32 {
+				return nil, nil, fmt.Errorf("expects 32 bytes but %d given", len(data))
+			}
 			data = data[32:]
 		}
 
@@ -242,6 +254,9 @@ func decodeArraySlice(t *Type, data []byte, size int) (interface{}, []byte, erro
 		if !isDynamic {
 			data = tail
 		} else {
+			if len(data) < 32 {
+				return nil, nil, fmt.Errorf("expects 32 bytes but %d given", len(data))
+			}
 			data = data[32:]
 		}
 		res.Index(indx).Set(reflect.ValueOf(val))
@@ -260,19 +275,25 @@ func decodeBool(data []byte) (interface{}, error) {
 	}
 }
 
-func readOffset(data []byte, len int) (int, error) {
+func readOffset(data []byte, length int) (int, error) {
+	if len(data) < 32 {
+		return 0, fmt.Errorf("insufficient length of data")
+	}
 	offsetBig := big.NewInt(0).SetBytes(data[0:32])
 	if offsetBig.BitLen() > 63 {
 		return 0, fmt.Errorf("offset larger than int64: %v", offsetBig.Int64())
 	}
 	offset := int(offsetBig.Int64())
-	if offset > len {
-		return 0, fmt.Errorf("offset insufficient %v require %v", len, offset)
+	if offset > length {
+		return 0, fmt.Errorf("offset insufficient %v require %v", length, offset)
 	}
 	return offset, nil
 }
 
 func readLength(data []byte) (int, error) {
+	if len(data) < 32 {
+		return 0, fmt.Errorf("insufficient length of data")
+	}
 	lengthBig := big.NewInt(0).SetBytes(data[0:32])
 	if lengthBig.BitLen() > 63 {
 		return 0, fmt.Errorf("length larger than int64: %v", lengthBig.Int64())
