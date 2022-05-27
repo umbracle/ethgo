@@ -1,6 +1,7 @@
 
 # 0.1.2 (Unreleased)
 
+- Update `fastrlp` to `59d5dd3` commit to fix a bug on bytes length check [[GH-204](https://github.com/umbracle/ethgo/issues/204)]
 - Update `btcd` library to new `v0.22.1`
 - Add option in `contract` to send transactions with EIP-1559 [[GH-198](https://github.com/umbracle/ethgo/issues/198)]
 - Add custom `TxnOpts` to send a transaction in `contract` [[GH-195](https://github.com/umbracle/ethgo/issues/195)]
