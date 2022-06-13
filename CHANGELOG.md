@@ -1,5 +1,5 @@
 
-# 0.1.2 (Unreleased)
+# 0.1.2 (12 June, 2022)
 
 - Fix out-of-bounds reading of bytes during ABI decoding [[GH-205](https://github.com/umbracle/ethgo/issues/205)]
 - Update `fastrlp` to `59d5dd3` commit to fix a bug on bytes length check [[GH-204](https://github.com/umbracle/ethgo/issues/204)]
