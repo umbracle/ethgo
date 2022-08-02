@@ -26,7 +26,17 @@ func DecodeStruct(t *Type, input []byte, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err := mapstructure.Decode(val, out); err != nil {
+
+	dc := &mapstructure.DecoderConfig{
+		Result:           out,
+		WeaklyTypedInput: true,
+		TagName:          "abi",
+	}
+	ms, err := mapstructure.NewDecoder(dc)
+	if err != nil {
+		return err
+	}
+	if err = ms.Decode(val); err != nil {
 		return err
 	}
 	return nil
