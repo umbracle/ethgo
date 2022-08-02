@@ -682,10 +682,10 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 }
 
 func TestEncodingStruct(t *testing.T) {
-	typ := MustNewType("tuple(address a, uint256 b)")
+	typ := MustNewType("tuple(address aa, uint256 b)")
 
 	type Obj struct {
-		A ethgo.Address
+		A ethgo.Address `abi:"aa"`
 		B *big.Int
 	}
 	obj := Obj{

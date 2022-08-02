@@ -1,3 +1,8 @@
+# 0.1.4 (Unreleased)
+
+- feat: `abi` DecodeStruct uses the `abi` tag instead of the default `mapstructure` [[GH-211](https://github.com/umbracle/ethgo/issues/211)]
+- feat: Implement `ens` reverse resolver [[GH-210](https://github.com/umbracle/ethgo/issues/210)]
+- fix: Jsonrpc eth_getLogs request cannot return string [[GH-209](https://github.com/umbracle/ethgo/issues/209)]
 
 # 0.1.3 (13 June, 2022)
 
