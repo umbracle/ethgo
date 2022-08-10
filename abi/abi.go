@@ -220,15 +220,27 @@ func (m *Method) Encode(args interface{}) ([]byte, error) {
 
 // Decode decodes the output with this function
 func (m *Method) Decode(data []byte) (map[string]interface{}, error) {
-	if len(data) == 0 {
+	if len(data) < 4 {
 		return nil, fmt.Errorf("empty response")
 	}
-	respInterface, err := Decode(m.Outputs, data)
+	if !bytes.HasPrefix(data, m.ID()) {
+		return nil, fmt.Errorf("incorrect input prefix: (0x%v) found (0x%v)", m.ID(), data)
+	}
+	respInterface, err := Decode(m.Outputs, data[4:])
 	if err != nil {
 		return nil, err
 	}
 	resp := respInterface.(map[string]interface{})
 	return resp, nil
+}
+
+// MustNewMethod creates a new solidity method object or fails
+func MustNewMethod(name string) *Method {
+	method, err := NewMethod(name)
+	if err != nil {
+		panic(err)
+	}
+	return method
 }
 
 func NewMethod(name string) (*Method, error) {
@@ -241,11 +253,14 @@ func NewMethod(name string) (*Method, error) {
 }
 
 var (
-	funcRegexpWithReturn    = regexp.MustCompile(`(\w*)\((.*)\)(.*) returns \((.*)\)`)
-	funcRegexpWithoutReturn = regexp.MustCompile(`(\w*)\((.*)\)(.*)`)
+	funcRegexpWithReturn    = regexp.MustCompile(`(\w*)\s*\((.*)\)(.*)\s*returns\s*\((.*)\)`)
+	funcRegexpWithoutReturn = regexp.MustCompile(`(\w*)\s*\((.*)\)(.*)`)
 )
 
 func parseMethodSignature(name string) (string, *Type, *Type, error) {
+	name = strings.Replace(name, "\n", " ", -1)
+	name = strings.Replace(name, "\t", " ", -1)
+
 	name = strings.TrimPrefix(name, "function ")
 	name = strings.TrimSpace(name)
 
