@@ -287,6 +287,20 @@ func TestAbi_ParseMethodSignature(t *testing.T) {
 			input:     "tuple(address)",
 			output:    "tuple()",
 		},
+		{
+			// multiline
+			signature: `function a(
+				uint256 b,
+				address[] c
+			)
+				returns
+				(
+				uint256[] d
+			)`,
+			name:   "a",
+			input:  "tuple(uint256,address[])",
+			output: "tuple(uint256[])",
+		},
 	}
 
 	for _, c := range cases {
