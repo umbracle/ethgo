@@ -220,6 +220,9 @@ func (m *Method) Encode(args interface{}) ([]byte, error) {
 
 // Decode decodes the output with this function
 func (m *Method) Decode(data []byte) (map[string]interface{}, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
 	respInterface, err := Decode(m.Outputs, data)
 	if err != nil {
 		return nil, err
