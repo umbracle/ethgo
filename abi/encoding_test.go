@@ -678,9 +678,6 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 	if res != encodeHex(data[4:]) { // remove funct signature in data
 		return fmt.Errorf("bad")
 	}
-	if _, err := method.Decode(data); err != nil {
-		return err
-	}
 	return nil
 }
 
