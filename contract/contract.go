@@ -98,6 +98,7 @@ func (j *jsonrpcTransaction) Build() error {
 		if err != nil {
 			return err
 		}
+		j.opts.GasLimit += 50000
 	}
 	// calculate the nonce
 	if j.opts.Nonce == 0 {
