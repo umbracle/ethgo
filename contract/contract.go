@@ -88,12 +88,14 @@ func (j *jsonrpcTransaction) Build() error {
 	if j.opts.GasLimit == 0 {
 		msg := &ethgo.CallMsg{
 			From:     from,
-			To:       &j.to,
+			To:       nil, //&j.to,
 			Data:     j.input,
 			Value:    j.opts.Value,
 			GasPrice: j.opts.GasPrice,
 		}
-
+		if j.to != ethgo.ZeroAddress {
+			msg.To = &j.to
+		}
 		j.opts.GasLimit, err = j.client.EstimateGas(msg)
 		if err != nil {
 			return err
