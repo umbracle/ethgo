@@ -1,11 +1,13 @@
 package abi
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"math/rand"
 	"reflect"
 	"strings"
+	"text/template"
 
 	"github.com/umbracle/ethgo"
 )
@@ -198,20 +200,29 @@ pragma experimental ABIEncoderV2;
 
 contract Sample {
 	// structs
-	%s
-	function set(%s) public view returns (%s) {
-		return (%s);
+	{{.Structs}}
+	function set({{.Input}}) public view returns ({{.Output}}) {
+		return ({{.Body}});
 	}
 }`
 
-	contract := fmt.Sprintf(
-		contractTemplate,
-		strings.Join(g.structs, "\n"),
-		strings.Join(input, ","),
-		strings.Join(output, ","),
-		strings.Join(body, ","))
+	tmpl, err := template.New("test").Parse(contractTemplate)
+	if err != nil {
+		panic(fmt.Errorf("BUG: %v", err))
+	}
 
-	return contract
+	config := map[string]interface{}{
+		"Structs": strings.Join(g.structs, "\n"),
+		"Input":   strings.Join(input, ","),
+		"Output":  strings.Join(output, ","),
+		"Body":    strings.Join(body, ","),
+	}
+
+	var tpl bytes.Buffer
+	if err = tmpl.Execute(&tpl, config); err != nil {
+		panic(fmt.Sprintf("BUG: Failed to render template: %v", err))
+	}
+	return tpl.String()
 }
 
 func (g *generateContractImpl) getValue(t *Type) string {

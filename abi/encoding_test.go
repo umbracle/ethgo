@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/compiler"
 	"github.com/umbracle/ethgo/testutil"
@@ -24,7 +25,82 @@ func mustDecodeHex(str string) []byte {
 	return buf
 }
 
-func TestEncoding(t *testing.T) {
+func TestEncodingXXXX(t *testing.T) {
+	server := testutil.NewTestServer(t, nil)
+	defer server.Close()
+
+	source := `pragma solidity ^0.5.5;
+pragma experimental ABIEncoderV2;
+
+contract Sample {
+	// structs
+
+    struct StateSync {
+        uint256 id;
+    }
+
+	function set(StateSync[] memory objs) public view returns (bytes memory) {
+		return abi.encode(objs);
+	}
+}
+	`
+
+	output, err := compiler.NewSolidityCompiler("solc").CompileCode(source)
+	require.NoError(t, err)
+
+	solcContract, ok := output.Contracts["<stdin>:Sample"]
+	if !ok {
+		panic("bad")
+	}
+
+	abi, err := NewABI(string(solcContract.Abi))
+	require.NoError(t, err)
+
+	binBuf, err := hex.DecodeString(solcContract.Bin)
+	require.NoError(t, err)
+
+	txn := &ethgo.Transaction{
+		Input: binBuf,
+	}
+	receipt, err := server.SendTxn(txn)
+	require.NoError(t, err)
+
+	fmt.Println(receipt)
+
+	method := abi.Methods["set"]
+
+	//tt := method.Inputs
+	//val := generateRandomType(tt)
+
+	val := []map[string]interface{}{
+		{
+			"id": 125,
+		},
+	}
+
+	data, err := method.Encode([]interface{}{val})
+	require.NoError(t, err)
+
+	res, err := server.Call(&ethgo.CallMsg{
+		To:   &receipt.ContractAddress,
+		Data: data,
+	})
+	require.NoError(t, err)
+
+	local, err := Encode(val, method.Inputs.tuple[0].Elem)
+	require.NoError(t, err)
+
+	retVals, err := method.Outputs.Decode(mustDecodeHex(res))
+	require.NoError(t, err)
+
+	encodeRes := retVals.(map[string]interface{})["0"].([]byte)
+
+	fmt.Println(encodeHex(local))
+	fmt.Println(encodeHex(encodeRes))
+
+}
+
+func TestEncodingE2E(t *testing.T) {
 	cases := []struct {
 		Type  string
 		Input interface{}
