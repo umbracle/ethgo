@@ -1,14 +1,11 @@
 package fourbyte
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func Test4Byte(t *testing.T) {
-	t.Skip("http api not stable, skip for now")
-
 	var cases = []struct {
 		in, out string
 	}{
@@ -24,7 +21,16 @@ func Test4Byte(t *testing.T) {
 	for _, i := range cases {
 		found, err := Resolve(i.in)
 		assert.NoError(t, err)
-		assert.Equal(t, i.out, found)
+		assert.Equal(t, contains(found, i.out), true)
 	}
 
+}
+
+func contains[T comparable](s []T, e T) bool {
+	for _, v := range s {
+		if v == e {
+			return true
+		}
+	}
+	return false
 }
