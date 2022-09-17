@@ -114,7 +114,7 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 
 	opts := &dockertest.RunOptions{
 		Repository: "ethereum/client-go",
-		Tag:        "v1.10.15",
+		Tag:        "v1.10.25",
 		Cmd:        args,
 		Mounts: []string{
 			tmpDir + ":/eth1data",
@@ -169,7 +169,8 @@ func (t *TestServer) WSAddr() string {
 
 // HTTPAddr returns the http endpoint
 func (t *TestServer) HTTPAddr() string {
-	return fmt.Sprintf("http://%s:8545", t.resource.Container.NetworkSettings.IPAddress)
+	port := t.resource.GetPort("8545/tcp")
+	return fmt.Sprintf("http://localhost:%s", port)
 }
 
 // ProcessBlock processes a new block
