@@ -45,6 +45,8 @@ contract Sample {
 }
 	`
 
+	mmm := MustNewType("tuple(tuple(uint256 id)[])")
+
 	output, err := compiler.NewSolidityCompiler("solc").CompileCode(source)
 	require.NoError(t, err)
 
@@ -87,16 +89,17 @@ contract Sample {
 	})
 	require.NoError(t, err)
 
-	local, err := Encode(val, method.Inputs.tuple[0].Elem)
-	require.NoError(t, err)
-
 	retVals, err := method.Outputs.Decode(mustDecodeHex(res))
 	require.NoError(t, err)
 
 	encodeRes := retVals.(map[string]interface{})["0"].([]byte)
 
-	fmt.Println(encodeHex(local))
+	real, _ := mmm.Encode([]interface{}{val})
+
 	fmt.Println(encodeHex(encodeRes))
+	fmt.Println(encodeHex(real))
+
+	fmt.Println(mmm.Decode(encodeRes))
 
 }
 
