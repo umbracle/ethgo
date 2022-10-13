@@ -305,12 +305,23 @@ func (r *Receipt) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 	if v.Exists("status") {
-		// status field is only available in post-byzantium forks
+		// post-byzantium fork
 		if r.Status, err = decodeUint(v, "status"); err != nil {
 			return err
 		}
 	}
-	
+
+	if v.Exists("to") {
+		// Do not decode 'to' if it doesn't exist.
+		if v.Get("to").String() != "null" {
+			var to Address
+			if err = decodeAddr(&to, v, "to"); err != nil {
+				return err
+			}
+			r.To = &to
+		}
+	}
+
 	// logs
 	r.Logs = r.Logs[:0]
 	for _, elem := range v.GetArray("logs") {
