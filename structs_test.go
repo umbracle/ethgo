@@ -1,6 +1,8 @@
 package ethgo
 
 import (
+	_ "embed"
+	"encoding/json"
 	"math/big"
 	"reflect"
 	"testing"
@@ -101,5 +103,18 @@ func TestLog_Copy(t *testing.T) {
 	ll := l.Copy()
 	if !reflect.DeepEqual(l, ll) {
 		t.Fatal("incorrect receipt")
+	}
+}
+
+//go:embed testsuite/receipts.json
+var receiptsFixtures []byte
+
+func TestReceipt_Unmarshal(t *testing.T) {
+	var cases []json.RawMessage
+	assert.NoError(t, json.Unmarshal(receiptsFixtures, &cases))
+
+	for _, c := range cases {
+		receipt := &Receipt{}
+		assert.NoError(t, receipt.UnmarshalJSON(c))
 	}
 }

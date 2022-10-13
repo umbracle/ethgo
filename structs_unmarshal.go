@@ -304,8 +304,22 @@ func (r *Receipt) UnmarshalJSON(buf []byte) error {
 	if r.LogsBloom, err = decodeBytes(r.LogsBloom[:0], v, "logsBloom", 256); err != nil {
 		return err
 	}
-	if r.Status, err = decodeUint(v, "status"); err != nil {
-		return err
+	if v.Exists("status") {
+		// post-byzantium fork
+		if r.Status, err = decodeUint(v, "status"); err != nil {
+			return err
+		}
+	}
+
+	if v.Exists("to") {
+		// Do not decode 'to' if it doesn't exist.
+		if v.Get("to").String() != "null" {
+			var to Address
+			if err = decodeAddr(&to, v, "to"); err != nil {
+				return err
+			}
+			r.To = &to
+		}
 	}
 
 	// logs

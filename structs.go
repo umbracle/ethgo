@@ -292,6 +292,7 @@ type Receipt struct {
 	LogsBloom         []byte
 	Logs              []*Log
 	Status            uint64
+	To                *Address
 }
 
 func (r *Receipt) Copy() *Receipt {
