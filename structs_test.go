@@ -59,10 +59,19 @@ func TestBlock_Copy(t *testing.T) {
 
 func TestTransaction_Copy(t *testing.T) {
 	txn := &Transaction{
-		Input: []byte{0x1, 0x2},
-		V:     []byte{0x1, 0x2},
-		R:     []byte{0x1, 0x2},
-		S:     []byte{0x1, 0x2},
+		GasPrice: 10,
+		Input:    []byte{0x1, 0x2},
+		V:        []byte{0x1, 0x2},
+		R:        []byte{0x1, 0x2},
+		S:        []byte{0x1, 0x2},
+		AccessList: AccessList{
+			AccessEntry{
+				Address: Address{0x1},
+				Storage: []Hash{
+					{0x1},
+				},
+			},
+		},
 	}
 	txn1 := txn.Copy()
 	if !reflect.DeepEqual(txn, txn1) {
@@ -73,7 +82,10 @@ func TestTransaction_Copy(t *testing.T) {
 func TestReceipt_Copy(t *testing.T) {
 	r := &Receipt{
 		LogsBloom: []byte{0x1, 0x2},
-		Logs:      []*Log{},
+		Logs: []*Log{
+			{LogIndex: 1, Topics: []Hash{{0x1}}},
+		},
+		GasUsed: 10,
 	}
 	rr := r.Copy()
 	if !reflect.DeepEqual(r, rr) {
@@ -83,7 +95,8 @@ func TestReceipt_Copy(t *testing.T) {
 
 func TestLog_Copy(t *testing.T) {
 	l := &Log{
-		Data: []byte{0x1, 0x2},
+		Data:      []byte{0x1, 0x2},
+		BlockHash: Hash{0x1},
 	}
 	ll := l.Copy()
 	if !reflect.DeepEqual(l, ll) {
