@@ -88,7 +88,7 @@ func (j *jsonrpcTransaction) Build() error {
 	if j.opts.GasLimit == 0 {
 		msg := &ethgo.CallMsg{
 			From:     from,
-			To:       nil,
+			To:       nil, //&j.to,
 			Data:     j.input,
 			Value:    j.opts.Value,
 			GasPrice: j.opts.GasPrice,
@@ -100,6 +100,7 @@ func (j *jsonrpcTransaction) Build() error {
 		if err != nil {
 			return err
 		}
+		// j.opts.GasLimit += 50000
 	}
 	// calculate the nonce
 	if j.opts.Nonce == 0 {

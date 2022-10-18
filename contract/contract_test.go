@@ -125,11 +125,11 @@ func TestContract_Deploy(t *testing.T) {
 	i := NewContract(receipt.ContractAddress, abi, WithJsonRPC(p.Eth()))
 	resp, err := i.Call("val_0", ethgo.Latest)
 	assert.NoError(t, err)
-	assert.Equal(t, resp["0"], ethgo.Address{0x1})
+	assert.Equal(t, ethgo.Address{0x1}, resp["0"])
 
 	resp, err = i.Call("val_1", ethgo.Latest)
 	assert.NoError(t, err)
-	assert.Equal(t, resp["0"], big.NewInt(1000))
+	assert.Equal(t, big.NewInt(1000), resp["0"])
 }
 
 func TestContract_Transaction(t *testing.T) {
