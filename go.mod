@@ -3,7 +3,6 @@ module github.com/umbracle/ethgo
 go 1.18
 
 require (
-	github.com/boltdb/bolt v1.3.1
 	github.com/btcsuite/btcd v0.22.1
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/gorilla/websocket v1.4.1
@@ -16,6 +15,7 @@ require (
 	github.com/umbracle/fastrlp v0.0.0-20220527094140-59d5dd30e722
 	github.com/valyala/fasthttp v1.4.0
 	github.com/valyala/fastjson v1.4.1
+	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/text v0.3.2
 )
@@ -46,7 +46,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
-	golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect
+	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
