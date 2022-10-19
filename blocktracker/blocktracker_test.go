@@ -35,7 +35,7 @@ func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTracke
 			if block.Number != count {
 				t.Fatal("bad number")
 			}
-		case <-time.After(2 * time.Second):
+		case <-time.After(4 * time.Second):
 			t.Fatal("timeout")
 		}
 	}
