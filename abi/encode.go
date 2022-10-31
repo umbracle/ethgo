@@ -294,12 +294,10 @@ func mapFromStruct(v reflect.Value) (reflect.Value, error) {
 			continue
 		}
 
-		name := f.Name
+		name := strings.ToLower(f.Name)
 		if tagValue != "" {
 			name = tagValue
 		}
-
-		name = strings.ToLower(name)
 		if _, ok := res[name]; !ok {
 			res[name] = v.Field(i).Interface()
 		}
