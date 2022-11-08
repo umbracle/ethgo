@@ -3,11 +3,11 @@ package wallet
 import (
 	"crypto/ecdsa"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 )
 
 func ParsePrivateKey(buf []byte) (*ecdsa.PrivateKey, error) {
-	prv, _ := btcec.PrivKeyFromBytes(S256, buf)
+	prv, _ := btcec.PrivKeyFromBytes(buf)
 	return prv.ToECDSA(), nil
 }
 

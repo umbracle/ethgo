@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/ory/dockertest v3.3.5+incompatible
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.8.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/umbracle/fastrlp v0.0.0-20220527094140-59d5dd30e722
 	github.com/valyala/fasthttp v1.4.0
@@ -21,9 +21,15 @@ require (
 )
 
 require (
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+require (
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.4.13 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.3.0
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
@@ -49,6 +55,5 @@ require (
 	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 )
