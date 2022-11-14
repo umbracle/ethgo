@@ -51,6 +51,13 @@ type BlockEvent struct {
 	Removed []*ethgo.Block
 }
 
+func (b *BlockEvent) Header() *ethgo.Block {
+	if len(b.Added) == 0 {
+		return nil
+	}
+	return b.Added[len(b.Added)-1]
+}
+
 // BlockTracker is an interface to track new blocks on the chain
 type BlockTracker struct {
 	config *Config
@@ -109,6 +116,14 @@ func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) (*BlockTracke
 	b.sub = b.subscribe()
 
 	return b, nil
+}
+
+// Header returns the last block of the tracked chain
+func (b *BlockTracker) Header() *ethgo.Block {
+	b.lock.Lock()
+	last := b.blocks[len(b.blocks)-1].Copy()
+	b.lock.Unlock()
+	return last
 }
 
 func (b *BlockTracker) Close() error {
