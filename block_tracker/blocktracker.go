@@ -79,9 +79,6 @@ type BlockTracker struct {
 
 	// provider is a reference to the Ethereum API (JsonRPC)
 	provider BlockProvider
-
-	// closeCh is a channel to close the tracker
-	closeCh chan struct{}
 }
 
 func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) (*BlockTracker, error) {
@@ -100,7 +97,6 @@ func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) (*BlockTracke
 		headTracker: tracker,
 		provider:    provider,
 		stream:      newBlockStream(),
-		closeCh:     make(chan struct{}),
 	}
 
 	// add an initial block
@@ -126,17 +122,7 @@ func (b *BlockTracker) Header() *ethgo.Block {
 	return last
 }
 
-func (b *BlockTracker) Close() error {
-	close(b.closeCh)
-	return nil
-}
-
-func (b *BlockTracker) Start() error {
-	ctx, cancelFn := context.WithCancel(context.Background())
-	go func() {
-		<-b.closeCh
-		cancelFn()
-	}()
+func (b *BlockTracker) Start(ctx context.Context) error {
 	// start the polling
 	err := b.headTracker.Track(ctx, func(block *ethgo.Block) error {
 		return b.HandleReconcile(block)

@@ -249,7 +249,7 @@ func TestBlockTracker_Lifecycle(t *testing.T) {
 	tr, err := NewBlockTracker(c.Eth())
 	require.NoError(t, err)
 
-	go tr.Start()
+	go tr.Start(context.Background())
 
 	sub := tr.subscribe()
 
