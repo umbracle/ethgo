@@ -64,6 +64,9 @@ type BlockTracker struct {
 	// stream handles a lock-free stream of blocks
 	stream *blockStream
 
+	// sub is the local subscription of the blocktracker
+	sub *subscription
+
 	// headTracker tracks the head of the chain
 	headTracker BlockTrackerInterface
 
@@ -101,6 +104,10 @@ func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) (*BlockTracke
 	if err := b.HandleReconcile(initial); err != nil {
 		return nil, err
 	}
+
+	// create the subscription
+	b.sub = b.subscribe()
+
 	return b, nil
 }
 
@@ -248,21 +255,29 @@ func (t *BlockTracker) handleReconcileImpl(block *ethgo.Block) ([]*ethgo.Block, 
 	return blocks, indx, nil
 }
 
-func (b *BlockTracker) Subscribe() *Subscription {
-	return &Subscription{last: b.stream.Head()}
+func (b *BlockTracker) subscribe() *subscription {
+	return &subscription{last: b.stream.Head()}
 }
 
-type Subscription struct {
+func (b *BlockTracker) Flush() *BlockEvent {
+	return b.sub.Flush()
+}
+
+func (b *BlockTracker) Next(ctx context.Context) (*BlockEvent, error) {
+	return b.sub.Next(ctx)
+}
+
+type subscription struct {
 	last *headElem
 }
 
-func (s *Subscription) Flush() *BlockEvent {
+func (s *subscription) Flush() *BlockEvent {
 	elem := s.last.flush()
 	s.last = elem
 	return elem.event
 }
 
-func (s *Subscription) Next(ctx context.Context) (*BlockEvent, error) {
+func (s *subscription) Next(ctx context.Context) (*BlockEvent, error) {
 	elem, err := s.last.next(ctx)
 	if err != nil {
 		return nil, err

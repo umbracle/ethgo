@@ -251,7 +251,7 @@ func TestBlockTracker_Lifecycle(t *testing.T) {
 
 	go tr.Start()
 
-	sub := tr.Subscribe()
+	sub := tr.subscribe()
 
 	last, err := sub.Next(context.Background())
 	require.NoError(t, err)
