@@ -20,13 +20,11 @@ func TestContract_Signatures(t *testing.T) {
 	ReadTestCase(t, "contract-signatures", &signatures)
 
 	for _, c := range signatures {
-		t.Run(c.Name, func(t *testing.T) {
-			m, err := abi.NewMethod(c.Signature)
-			assert.NoError(t, err)
+		m, err := abi.NewMethod(c.Signature)
+		assert.NoError(t, err)
 
-			sigHash := "0x" + hex.EncodeToString(m.ID())
-			assert.Equal(t, sigHash, c.SigHash)
-		})
+		sigHash := "0x" + hex.EncodeToString(m.ID())
+		assert.Equal(t, sigHash, c.SigHash)
 	}
 }
 
