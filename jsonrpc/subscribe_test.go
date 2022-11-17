@@ -11,7 +11,7 @@ import (
 )
 
 func TestSubscribeNewHead(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		if strings.HasPrefix(addr, "http") {
 			return
 		}

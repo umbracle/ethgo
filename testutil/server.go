@@ -44,7 +44,7 @@ func getOpenPort() string {
 }
 
 // MultiAddr creates new servers to test different addresses
-func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr string)) {
+func MultiAddr(t *testing.T, c func(s *TestServer, addr string)) {
 	s := NewTestServer(t)
 
 	// http addr
@@ -285,7 +285,7 @@ func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
 		if receipt != nil {
 			break
 		}
-		if count > 100 {
+		if count > 300 {
 			return nil, fmt.Errorf("timeout")
 		}
 		time.Sleep(500 * time.Millisecond)

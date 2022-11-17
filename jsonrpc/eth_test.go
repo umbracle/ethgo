@@ -20,7 +20,7 @@ var (
 )
 
 func TestEthAccounts(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -30,7 +30,7 @@ func TestEthAccounts(t *testing.T) {
 }
 
 func TestEthBlockNumber(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -140,7 +140,7 @@ func TestEthGetBlockByNumber(t *testing.T) {
 }
 
 func TestEthGetBlockByHash(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -157,7 +157,7 @@ func TestEthGetBlockByHash(t *testing.T) {
 }
 
 func TestEthGasPrice(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -264,7 +264,7 @@ func TestEthGetLogs(t *testing.T) {
 }
 
 func TestEthChainID(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
