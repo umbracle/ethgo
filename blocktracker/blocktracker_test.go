@@ -26,15 +26,20 @@ func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTracke
 		t.Fatal(err)
 	}
 
+	var lastBlock *ethgo.Block
 	count := uint64(0)
 	recv := func() {
 		count++
 
 		select {
 		case block := <-blocks:
-			if block.Number != count {
-				t.Fatal("bad number")
+			if lastBlock != nil {
+				if lastBlock.Number+1 != block.Number {
+					t.Fatal("bad sequence")
+				}
 			}
+			lastBlock = block
+
 		case <-time.After(4 * time.Second):
 			t.Fatal("timeout")
 		}
@@ -48,8 +53,7 @@ func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTracke
 }
 
 func TestBlockTracker_Listener_JsonRPC(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 	defer c.Close()
@@ -61,8 +65,7 @@ func TestBlockTracker_Listener_JsonRPC(t *testing.T) {
 }
 
 func TestBlockTracker_Listener_Websocket(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := jsonrpc.NewClient(s.WSAddr())
 	defer c.Close()
@@ -76,16 +79,21 @@ func TestBlockTracker_Listener_Websocket(t *testing.T) {
 }
 
 func TestBlockTracker_Lifecycle(t *testing.T) {
-	s := testutil.NewTestServer(t, func(c *testutil.TestServerConfig) {
-		c.Period = 1
-	})
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 	tr := NewBlockTracker(c.Eth())
 	assert.NoError(t, tr.Init())
 
 	go tr.Start()
+
+	// try to mine a block at least every 1 second
+	go func() {
+		for {
+			s.ProcessBlock()
+			time.After(1 * time.Second)
+		}
+	}()
 
 	sub := tr.Subscribe()
 	for i := 0; i < 10; i++ {

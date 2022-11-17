@@ -33,8 +33,7 @@ func TestContract_Signatures(t *testing.T) {
 func TestContract_Interface(t *testing.T) {
 	t.Skip()
 
-	server := testutil.NewTestServer(t, nil)
-	defer server.Close()
+	server := testutil.NewTestServer(t)
 
 	var calls []struct {
 		Name      string         `json:"name"`
@@ -46,29 +45,27 @@ func TestContract_Interface(t *testing.T) {
 	ReadTestCase(t, "contract-interface", &calls)
 
 	for _, c := range calls {
-		t.Run(c.Name, func(t *testing.T) {
-			a, err := abi.NewABI(c.Interface)
-			assert.NoError(t, err)
+		a, err := abi.NewABI(c.Interface)
+		assert.NoError(t, err)
 
-			method := a.GetMethod("test")
+		method := a.GetMethod("test")
 
-			receipt, err := server.SendTxn(&ethgo.Transaction{
-				Input: c.Bytecode.Bytes(),
-			})
-			assert.NoError(t, err)
-
-			outputRaw, err := server.Call(&ethgo.CallMsg{
-				To:   &receipt.ContractAddress,
-				Data: method.ID(),
-			})
-			assert.NoError(t, err)
-
-			output, err := hex.DecodeString(outputRaw[2:])
-			assert.NoError(t, err)
-
-			_, err = method.Decode(output)
-			assert.NoError(t, err)
+		receipt, err := server.SendTxn(&ethgo.Transaction{
+			Input: c.Bytecode.Bytes(),
 		})
+		assert.NoError(t, err)
+
+		outputRaw, err := server.Call(&ethgo.CallMsg{
+			To:   &receipt.ContractAddress,
+			Data: method.ID(),
+		})
+		assert.NoError(t, err)
+
+		output, err := hex.DecodeString(outputRaw[2:])
+		assert.NoError(t, err)
+
+		_, err = method.Decode(output)
+		assert.NoError(t, err)
 	}
 
 }

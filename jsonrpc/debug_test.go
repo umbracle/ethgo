@@ -8,9 +8,7 @@ import (
 )
 
 func TestDebug_TraceTransaction(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
-
+	s := testutil.NewTestServer(t)
 	c, _ := NewClient(s.HTTPAddr())
 
 	cc := &testutil.Contract{}

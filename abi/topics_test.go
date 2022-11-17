@@ -53,8 +53,7 @@ func TestTopicEncoding(t *testing.T) {
 }
 
 func TestIntegrationTopics(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	type field struct {
 		typ    string

@@ -45,7 +45,7 @@ func getOpenPort() string {
 
 // MultiAddr creates new servers to test different addresses
 func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr string)) {
-	s := NewTestServer(t, cb)
+	s := NewTestServer(t)
 
 	// http addr
 	c(s, s.HTTPAddr())
@@ -56,7 +56,7 @@ func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr
 	// ip addr
 	// c(s, s.IPCPath())
 
-	s.Close()
+	// s.Close()
 }
 
 // TestServerConfig is the configuration of the server
@@ -69,17 +69,14 @@ type ServerConfigCallback func(c *TestServerConfig)
 
 // TestServer is a Geth test server
 type TestServer struct {
-	pool     *dockertest.Pool
-	resource *dockertest.Resource
-	config   *TestServerConfig
-	tmpDir   string
+	addr     string
 	accounts []ethgo.Address
 	client   *ethClient
 	t        *testing.T
 }
 
-// NewTestServer creates a new Geth test server
-func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
+// DeployTestServer creates a new Geth test server
+func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 	tmpDir, err := ioutil.TempDir("/tmp", "geth-")
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -130,25 +127,37 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 		t.Fatalf("Could not start go-ethereum: %s", err)
 	}
 
-	server := &TestServer{
-		t:        t,
-		pool:     pool,
-		tmpDir:   tmpDir,
-		resource: resource,
-		config:   config,
+	closeFn := func() {
+		if err := pool.Purge(resource); err != nil {
+			t.Fatalf("Could not purge geth: %s", err)
+		}
 	}
+
+	addr := resource.Container.NetworkSettings.IPAddress
 
 	if err := pool.Retry(func() error {
-		return testHTTPEndpoint(server.HTTPAddr())
+		return testHTTPEndpoint(addr)
 	}); err != nil {
-		server.Close()
+		closeFn()
 	}
 
-	server.client = &ethClient{server.HTTPAddr()}
+	t.Cleanup(func() {
+		closeFn()
+	})
+
+	return NewTestServer(t)
+}
+
+func NewTestServer(t *testing.T) *TestServer {
+	addr := "http://127.0.0.1:8545"
+	server := &TestServer{
+		t: t,
+	}
+
+	server.client = &ethClient{addr}
 	if err := server.client.call("eth_accounts", &server.accounts); err != nil {
 		t.Fatal(err)
 	}
-
 	return server
 }
 
@@ -159,17 +168,18 @@ func (t *TestServer) Account(i int) ethgo.Address {
 
 // IPCPath returns the ipc endpoint
 func (t *TestServer) IPCPath() string {
-	return t.tmpDir + "/geth.ipc"
+	return ""
+	// return t.tmpDir + "/geth.ipc"
 }
 
 // WSAddr returns the websocket endpoint
 func (t *TestServer) WSAddr() string {
-	return fmt.Sprintf("ws://%s:8546", t.resource.Container.NetworkSettings.IPAddress)
+	return fmt.Sprintf("ws://localhost:8546")
 }
 
 // HTTPAddr returns the http endpoint
 func (t *TestServer) HTTPAddr() string {
-	return fmt.Sprintf("http://%s:8545", t.resource.Container.NetworkSettings.IPAddress)
+	return fmt.Sprintf("http://localhost:8545")
 }
 
 // ProcessBlock processes a new block
@@ -299,15 +309,7 @@ func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Addr
 }
 
 func (t *TestServer) exit(err error) {
-	t.Close()
 	t.t.Fatal(err)
-}
-
-// Close closes the server
-func (t *TestServer) Close() {
-	if err := t.pool.Purge(t.resource); err != nil {
-		t.t.Fatalf("Could not purge geth: %s", err)
-	}
 }
 
 // Simple jsonrpc client to avoid cycle dependencies

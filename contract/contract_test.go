@@ -19,8 +19,7 @@ var (
 )
 
 func TestContract_NoInput(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	cc := &testutil.Contract{}
 	cc.AddOutputCaller("set")
@@ -49,8 +48,7 @@ func TestContract_NoInput(t *testing.T) {
 }
 
 func TestContract_IO(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	cc := &testutil.Contract{}
 	cc.AddDualCaller("setA", "address", "uint256")
@@ -70,8 +68,7 @@ func TestContract_IO(t *testing.T) {
 }
 
 func TestContract_From(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	cc := &testutil.Contract{}
 	cc.AddCallback(func() string {
@@ -94,8 +91,7 @@ func TestContract_From(t *testing.T) {
 }
 
 func TestContract_Deploy(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
@@ -133,8 +129,7 @@ func TestContract_Deploy(t *testing.T) {
 }
 
 func TestContract_Transaction(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
@@ -166,8 +161,7 @@ func TestContract_Transaction(t *testing.T) {
 }
 
 func TestContract_CallAtBlock(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
@@ -225,8 +219,7 @@ func TestContract_CallAtBlock(t *testing.T) {
 }
 
 func TestContract_SendValueContractCall(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	key, _ := wallet.GenerateKey()
 	s.Fund(key.Address())
@@ -264,8 +257,7 @@ func TestContract_SendValueContractCall(t *testing.T) {
 }
 
 func TestContract_EIP1559(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	key, _ := wallet.GenerateKey()
 	s.Fund(key.Address())

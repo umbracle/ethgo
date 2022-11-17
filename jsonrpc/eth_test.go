@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/testutil"
 	"github.com/umbracle/ethgo/wallet"
@@ -29,24 +30,28 @@ func TestEthAccounts(t *testing.T) {
 }
 
 func TestEthBlockNumber(t *testing.T) {
-	i := uint64(0)
 	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
-		for count := 0; count < 10; count, i = count+1, i+1 {
-			num, err := c.Eth().BlockNumber()
-			assert.NoError(t, err)
-			assert.Equal(t, num, i)
-			assert.NoError(t, s.ProcessBlock())
-			count++
+		num, err := c.Eth().BlockNumber()
+		require.NoError(t, err)
+
+		for i := 0; i < 10; i++ {
+			require.NoError(t, s.ProcessBlock())
+
+			// since it is concurrent, we cannot ensure sequential numbers
+			newNum, err := c.Eth().BlockNumber()
+			require.NoError(t, err)
+			require.Greater(t, newNum, num)
+
+			num = newNum
 		}
 	})
 }
 
 func TestEthGetCode(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -70,8 +75,7 @@ func TestEthGetCode(t *testing.T) {
 }
 
 func TestEthGetBalance(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -117,8 +121,7 @@ func TestEthGetBalance(t *testing.T) {
 }
 
 func TestEthGetBlockByNumber(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -126,18 +129,14 @@ func TestEthGetBlockByNumber(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, block.Number, uint64(0))
 
-	// block 1 has not been processed yet, do not fail but returns nil
-	block, err = c.Eth().GetBlockByNumber(1, true)
+	// query a non-sealed block block 1 has not been processed yet
+	// it does not fail but returns nil
+	latest, err := c.Eth().BlockNumber()
+	require.NoError(t, err)
+
+	block, err = c.Eth().GetBlockByNumber(ethgo.BlockNumber(latest+10000), true)
 	assert.NoError(t, err)
 	assert.Nil(t, block)
-
-	// process a new block
-	assert.NoError(t, s.ProcessBlock())
-
-	// there exists a block 1 now
-	block, err = c.Eth().GetBlockByNumber(1, true)
-	assert.NoError(t, err)
-	assert.Equal(t, block.Number, uint64(1))
 }
 
 func TestEthGetBlockByHash(t *testing.T) {
@@ -168,8 +167,7 @@ func TestEthGasPrice(t *testing.T) {
 }
 
 func TestEthSendTransaction(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -196,8 +194,7 @@ func TestEthSendTransaction(t *testing.T) {
 }
 
 func TestEthEstimateGas(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -230,8 +227,7 @@ func TestEthEstimateGas(t *testing.T) {
 }
 
 func TestEthGetLogs(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -279,14 +275,9 @@ func TestEthChainID(t *testing.T) {
 }
 
 func TestEthGetNonce(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
-
-	num, err := c.Eth().GetNonce(s.Account(0), ethgo.Latest)
-	assert.NoError(t, err)
-	assert.Equal(t, num, uint64(0))
 
 	receipt, err := s.ProcessBlockWithReceipt()
 	assert.NoError(t, err)
@@ -298,15 +289,14 @@ func TestEthGetNonce(t *testing.T) {
 		ethgo.BlockNumber(receipt.BlockNumber),
 	}
 	for _, ca := range cases {
-		num, err = c.Eth().GetNonce(s.Account(0), ca)
+		num, err := c.Eth().GetNonce(s.Account(0), ca)
 		assert.NoError(t, err)
-		assert.Equal(t, num, uint64(1))
+		assert.NotEqual(t, num, uint64(0))
 	}
 }
 
 func TestEthTransactionsInBlock(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -334,8 +324,7 @@ func TestEthTransactionsInBlock(t *testing.T) {
 }
 
 func TestEthGetStorageAt(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
