@@ -150,11 +150,11 @@ func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 
 func NewTestServer(t *testing.T, addrs ...string) *TestServer {
 	var addr string
-	if len(addrs) == 0 {
+	if len(addrs) != 0 {
 		addr = addrs[0]
 	} else {
 		// default address
-		addr = "http://127.0.0.1:8845"
+		addr = "http://127.0.0.1:8545"
 	}
 
 	server := &TestServer{
