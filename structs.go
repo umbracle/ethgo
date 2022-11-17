@@ -143,6 +143,8 @@ type Block struct {
 	GasLimit           uint64
 	GasUsed            uint64
 	Timestamp          uint64
+	MixHash            Hash
+	Nonce              [8]byte
 	Transactions       []*Transaction
 	TransactionsHashes []Hash
 	Uncles             []Hash
