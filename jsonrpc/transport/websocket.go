@@ -167,7 +167,7 @@ func (s *stream) setHandler(id uint64, ack chan *ackMessage) {
 	s.handler[id] = callback
 	s.handlerLock.Unlock()
 
-	s.timer = time.AfterFunc(5*time.Second, func() {
+	s.timer = time.AfterFunc(15*time.Second, func() {
 		s.handlerLock.Lock()
 		delete(s.handler, id)
 		s.handlerLock.Unlock()
