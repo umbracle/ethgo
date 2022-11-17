@@ -41,7 +41,7 @@ func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTracke
 			lastBlock = block
 
 		case <-time.After(4 * time.Second):
-			t.Fatal("timeout")
+			t.Fatal("timeout to receive block tracker block")
 		}
 	}
 

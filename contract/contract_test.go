@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/jsonrpc"
@@ -24,7 +25,8 @@ func TestContract_NoInput(t *testing.T) {
 	cc := &testutil.Contract{}
 	cc.AddOutputCaller("set")
 
-	contract, addr := s.DeployContract(cc)
+	contract, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi0, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
@@ -53,7 +55,8 @@ func TestContract_IO(t *testing.T) {
 	cc := &testutil.Contract{}
 	cc.AddDualCaller("setA", "address", "uint256")
 
-	contract, addr := s.DeployContract(cc)
+	contract, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
@@ -77,7 +80,8 @@ func TestContract_From(t *testing.T) {
 		}`
 	})
 
-	contract, addr := s.DeployContract(cc)
+	contract, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
@@ -139,7 +143,8 @@ func TestContract_Transaction(t *testing.T) {
 	cc.AddEvent(testutil.NewEvent("A").Add("uint256", true))
 	cc.EmitEvent("setA", "A", "1")
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
@@ -179,7 +184,8 @@ func TestContract_CallAtBlock(t *testing.T) {
 		}`
 	})
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
@@ -231,7 +237,8 @@ func TestContract_SendValueContractCall(t *testing.T) {
 		}`
 	})
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
@@ -265,7 +272,8 @@ func TestContract_EIP1559(t *testing.T) {
 	cc := &testutil.Contract{}
 	cc.AddOutputCaller("example")
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)

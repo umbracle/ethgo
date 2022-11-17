@@ -28,7 +28,7 @@ func newWebsocket(url string, headers map[string]string) (Transport, error) {
 }
 
 // ErrTimeout happens when the websocket requests times out
-var ErrTimeout = fmt.Errorf("timeout")
+var ErrTimeout = fmt.Errorf("ws timeout")
 
 type ackMessage struct {
 	buf []byte

@@ -52,7 +52,8 @@ func TestPolling(t *testing.T) {
 	c0.AddEvent(testutil.NewEvent("A").Add("uint256", true).Add("uint256", true))
 	c0.EmitEvent("setA1", "A", "1", "2")
 
-	_, addr0 := s.DeployContract(c0)
+	_, addr0, err := s.DeployContract(c0)
+	require.NoError(t, err)
 
 	// send 5 txns
 	for i := 0; i < 5; i++ {
@@ -85,7 +86,8 @@ EXIT:
 
 	// send another 5 transactions, we have to have another log each time
 	for i := 0; i < 5; i++ {
-		receipt := s.TxnTo(addr0, "setA1")
+		receipt, err := s.TxnTo(addr0, "setA1")
+		require.NoError(t, err)
 
 		select {
 		case evnt := <-tt.EventCh:
@@ -107,19 +109,20 @@ func TestFilterIntegration(t *testing.T) {
 	c0.AddEvent(testutil.NewEvent("A").Add("uint256", true).Add("uint256", true))
 	c0.EmitEvent("setA1", "A", "1", "2")
 
-	_, addr0 := s.DeployContract(c0)
-	_, addr1 := s.DeployContract(c0)
+	_, addr0, err := s.DeployContract(c0)
+	require.NoError(t, err)
 
-	receipts := []*ethgo.Receipt{}
+	_, addr1, err := s.DeployContract(c0)
+	require.NoError(t, err)
+
 	for i := 0; i < 20; i++ {
-		var receipt *ethgo.Receipt
-
 		if i%2 == 0 {
-			receipt = s.TxnTo(addr0, "setA1")
+			_, err := s.TxnTo(addr0, "setA1")
+			require.NoError(t, err)
 		} else {
-			receipt = s.TxnTo(addr1, "setA1")
+			_, err := s.TxnTo(addr1, "setA1")
+			require.NoError(t, err)
 		}
-		receipts = append(receipts, receipt)
 	}
 
 	// filter by address

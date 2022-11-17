@@ -72,7 +72,6 @@ type TestServer struct {
 	addr     string
 	accounts []ethgo.Address
 	client   *ethClient
-	t        *testing.T
 }
 
 // DeployTestServer creates a new Geth test server
@@ -157,9 +156,7 @@ func NewTestServer(t *testing.T, addrs ...string) *TestServer {
 		addr = "http://127.0.0.1:8545"
 	}
 
-	server := &TestServer{
-		t: t,
-	}
+	server := &TestServer{}
 
 	server.client = &ethClient{addr}
 	if err := server.client.call("eth_accounts", &server.accounts); err != nil {
@@ -222,33 +219,24 @@ func (t *TestServer) Call(msg *ethgo.CallMsg) (string, error) {
 	return resp, nil
 }
 
-func (t *TestServer) Fund(address ethgo.Address) *ethgo.Receipt {
+func (t *TestServer) Fund(address ethgo.Address) (*ethgo.Receipt, error) {
 	return t.Transfer(address, big.NewInt(1000000000000000000))
 }
 
-func (t *TestServer) Transfer(address ethgo.Address, value *big.Int) *ethgo.Receipt {
-	receipt, err := t.SendTxn(&ethgo.Transaction{
+func (t *TestServer) Transfer(address ethgo.Address, value *big.Int) (*ethgo.Receipt, error) {
+	return t.SendTxn(&ethgo.Transaction{
 		From:  t.accounts[0],
 		To:    &address,
 		Value: value,
 	})
-	if err != nil {
-		t.t.Fatal(err)
-	}
-	return receipt
 }
 
 // TxnTo sends a transaction to a given method without any arguments
-func (t *TestServer) TxnTo(address ethgo.Address, method string) *ethgo.Receipt {
-	sig := MethodSig(method)
-	receipt, err := t.SendTxn(&ethgo.Transaction{
+func (t *TestServer) TxnTo(address ethgo.Address, method string) (*ethgo.Receipt, error) {
+	return t.SendTxn(&ethgo.Transaction{
 		To:    &address,
-		Input: sig,
+		Input: MethodSig(method),
 	})
-	if err != nil {
-		t.t.Fatal(err)
-	}
-	return receipt
 }
 
 // SendTxn sends a transaction
@@ -286,7 +274,7 @@ func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
 			break
 		}
 		if count > 300 {
-			return nil, fmt.Errorf("timeout")
+			return nil, fmt.Errorf("timeout waiting for receipt")
 		}
 		time.Sleep(500 * time.Millisecond)
 		count++
@@ -295,28 +283,24 @@ func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Address) {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Address, error) {
 	// solcContract := compile(c.Print())
 	solcContract, err := c.Compile()
 	if err != nil {
-		panic(err)
+		return nil, ethgo.Address{}, err
 	}
 	buf, err := hex.DecodeString(solcContract.Bin)
 	if err != nil {
-		panic(err)
+		return nil, ethgo.Address{}, err
 	}
 
 	receipt, err := t.SendTxn(&ethgo.Transaction{
 		Input: buf,
 	})
 	if err != nil {
-		panic(err)
+		return nil, ethgo.Address{}, err
 	}
-	return solcContract, receipt.ContractAddress
-}
-
-func (t *TestServer) exit(err error) {
-	t.t.Fatal(err)
+	return solcContract, receipt.ContractAddress, nil
 }
 
 // Simple jsonrpc client to avoid cycle dependencies

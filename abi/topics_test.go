@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/testutil"
 )
@@ -98,8 +99,11 @@ func TestIntegrationTopics(t *testing.T) {
 		cc.EmitEvent("setA", "A", input...)
 
 		// deploy the contract
-		artifact, addr := s.DeployContract(cc)
-		receipt := s.TxnTo(addr, "setA")
+		artifact, addr, err := s.DeployContract(cc)
+		require.NoError(t, err)
+
+		receipt, err := s.TxnTo(addr, "setA")
+		require.NoError(t, err)
 
 		// read the abi
 		abi, err := NewABI(artifact.Abi)

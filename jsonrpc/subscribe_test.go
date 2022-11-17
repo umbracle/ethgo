@@ -48,7 +48,7 @@ func TestSubscribeNewHead(t *testing.T) {
 
 			case <-time.After(1 * time.Second):
 				if ok {
-					t.Fatal("timeout")
+					t.Fatal("timeout for new head")
 				}
 			}
 		}

@@ -62,7 +62,8 @@ func TestEthGetCode(t *testing.T) {
 	cc.EmitEvent("setA1", "A", addr0.String(), addr1.String())
 	cc.EmitEvent("setA2", "A", addr1.String(), addr0.String())
 
-	_, addr := s.DeployContract(cc)
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	code, err := c.Eth().GetCode(addr, ethgo.Latest)
 	assert.NoError(t, err)
@@ -180,7 +181,8 @@ func TestEthEstimateGas(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Greater(t, gas, uint64(140000))
 
-	_, addr := s.DeployContract(cc)
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	msg := &ethgo.CallMsg{
 		From: s.Account(0),
@@ -206,9 +208,11 @@ func TestEthGetLogs(t *testing.T) {
 	cc.EmitEvent("setA1", "A", addr0.String(), addr1.String())
 	cc.EmitEvent("setA2", "A", addr1.String(), addr0.String())
 
-	_, addr := s.DeployContract(cc)
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
-	r := s.TxnTo(addr, "setA2")
+	r, err := s.TxnTo(addr, "setA2")
+	require.NoError(t, err)
 
 	filter := &ethgo.LogFilter{
 		BlockHash: &r.BlockHash,
@@ -309,8 +313,11 @@ func TestEthGetStorageAt(t *testing.T) {
 		}`
 	})
 
-	_, addr := s.DeployContract(cc)
-	receipt := s.TxnTo(addr, "setValue")
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
+
+	receipt, err := s.TxnTo(addr, "setValue")
+	require.NoError(t, err)
 
 	cases := []ethgo.BlockNumberOrHash{
 		ethgo.Latest,
