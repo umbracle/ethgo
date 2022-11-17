@@ -51,7 +51,7 @@ func MultiAddr(t *testing.T, c func(s *TestServer, addr string)) {
 	c(s, s.HTTPAddr())
 
 	// ws addr
-	c(s, s.WSAddr())
+	// c(s, s.WSAddr())
 
 	// ip addr
 	// c(s, s.IPCPath())

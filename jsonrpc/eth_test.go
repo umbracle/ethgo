@@ -271,27 +271,35 @@ func TestEthTransactionsInBlock(t *testing.T) {
 
 	c, _ := NewClient(s.HTTPAddr())
 
+	// block 0 does not have transactions
 	_, err := c.Eth().GetBlockByNumber(0, false)
 	assert.NoError(t, err)
 
 	// Process a block with a transaction
 	assert.NoError(t, s.ProcessBlock())
 
+	latest, err := c.Eth().BlockNumber()
+	require.NoError(t, err)
+
+	num := ethgo.BlockNumber(latest)
+
 	// get a non-full block
-	block0, err := c.Eth().GetBlockByNumber(1, false)
+	block0, err := c.Eth().GetBlockByNumber(num, false)
 	assert.NoError(t, err)
 
-	assert.Len(t, block0.TransactionsHashes, 1)
-	assert.Len(t, block0.Transactions, 0)
+	assert.NotEmpty(t, block0.TransactionsHashes, 1)
+	assert.Empty(t, block0.Transactions, 0)
 
 	// get a full block
-	block1, err := c.Eth().GetBlockByNumber(1, true)
+	block1, err := c.Eth().GetBlockByNumber(num, true)
 	assert.NoError(t, err)
 
-	assert.Len(t, block1.TransactionsHashes, 0)
-	assert.Len(t, block1.Transactions, 1)
+	assert.Empty(t, block1.TransactionsHashes, 0)
+	assert.NotEmpty(t, block1.Transactions, 1)
 
-	assert.Equal(t, block0.TransactionsHashes[0], block1.Transactions[0].Hash)
+	for indx := range block0.TransactionsHashes {
+		assert.Equal(t, block0.TransactionsHashes[indx], block1.Transactions[indx].Hash)
+	}
 }
 
 func TestEthGetStorageAt(t *testing.T) {
