@@ -41,7 +41,7 @@ func TestSubscribeNewHead(t *testing.T) {
 				}
 				if lastBlock != nil {
 					if lastBlock.Number+1 != block.Number {
-						t.Fatal("bad sequence")
+						t.Fatalf("bad sequence %d %d", lastBlock.Number, block.Number)
 					}
 				}
 				lastBlock = &block
