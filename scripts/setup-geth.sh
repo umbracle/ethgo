@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start geth test server
-docker run --name geth-test -d -p 8545:8545 ethereum/client-go:v1.10.15 \
+docker run --name geth-test -d -p 8545:8545 -p 8546:8546 ethereum/client-go:v1.10.15 \
     --dev \
     --datadir /eth1data \
     --ipcpath /eth1data/geth.ipc \
