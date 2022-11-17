@@ -44,19 +44,19 @@ func getOpenPort() string {
 }
 
 // MultiAddr creates new servers to test different addresses
-func MultiAddr(t *testing.T, cb ServerConfigCallback, c func(s *TestServer, addr string)) {
-	s := NewTestServer(t, cb)
+func MultiAddr(t *testing.T, c func(s *TestServer, addr string)) {
+	s := NewTestServer(t)
 
 	// http addr
 	c(s, s.HTTPAddr())
 
 	// ws addr
-	c(s, s.WSAddr())
+	// c(s, s.WSAddr())
 
 	// ip addr
 	// c(s, s.IPCPath())
 
-	s.Close()
+	// s.Close()
 }
 
 // TestServerConfig is the configuration of the server
@@ -69,17 +69,13 @@ type ServerConfigCallback func(c *TestServerConfig)
 
 // TestServer is a Geth test server
 type TestServer struct {
-	pool     *dockertest.Pool
-	resource *dockertest.Resource
-	config   *TestServerConfig
-	tmpDir   string
+	addr     string
 	accounts []ethgo.Address
 	client   *ethClient
-	t        *testing.T
 }
 
-// NewTestServer creates a new Geth test server
-func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
+// DeployTestServer creates a new Geth test server
+func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 	tmpDir, err := ioutil.TempDir("/tmp", "geth-")
 	if err != nil {
 		t.Fatalf("err: %s", err)
@@ -130,25 +126,42 @@ func NewTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 		t.Fatalf("Could not start go-ethereum: %s", err)
 	}
 
-	server := &TestServer{
-		t:        t,
-		pool:     pool,
-		tmpDir:   tmpDir,
-		resource: resource,
-		config:   config,
+	closeFn := func() {
+		if err := pool.Purge(resource); err != nil {
+			t.Fatalf("Could not purge geth: %s", err)
+		}
 	}
+
+	addr := resource.Container.NetworkSettings.IPAddress
 
 	if err := pool.Retry(func() error {
-		return testHTTPEndpoint(server.HTTPAddr())
+		return testHTTPEndpoint(addr)
 	}); err != nil {
-		server.Close()
+		closeFn()
 	}
 
-	server.client = &ethClient{server.HTTPAddr()}
+	t.Cleanup(func() {
+		closeFn()
+	})
+
+	return NewTestServer(t)
+}
+
+func NewTestServer(t *testing.T, addrs ...string) *TestServer {
+	var addr string
+	if len(addrs) != 0 {
+		addr = addrs[0]
+	} else {
+		// default address
+		addr = "http://127.0.0.1:8545"
+	}
+
+	server := &TestServer{}
+
+	server.client = &ethClient{addr}
 	if err := server.client.call("eth_accounts", &server.accounts); err != nil {
 		t.Fatal(err)
 	}
-
 	return server
 }
 
@@ -159,17 +172,18 @@ func (t *TestServer) Account(i int) ethgo.Address {
 
 // IPCPath returns the ipc endpoint
 func (t *TestServer) IPCPath() string {
-	return t.tmpDir + "/geth.ipc"
+	return ""
+	// return t.tmpDir + "/geth.ipc"
 }
 
 // WSAddr returns the websocket endpoint
 func (t *TestServer) WSAddr() string {
-	return fmt.Sprintf("ws://%s:8546", t.resource.Container.NetworkSettings.IPAddress)
+	return fmt.Sprintf("ws://localhost:8546")
 }
 
 // HTTPAddr returns the http endpoint
 func (t *TestServer) HTTPAddr() string {
-	return fmt.Sprintf("http://%s:8545", t.resource.Container.NetworkSettings.IPAddress)
+	return fmt.Sprintf("http://localhost:8545")
 }
 
 // ProcessBlock processes a new block
@@ -205,33 +219,24 @@ func (t *TestServer) Call(msg *ethgo.CallMsg) (string, error) {
 	return resp, nil
 }
 
-func (t *TestServer) Fund(address ethgo.Address) *ethgo.Receipt {
+func (t *TestServer) Fund(address ethgo.Address) (*ethgo.Receipt, error) {
 	return t.Transfer(address, big.NewInt(1000000000000000000))
 }
 
-func (t *TestServer) Transfer(address ethgo.Address, value *big.Int) *ethgo.Receipt {
-	receipt, err := t.SendTxn(&ethgo.Transaction{
+func (t *TestServer) Transfer(address ethgo.Address, value *big.Int) (*ethgo.Receipt, error) {
+	return t.SendTxn(&ethgo.Transaction{
 		From:  t.accounts[0],
 		To:    &address,
 		Value: value,
 	})
-	if err != nil {
-		t.t.Fatal(err)
-	}
-	return receipt
 }
 
 // TxnTo sends a transaction to a given method without any arguments
-func (t *TestServer) TxnTo(address ethgo.Address, method string) *ethgo.Receipt {
-	sig := MethodSig(method)
-	receipt, err := t.SendTxn(&ethgo.Transaction{
+func (t *TestServer) TxnTo(address ethgo.Address, method string) (*ethgo.Receipt, error) {
+	return t.SendTxn(&ethgo.Transaction{
 		To:    &address,
-		Input: sig,
+		Input: MethodSig(method),
 	})
-	if err != nil {
-		t.t.Fatal(err)
-	}
-	return receipt
 }
 
 // SendTxn sends a transaction
@@ -268,8 +273,8 @@ func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
 		if receipt != nil {
 			break
 		}
-		if count > 100 {
-			return nil, fmt.Errorf("timeout")
+		if count > 300 {
+			return nil, fmt.Errorf("timeout waiting for receipt")
 		}
 		time.Sleep(500 * time.Millisecond)
 		count++
@@ -278,36 +283,24 @@ func (t *TestServer) WaitForReceipt(hash ethgo.Hash) (*ethgo.Receipt, error) {
 }
 
 // DeployContract deploys a contract with account 0 and returns the address
-func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Address) {
+func (t *TestServer) DeployContract(c *Contract) (*compiler.Artifact, ethgo.Address, error) {
 	// solcContract := compile(c.Print())
 	solcContract, err := c.Compile()
 	if err != nil {
-		panic(err)
+		return nil, ethgo.Address{}, err
 	}
 	buf, err := hex.DecodeString(solcContract.Bin)
 	if err != nil {
-		panic(err)
+		return nil, ethgo.Address{}, err
 	}
 
 	receipt, err := t.SendTxn(&ethgo.Transaction{
 		Input: buf,
 	})
 	if err != nil {
-		panic(err)
+		return nil, ethgo.Address{}, err
 	}
-	return solcContract, receipt.ContractAddress
-}
-
-func (t *TestServer) exit(err error) {
-	t.Close()
-	t.t.Fatal(err)
-}
-
-// Close closes the server
-func (t *TestServer) Close() {
-	if err := t.pool.Purge(t.resource); err != nil {
-		t.t.Fatalf("Could not purge geth: %s", err)
-	}
+	return solcContract, receipt.ContractAddress, nil
 }
 
 // Simple jsonrpc client to avoid cycle dependencies

@@ -11,11 +11,7 @@ import (
 )
 
 func TestSubscribeNewHead(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
-
-	count := uint64(0)
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		if strings.HasPrefix(addr, "http") {
 			return
 		}
@@ -31,9 +27,8 @@ func TestSubscribeNewHead(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		var lastBlock *ethgo.Block
 		recv := func(ok bool) {
-			count++
-
 			select {
 			case buf := <-data:
 				if !ok {
@@ -44,13 +39,16 @@ func TestSubscribeNewHead(t *testing.T) {
 				if err := block.UnmarshalJSON(buf); err != nil {
 					t.Fatal(err)
 				}
-				if block.Number != count {
-					t.Fatal("bad")
+				if lastBlock != nil {
+					if lastBlock.Number+1 != block.Number {
+						t.Fatalf("bad sequence %d %d", lastBlock.Number, block.Number)
+					}
 				}
+				lastBlock = &block
 
 			case <-time.After(1 * time.Second):
 				if ok {
-					t.Fatal("timeout")
+					t.Fatal("timeout for new head")
 				}
 			}
 		}

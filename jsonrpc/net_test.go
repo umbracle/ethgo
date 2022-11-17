@@ -8,7 +8,7 @@ import (
 )
 
 func TestNetVersion(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -18,7 +18,7 @@ func TestNetVersion(t *testing.T) {
 }
 
 func TestNetListening(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -29,7 +29,7 @@ func TestNetListening(t *testing.T) {
 }
 
 func TestNetPeerCount(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 

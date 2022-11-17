@@ -34,49 +34,47 @@ func TestTransactions(t *testing.T) {
 	ReadTestCase(t, "transactions", &transactions)
 
 	for _, c := range transactions {
-		t.Run(c.Name, func(t *testing.T) {
-			key, err := wallet.NewWalletFromPrivKey(c.PrivateKey)
-			assert.NoError(t, err)
-			assert.Equal(t, key.Address(), c.AccountAddress)
+		key, err := wallet.NewWalletFromPrivKey(c.PrivateKey)
+		assert.NoError(t, err)
+		assert.Equal(t, key.Address(), c.AccountAddress)
 
-			txn := &ethgo.Transaction{
-				ChainID: big.NewInt(5),
+		txn := &ethgo.Transaction{
+			ChainID: big.NewInt(5),
+		}
+		if c.Data != nil {
+			txn.Input = *c.Data
+		}
+		if c.Value != nil {
+			txn.Value = (*big.Int)(c.Value)
+		}
+		if c.To != nil {
+			txn.To = c.To
+		}
+		if c.GasLimit != nil {
+			gasLimit, isUint64 := getUint64FromBigInt(c.GasLimit)
+			if !isUint64 {
+				return
 			}
-			if c.Data != nil {
-				txn.Input = *c.Data
+			txn.Gas = gasLimit
+		}
+		if c.Nonce != nil {
+			txn.Nonce = c.Nonce.Uint64()
+		}
+		if c.GasPrice != nil {
+			gasPrice, isUint64 := getUint64FromBigInt(c.GasPrice)
+			if !isUint64 {
+				return
 			}
-			if c.Value != nil {
-				txn.Value = (*big.Int)(c.Value)
-			}
-			if c.To != nil {
-				txn.To = c.To
-			}
-			if c.GasLimit != nil {
-				gasLimit, isUint64 := getUint64FromBigInt(c.GasLimit)
-				if !isUint64 {
-					return
-				}
-				txn.Gas = gasLimit
-			}
-			if c.Nonce != nil {
-				txn.Nonce = c.Nonce.Uint64()
-			}
-			if c.GasPrice != nil {
-				gasPrice, isUint64 := getUint64FromBigInt(c.GasPrice)
-				if !isUint64 {
-					return
-				}
-				txn.GasPrice = gasPrice
-			}
+			txn.GasPrice = gasPrice
+		}
 
-			signer := wallet.NewEIP155Signer(5)
-			signedTxn, err := signer.SignTx(txn, key)
-			assert.NoError(t, err)
+		signer := wallet.NewEIP155Signer(5)
+		signedTxn, err := signer.SignTx(txn, key)
+		assert.NoError(t, err)
 
-			txnRaw, err := signedTxn.MarshalRLPTo(nil)
-			assert.NoError(t, err)
-			assert.Equal(t, txnRaw, c.SignedTransaction.Bytes())
-		})
+		txnRaw, err := signedTxn.MarshalRLPTo(nil)
+		assert.NoError(t, err)
+		assert.Equal(t, txnRaw, c.SignedTransaction.Bytes())
 	}
 }
 
@@ -104,53 +102,51 @@ func TestTypedTransactions(t *testing.T) {
 	ReadTestCase(t, "typed-transactions", &transactions)
 
 	for _, c := range transactions {
-		t.Run(c.Name, func(t *testing.T) {
-			key, err := wallet.NewWalletFromPrivKey(c.Key)
-			assert.NoError(t, err)
-			assert.Equal(t, key.Address(), c.AccountAddress)
+		key, err := wallet.NewWalletFromPrivKey(c.Key)
+		assert.NoError(t, err)
+		assert.Equal(t, key.Address(), c.AccountAddress)
 
-			chainID := big.NewInt(int64(c.Tx.ChainID))
+		chainID := big.NewInt(int64(c.Tx.ChainID))
 
-			txn := &ethgo.Transaction{
-				ChainID:              chainID,
-				Type:                 c.Tx.Type,
-				MaxPriorityFeePerGas: (*big.Int)(c.Tx.MaxPriorityFeePerGas),
-				MaxFeePerGas:         (*big.Int)(c.Tx.MaxFeePerGas),
-				AccessList:           c.Tx.AccessList,
+		txn := &ethgo.Transaction{
+			ChainID:              chainID,
+			Type:                 c.Tx.Type,
+			MaxPriorityFeePerGas: (*big.Int)(c.Tx.MaxPriorityFeePerGas),
+			MaxFeePerGas:         (*big.Int)(c.Tx.MaxFeePerGas),
+			AccessList:           c.Tx.AccessList,
+		}
+		if c.Tx.Data != nil {
+			txn.Input = *c.Tx.Data
+		}
+		if c.Tx.Value != nil {
+			txn.Value = (*big.Int)(c.Tx.Value)
+		}
+		if c.Tx.To != nil {
+			txn.To = c.Tx.To
+		}
+		if c.Tx.GasLimit != nil {
+			gasLimit, isUint64 := getUint64FromBigInt(c.Tx.GasLimit)
+			if !isUint64 {
+				return
 			}
-			if c.Tx.Data != nil {
-				txn.Input = *c.Tx.Data
+			txn.Gas = gasLimit
+		}
+		txn.Nonce = c.Tx.Nonce
+		if c.Tx.GasPrice != nil {
+			gasPrice, isUint64 := getUint64FromBigInt(c.Tx.GasPrice)
+			if !isUint64 {
+				return
 			}
-			if c.Tx.Value != nil {
-				txn.Value = (*big.Int)(c.Tx.Value)
-			}
-			if c.Tx.To != nil {
-				txn.To = c.Tx.To
-			}
-			if c.Tx.GasLimit != nil {
-				gasLimit, isUint64 := getUint64FromBigInt(c.Tx.GasLimit)
-				if !isUint64 {
-					return
-				}
-				txn.Gas = gasLimit
-			}
-			txn.Nonce = c.Tx.Nonce
-			if c.Tx.GasPrice != nil {
-				gasPrice, isUint64 := getUint64FromBigInt(c.Tx.GasPrice)
-				if !isUint64 {
-					return
-				}
-				txn.GasPrice = gasPrice
-			}
+			txn.GasPrice = gasPrice
+		}
 
-			signer := wallet.NewEIP155Signer(chainID.Uint64())
-			signedTxn, err := signer.SignTx(txn, key)
-			assert.NoError(t, err)
+		signer := wallet.NewEIP155Signer(chainID.Uint64())
+		signedTxn, err := signer.SignTx(txn, key)
+		assert.NoError(t, err)
 
-			txnRaw, err := signedTxn.MarshalRLPTo(nil)
-			assert.NoError(t, err)
+		txnRaw, err := signedTxn.MarshalRLPTo(nil)
+		assert.NoError(t, err)
 
-			assert.Equal(t, txnRaw, c.Signed.Bytes())
-		})
+		assert.Equal(t, txnRaw, c.Signed.Bytes())
 	}
 }

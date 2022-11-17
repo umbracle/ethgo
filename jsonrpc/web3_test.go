@@ -9,7 +9,7 @@ import (
 )
 
 func TestWeb3ClientVersion(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -19,7 +19,7 @@ func TestWeb3ClientVersion(t *testing.T) {
 }
 
 func TestWeb3Sha3(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 

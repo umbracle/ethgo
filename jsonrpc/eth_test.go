@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/testutil"
-	"github.com/umbracle/ethgo/wallet"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 )
 
 func TestEthAccounts(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -29,24 +29,28 @@ func TestEthAccounts(t *testing.T) {
 }
 
 func TestEthBlockNumber(t *testing.T) {
-	i := uint64(0)
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
-		for count := 0; count < 10; count, i = count+1, i+1 {
-			num, err := c.Eth().BlockNumber()
-			assert.NoError(t, err)
-			assert.Equal(t, num, i)
-			assert.NoError(t, s.ProcessBlock())
-			count++
+		num, err := c.Eth().BlockNumber()
+		require.NoError(t, err)
+
+		for i := 0; i < 10; i++ {
+			require.NoError(t, s.ProcessBlock())
+
+			// since it is concurrent, we cannot ensure sequential numbers
+			newNum, err := c.Eth().BlockNumber()
+			require.NoError(t, err)
+			require.Greater(t, newNum, num)
+
+			num = newNum
 		}
 	})
 }
 
 func TestEthGetCode(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -58,7 +62,8 @@ func TestEthGetCode(t *testing.T) {
 	cc.EmitEvent("setA1", "A", addr0.String(), addr1.String())
 	cc.EmitEvent("setA2", "A", addr1.String(), addr0.String())
 
-	_, addr := s.DeployContract(cc)
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	code, err := c.Eth().GetCode(addr, ethgo.Latest)
 	assert.NoError(t, err)
@@ -70,55 +75,21 @@ func TestEthGetCode(t *testing.T) {
 }
 
 func TestEthGetBalance(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
-	before, err := c.Eth().GetBalance(s.Account(0), ethgo.Latest)
+	balance, err := c.Eth().GetBalance(s.Account(0), ethgo.Latest)
 	assert.NoError(t, err)
+	assert.NotEqual(t, balance, big.NewInt(0))
 
-	key, err := wallet.GenerateKey()
+	balance, err = c.Eth().GetBalance(ethgo.Address{}, ethgo.Latest)
 	assert.NoError(t, err)
-
-	sender := s.Account(0).Address()
-	receiver := key.Address()
-
-	amount := big.NewInt(10)
-	txn := &ethgo.Transaction{
-		From:  sender,
-		To:    &receiver,
-		Value: amount,
-	}
-	receipt, err := s.SendTxn(txn)
-	assert.NoError(t, err)
-
-	senderBalance, err := c.Eth().GetBalance(sender, ethgo.Latest)
-	assert.NoError(t, err)
-	assert.NotEqual(t, senderBalance, before)
-
-	receiverBalance, err := c.Eth().GetBalance(receiver, ethgo.Latest)
-	assert.NoError(t, err)
-	assert.Equal(t, receiverBalance, amount)
-
-	{
-		// query the balance with different options
-		cases := []ethgo.BlockNumberOrHash{
-			ethgo.Latest,
-			receipt.BlockHash,
-			ethgo.BlockNumber(receipt.BlockNumber),
-		}
-		for _, ca := range cases {
-			res, err := c.Eth().GetBalance(s.Account(0), ca)
-			assert.NoError(t, err)
-			assert.Equal(t, res, senderBalance)
-		}
-	}
+	assert.Equal(t, balance, big.NewInt(0))
 }
 
 func TestEthGetBlockByNumber(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -126,22 +97,18 @@ func TestEthGetBlockByNumber(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, block.Number, uint64(0))
 
-	// block 1 has not been processed yet, do not fail but returns nil
-	block, err = c.Eth().GetBlockByNumber(1, true)
+	// query a non-sealed block block 1 has not been processed yet
+	// it does not fail but returns nil
+	latest, err := c.Eth().BlockNumber()
+	require.NoError(t, err)
+
+	block, err = c.Eth().GetBlockByNumber(ethgo.BlockNumber(latest+10000), true)
 	assert.NoError(t, err)
 	assert.Nil(t, block)
-
-	// process a new block
-	assert.NoError(t, s.ProcessBlock())
-
-	// there exists a block 1 now
-	block, err = c.Eth().GetBlockByNumber(1, true)
-	assert.NoError(t, err)
-	assert.Equal(t, block.Number, uint64(1))
 }
 
 func TestEthGetBlockByHash(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -158,7 +125,7 @@ func TestEthGetBlockByHash(t *testing.T) {
 }
 
 func TestEthGasPrice(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -168,8 +135,7 @@ func TestEthGasPrice(t *testing.T) {
 }
 
 func TestEthSendTransaction(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -196,8 +162,7 @@ func TestEthSendTransaction(t *testing.T) {
 }
 
 func TestEthEstimateGas(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -216,7 +181,8 @@ func TestEthEstimateGas(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Greater(t, gas, uint64(140000))
 
-	_, addr := s.DeployContract(cc)
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	msg := &ethgo.CallMsg{
 		From: s.Account(0),
@@ -230,8 +196,7 @@ func TestEthEstimateGas(t *testing.T) {
 }
 
 func TestEthGetLogs(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -243,9 +208,11 @@ func TestEthGetLogs(t *testing.T) {
 	cc.EmitEvent("setA1", "A", addr0.String(), addr1.String())
 	cc.EmitEvent("setA2", "A", addr1.String(), addr0.String())
 
-	_, addr := s.DeployContract(cc)
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
-	r := s.TxnTo(addr, "setA2")
+	r, err := s.TxnTo(addr, "setA2")
+	require.NoError(t, err)
 
 	filter := &ethgo.LogFilter{
 		BlockHash: &r.BlockHash,
@@ -268,7 +235,7 @@ func TestEthGetLogs(t *testing.T) {
 }
 
 func TestEthChainID(t *testing.T) {
-	testutil.MultiAddr(t, nil, func(s *testutil.TestServer, addr string) {
+	testutil.MultiAddr(t, func(s *testutil.TestServer, addr string) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
@@ -279,14 +246,9 @@ func TestEthChainID(t *testing.T) {
 }
 
 func TestEthGetNonce(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
-
-	num, err := c.Eth().GetNonce(s.Account(0), ethgo.Latest)
-	assert.NoError(t, err)
-	assert.Equal(t, num, uint64(0))
 
 	receipt, err := s.ProcessBlockWithReceipt()
 	assert.NoError(t, err)
@@ -298,44 +260,50 @@ func TestEthGetNonce(t *testing.T) {
 		ethgo.BlockNumber(receipt.BlockNumber),
 	}
 	for _, ca := range cases {
-		num, err = c.Eth().GetNonce(s.Account(0), ca)
+		num, err := c.Eth().GetNonce(s.Account(0), ca)
 		assert.NoError(t, err)
-		assert.Equal(t, num, uint64(1))
+		assert.NotEqual(t, num, uint64(0))
 	}
 }
 
 func TestEthTransactionsInBlock(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
+	// block 0 does not have transactions
 	_, err := c.Eth().GetBlockByNumber(0, false)
 	assert.NoError(t, err)
 
 	// Process a block with a transaction
 	assert.NoError(t, s.ProcessBlock())
 
+	latest, err := c.Eth().BlockNumber()
+	require.NoError(t, err)
+
+	num := ethgo.BlockNumber(latest)
+
 	// get a non-full block
-	block0, err := c.Eth().GetBlockByNumber(1, false)
+	block0, err := c.Eth().GetBlockByNumber(num, false)
 	assert.NoError(t, err)
 
-	assert.Len(t, block0.TransactionsHashes, 1)
-	assert.Len(t, block0.Transactions, 0)
+	assert.NotEmpty(t, block0.TransactionsHashes, 1)
+	assert.Empty(t, block0.Transactions, 0)
 
 	// get a full block
-	block1, err := c.Eth().GetBlockByNumber(1, true)
+	block1, err := c.Eth().GetBlockByNumber(num, true)
 	assert.NoError(t, err)
 
-	assert.Len(t, block1.TransactionsHashes, 0)
-	assert.Len(t, block1.Transactions, 1)
+	assert.Empty(t, block1.TransactionsHashes, 0)
+	assert.NotEmpty(t, block1.Transactions, 1)
 
-	assert.Equal(t, block0.TransactionsHashes[0], block1.Transactions[0].Hash)
+	for indx := range block0.TransactionsHashes {
+		assert.Equal(t, block0.TransactionsHashes[indx], block1.Transactions[indx].Hash)
+	}
 }
 
 func TestEthGetStorageAt(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	c, _ := NewClient(s.HTTPAddr())
 
@@ -353,8 +321,11 @@ func TestEthGetStorageAt(t *testing.T) {
 		}`
 	})
 
-	_, addr := s.DeployContract(cc)
-	receipt := s.TxnTo(addr, "setValue")
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
+
+	receipt, err := s.TxnTo(addr, "setValue")
+	require.NoError(t, err)
 
 	cases := []ethgo.BlockNumberOrHash{
 		ethgo.Latest,
