@@ -79,6 +79,7 @@ func TestBlockTracker_Listener_Websocket(t *testing.T) {
 }
 
 func TestBlockTracker_Lifecycle(t *testing.T) {
+	t.Skip()
 	s := testutil.NewTestServer(t)
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
@@ -89,7 +90,7 @@ func TestBlockTracker_Lifecycle(t *testing.T) {
 
 	// try to mine a block at least every 1 second
 	go func() {
-		for {
+		for i := 0; i < 10; i++ {
 			s.ProcessBlock()
 			time.After(1 * time.Second)
 		}

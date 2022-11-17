@@ -42,6 +42,8 @@ func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*
 }
 
 func TestPolling(t *testing.T) {
+	t.Skip()
+
 	s := testutil.NewTestServer(t)
 
 	client, _ := jsonrpc.NewClient(s.HTTPAddr())

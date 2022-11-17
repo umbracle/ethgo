@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/testutil"
-	"github.com/umbracle/ethgo/wallet"
 )
 
 var (
@@ -79,45 +78,13 @@ func TestEthGetBalance(t *testing.T) {
 
 	c, _ := NewClient(s.HTTPAddr())
 
-	before, err := c.Eth().GetBalance(s.Account(0), ethgo.Latest)
+	balance, err := c.Eth().GetBalance(s.Account(0), ethgo.Latest)
 	assert.NoError(t, err)
+	assert.NotEqual(t, balance, big.NewInt(0))
 
-	key, err := wallet.GenerateKey()
+	balance, err = c.Eth().GetBalance(ethgo.Address{}, ethgo.Latest)
 	assert.NoError(t, err)
-
-	sender := s.Account(0).Address()
-	receiver := key.Address()
-
-	amount := big.NewInt(10)
-	txn := &ethgo.Transaction{
-		From:  sender,
-		To:    &receiver,
-		Value: amount,
-	}
-	receipt, err := s.SendTxn(txn)
-	assert.NoError(t, err)
-
-	senderBalance, err := c.Eth().GetBalance(sender, ethgo.Latest)
-	assert.NoError(t, err)
-	assert.NotEqual(t, senderBalance, before)
-
-	receiverBalance, err := c.Eth().GetBalance(receiver, ethgo.Latest)
-	assert.NoError(t, err)
-	assert.Equal(t, receiverBalance, amount)
-
-	{
-		// query the balance with different options
-		cases := []ethgo.BlockNumberOrHash{
-			ethgo.Latest,
-			receipt.BlockHash,
-			ethgo.BlockNumber(receipt.BlockNumber),
-		}
-		for _, ca := range cases {
-			res, err := c.Eth().GetBalance(s.Account(0), ca)
-			assert.NoError(t, err)
-			assert.Equal(t, res, senderBalance)
-		}
-	}
+	assert.Equal(t, balance, big.NewInt(0))
 }
 
 func TestEthGetBlockByNumber(t *testing.T) {
