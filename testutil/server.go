@@ -157,7 +157,9 @@ func NewTestServer(t *testing.T, addrs ...string) *TestServer {
 		addr = "http://127.0.0.1:8545"
 	}
 
-	server := &TestServer{}
+	server := &TestServer{
+		addr: addr,
+	}
 
 	server.client = &ethClient{addr}
 	if err := server.client.call("eth_accounts", &server.accounts); err != nil {
@@ -184,7 +186,7 @@ func (t *TestServer) WSAddr() string {
 
 // HTTPAddr returns the http endpoint
 func (t *TestServer) HTTPAddr() string {
-	return fmt.Sprintf("http://localhost:8545")
+	return fmt.Sprintf(t.addr)
 }
 
 // ProcessBlock processes a new block
