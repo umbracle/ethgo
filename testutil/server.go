@@ -132,7 +132,8 @@ func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 		}
 	}
 
-	addr := resource.Container.NetworkSettings.IPAddress
+	ipAddr := resource.Container.NetworkSettings.IPAddress
+	addr := fmt.Sprintf("http://%s:8545", ipAddr)
 
 	if err := pool.Retry(func() error {
 		return testHTTPEndpoint(addr)
@@ -144,7 +145,7 @@ func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
 		closeFn()
 	})
 
-	return NewTestServer(t)
+	return NewTestServer(t, addr)
 }
 
 func NewTestServer(t *testing.T, addrs ...string) *TestServer {
