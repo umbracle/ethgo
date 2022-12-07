@@ -231,6 +231,15 @@ func (m *Method) Decode(data []byte) (map[string]interface{}, error) {
 	return resp, nil
 }
 
+// MustNewMethod creates a new solidity method object or fails
+func MustNewMethod(name string) *Method {
+	method, err := NewMethod(name)
+	if err != nil {
+		panic(err)
+	}
+	return method
+}
+
 func NewMethod(name string) (*Method, error) {
 	name, inputs, outputs, err := parseMethodSignature(name)
 	if err != nil {
@@ -241,11 +250,14 @@ func NewMethod(name string) (*Method, error) {
 }
 
 var (
-	funcRegexpWithReturn    = regexp.MustCompile(`(\w*)\((.*)\)(.*) returns \((.*)\)`)
-	funcRegexpWithoutReturn = regexp.MustCompile(`(\w*)\((.*)\)(.*)`)
+	funcRegexpWithReturn    = regexp.MustCompile(`(\w*)\s*\((.*)\)(.*)\s*returns\s*\((.*)\)`)
+	funcRegexpWithoutReturn = regexp.MustCompile(`(\w*)\s*\((.*)\)(.*)`)
 )
 
 func parseMethodSignature(name string) (string, *Type, *Type, error) {
+	name = strings.Replace(name, "\n", " ", -1)
+	name = strings.Replace(name, "\t", " ", -1)
+
 	name = strings.TrimPrefix(name, "function ")
 	name = strings.TrimSpace(name)
 

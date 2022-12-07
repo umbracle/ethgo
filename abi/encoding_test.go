@@ -314,11 +314,12 @@ func TestEncoding(t *testing.T) {
 		},
 	}
 
-	server := testutil.NewTestServer(t, nil)
-	defer server.Close()
+	server := testutil.NewTestServer(t)
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
+			t.Parallel()
+
 			tt, err := NewType(c.Type)
 			if err != nil {
 				t.Fatal(err)
@@ -469,8 +470,7 @@ func TestEncodingBestEffort(t *testing.T) {
 		},
 	}
 
-	server := testutil.NewTestServer(t, nil)
-	defer server.Close()
+	server := testutil.NewTestServer(t)
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
@@ -545,8 +545,7 @@ func TestEncodingArguments(t *testing.T) {
 		},
 	}
 
-	server := testutil.NewTestServer(t, nil)
-	defer server.Close()
+	server := testutil.NewTestServer(t)
 
 	for _, c := range cases {
 		t.Run("", func(t *testing.T) {
@@ -610,11 +609,12 @@ func TestRandomEncoding(t *testing.T) {
 		n = 100
 	}
 
-	server := testutil.NewTestServer(t, nil)
-	defer server.Close()
+	server := testutil.NewTestServer(t)
 
 	for i := 0; i < int(n); i++ {
 		t.Run("", func(t *testing.T) {
+			t.Parallel()
+
 			tt := generateRandomArgs(randomInt(1, 4))
 			input := generateRandomType(tt)
 
@@ -682,10 +682,36 @@ func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) 
 }
 
 func TestEncodingStruct(t *testing.T) {
-	typ := MustNewType("tuple(address a, uint256 b)")
+	typ := MustNewType("tuple(address aa, uint256 b)")
 
 	type Obj struct {
-		A ethgo.Address
+		A ethgo.Address `abi:"aa"`
+		B *big.Int
+	}
+	obj := Obj{
+		A: ethgo.Address{0x1},
+		B: big.NewInt(1),
+	}
+
+	encoded, err := typ.Encode(&obj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var obj2 Obj
+	if err := typ.DecodeStruct(encoded, &obj2); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(obj, obj2) {
+		t.Fatal("bad")
+	}
+}
+
+func TestEncodingStruct_camcelCase(t *testing.T) {
+	typ := MustNewType("tuple(address aA, uint256 b)")
+
+	type Obj struct {
+		A ethgo.Address `abi:"aA"`
 		B *big.Int
 	}
 	obj := Obj{

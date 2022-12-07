@@ -9,6 +9,7 @@ import (
 	"github.com/cloudwalk/ethgo"
 	"github.com/cloudwalk/ethgo/testutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTopicEncoding(t *testing.T) {
@@ -53,8 +54,7 @@ func TestTopicEncoding(t *testing.T) {
 }
 
 func TestIntegrationTopics(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	type field struct {
 		typ    string
@@ -99,8 +99,11 @@ func TestIntegrationTopics(t *testing.T) {
 		cc.EmitEvent("setA", "A", input...)
 
 		// deploy the contract
-		artifact, addr := s.DeployContract(cc)
-		receipt := s.TxnTo(addr, "setA")
+		artifact, addr, err := s.DeployContract(cc)
+		require.NoError(t, err)
+
+		receipt, err := s.TxnTo(addr, "setA")
+		require.NoError(t, err)
 
 		// read the abi
 		abi, err := NewABI(artifact.Abi)

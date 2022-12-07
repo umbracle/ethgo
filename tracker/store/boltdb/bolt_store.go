@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/boltdb/bolt"
 	"github.com/cloudwalk/ethgo"
 	"github.com/cloudwalk/ethgo/tracker/store"
+	bolt "go.etcd.io/bbolt"
 )
 
 var _ store.Store = (*BoltStore)(nil)

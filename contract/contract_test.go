@@ -11,6 +11,7 @@ import (
 	"github.com/cloudwalk/ethgo/testutil"
 	"github.com/cloudwalk/ethgo/wallet"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -19,13 +20,13 @@ var (
 )
 
 func TestContract_NoInput(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	cc := &testutil.Contract{}
 	cc.AddOutputCaller("set")
 
-	contract, addr := s.DeployContract(cc)
+	contract, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi0, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
@@ -49,13 +50,13 @@ func TestContract_NoInput(t *testing.T) {
 }
 
 func TestContract_IO(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	cc := &testutil.Contract{}
 	cc.AddDualCaller("setA", "address", "uint256")
 
-	contract, addr := s.DeployContract(cc)
+	contract, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
@@ -70,8 +71,7 @@ func TestContract_IO(t *testing.T) {
 }
 
 func TestContract_From(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	cc := &testutil.Contract{}
 	cc.AddCallback(func() string {
@@ -80,7 +80,8 @@ func TestContract_From(t *testing.T) {
 		}`
 	})
 
-	contract, addr := s.DeployContract(cc)
+	contract, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(contract.Abi)
 	assert.NoError(t, err)
@@ -94,8 +95,7 @@ func TestContract_From(t *testing.T) {
 }
 
 func TestContract_Deploy(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
@@ -133,8 +133,7 @@ func TestContract_Deploy(t *testing.T) {
 }
 
 func TestContract_Transaction(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
@@ -144,7 +143,8 @@ func TestContract_Transaction(t *testing.T) {
 	cc.AddEvent(testutil.NewEvent("A").Add("uint256", true))
 	cc.EmitEvent("setA", "A", "1")
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
@@ -166,8 +166,7 @@ func TestContract_Transaction(t *testing.T) {
 }
 
 func TestContract_CallAtBlock(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
@@ -185,7 +184,8 @@ func TestContract_CallAtBlock(t *testing.T) {
 		}`
 	})
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
@@ -225,8 +225,7 @@ func TestContract_CallAtBlock(t *testing.T) {
 }
 
 func TestContract_SendValueContractCall(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	key, _ := wallet.GenerateKey()
 	s.Fund(key.Address())
@@ -238,7 +237,8 @@ func TestContract_SendValueContractCall(t *testing.T) {
 		}`
 	})
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)
@@ -264,8 +264,7 @@ func TestContract_SendValueContractCall(t *testing.T) {
 }
 
 func TestContract_EIP1559(t *testing.T) {
-	s := testutil.NewTestServer(t, nil)
-	defer s.Close()
+	s := testutil.NewTestServer(t)
 
 	key, _ := wallet.GenerateKey()
 	s.Fund(key.Address())
@@ -273,7 +272,8 @@ func TestContract_EIP1559(t *testing.T) {
 	cc := &testutil.Contract{}
 	cc.AddOutputCaller("example")
 
-	artifact, addr := s.DeployContract(cc)
+	artifact, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
 
 	abi, err := abi.NewABI(artifact.Abi)
 	assert.NoError(t, err)

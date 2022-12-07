@@ -26,7 +26,17 @@ func DecodeStruct(t *Type, input []byte, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err := mapstructure.Decode(val, out); err != nil {
+
+	dc := &mapstructure.DecoderConfig{
+		Result:           out,
+		WeaklyTypedInput: true,
+		TagName:          "abi",
+	}
+	ms, err := mapstructure.NewDecoder(dc)
+	if err != nil {
+		return err
+	}
+	if err = ms.Decode(val); err != nil {
 		return err
 	}
 	return nil
@@ -172,6 +182,10 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 	orig := data
 	origLen := len(orig)
 	for indx, arg := range t.tuple {
+		if len(data) < 32 {
+			return nil, nil, fmt.Errorf("incorrect length")
+		}
+
 		entry := data
 		if arg.Elem.isDynamicType() {
 			offset, err := readOffset(data, origLen)
@@ -224,6 +238,10 @@ func decodeArraySlice(t *Type, data []byte, size int) (interface{}, []byte, erro
 	origLen := len(orig)
 	for indx := 0; indx < size; indx++ {
 		isDynamic := t.elem.isDynamicType()
+
+		if len(data) < 32 {
+			return nil, nil, fmt.Errorf("incorrect length")
+		}
 
 		entry := data
 		if isDynamic {

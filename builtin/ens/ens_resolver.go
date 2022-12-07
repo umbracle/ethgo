@@ -4,6 +4,7 @@ import (
 	"github.com/cloudwalk/ethgo"
 	"github.com/cloudwalk/ethgo/contract"
 	"github.com/cloudwalk/ethgo/jsonrpc"
+	"strings"
 )
 
 type ENSResolver struct {
@@ -17,12 +18,35 @@ func NewENSResolver(addr ethgo.Address, provider *jsonrpc.Client) *ENSResolver {
 
 func (e *ENSResolver) Resolve(addr string, block ...ethgo.BlockNumber) (res ethgo.Address, err error) {
 	addrHash := NameHash(addr)
-	resolverAddr, err := e.e.Resolver(addrHash, block...)
+	resolver, err := e.prepareResolver(addrHash, block...)
 	if err != nil {
 		return
 	}
-
-	resolver := NewResolver(resolverAddr, contract.WithJsonRPC(e.provider))
 	res, err = resolver.Addr(addrHash, block...)
 	return
+}
+
+func addressToReverseDomain(addr ethgo.Address) string {
+	return strings.ToLower(strings.TrimPrefix(addr.String(), "0x")) + ".addr.reverse"
+}
+
+func (e *ENSResolver) ReverseResolve(addr ethgo.Address, block ...ethgo.BlockNumber) (res string, err error) {
+	addrHash := NameHash(addressToReverseDomain(addr))
+
+	resolver, err := e.prepareResolver(addrHash, block...)
+	if err != nil {
+		return
+	}
+	res, err = resolver.Name(addrHash, block...)
+	return
+}
+
+func (e *ENSResolver) prepareResolver(inputHash ethgo.Hash, block ...ethgo.BlockNumber) (*Resolver, error) {
+	resolverAddr, err := e.e.Resolver(inputHash, block...)
+	if err != nil {
+		return nil, err
+	}
+
+	resolver := NewResolver(resolverAddr, contract.WithJsonRPC(e.provider))
+	return resolver, nil
 }

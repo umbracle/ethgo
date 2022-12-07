@@ -7,7 +7,7 @@ var (
 	GitCommit string
 
 	// Version is the main version at the moment.
-	Version = "0.1.2"
+	Version = "0.1.3"
 
 	// VersionPrerelease is a marker for the version.
 	VersionPrerelease = ""

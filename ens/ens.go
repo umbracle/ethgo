@@ -86,3 +86,8 @@ func (e *ENS) Resolve(name string) (ethgo.Address, error) {
 	resolver := ens.NewENSResolver(e.config.Resolver, e.config.Client)
 	return resolver.Resolve(name)
 }
+
+func (e *ENS) ReverseResolve(addr ethgo.Address) (string, error) {
+	resolver := ens.NewENSResolver(e.config.Resolver, e.config.Client)
+	return resolver.ReverseResolve(addr)
+}

@@ -52,6 +52,12 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 	if b.GasUsed, err = decodeUint(v, "gasUsed"); err != nil {
 		return err
 	}
+	if err = decodeHash(&b.MixHash, v, "mixHash"); err != nil {
+		return err
+	}
+	if err = decodeNonce(&b.Nonce, v, "nonce"); err != nil {
+		return err
+	}
 	if b.Timestamp, err = decodeUint(v, "timestamp"); err != nil {
 		return err
 	}
@@ -304,8 +310,22 @@ func (r *Receipt) UnmarshalJSON(buf []byte) error {
 	if r.LogsBloom, err = decodeBytes(r.LogsBloom[:0], v, "logsBloom", 256); err != nil {
 		return err
 	}
-	if r.Status, err = decodeUint(v, "status"); err != nil {
-		return err
+	if v.Exists("status") {
+		// post-byzantium fork
+		if r.Status, err = decodeUint(v, "status"); err != nil {
+			return err
+		}
+	}
+
+	if v.Exists("to") {
+		// Do not decode 'to' if it doesn't exist.
+		if v.Get("to").String() != "null" {
+			var to Address
+			if err = decodeAddr(&to, v, "to"); err != nil {
+				return err
+			}
+			r.To = &to
+		}
 	}
 
 	// logs
@@ -601,6 +621,18 @@ func decodeInt64(v *fastjson.Value, key string) (int64, error) {
 		return 0, fmt.Errorf("field '%s' failed to decode int64: %s", key, str)
 	}
 	return num, nil
+}
+
+func decodeNonce(n *[8]byte, v *fastjson.Value, key string) error {
+	b := v.GetStringBytes(key)
+	if len(b) == 0 {
+		return fmt.Errorf("field '%s' not found", key)
+	}
+
+	if err := unmarshalTextByte(n[:], b, 8); err != nil {
+		return err
+	}
+	return nil
 }
 
 func decodeHash(h *Hash, v *fastjson.Value, key string) error {

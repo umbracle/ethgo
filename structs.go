@@ -143,6 +143,8 @@ type Block struct {
 	GasLimit           uint64
 	GasUsed            uint64
 	Timestamp          uint64
+	MixHash            Hash
+	Nonce              [8]byte
 	Transactions       []*Transaction
 	TransactionsHashes []Hash
 	Uncles             []Hash
@@ -204,6 +206,7 @@ type Transaction struct {
 
 func (t *Transaction) Copy() *Transaction {
 	tt := new(Transaction)
+	*tt = *t
 	if t.To != nil {
 		to := Address(*t.To)
 		tt.To = &to
@@ -224,6 +227,7 @@ func (t *Transaction) Copy() *Transaction {
 	if t.MaxFeePerGas != nil {
 		tt.MaxFeePerGas = new(big.Int).Set(t.MaxFeePerGas)
 	}
+	tt.AccessList = t.AccessList.Copy()
 	return tt
 }
 
@@ -233,6 +237,19 @@ type AccessEntry struct {
 }
 
 type AccessList []AccessEntry
+
+func (a *AccessList) Copy() AccessList {
+	aa := AccessList{}
+	for _, i := range *a {
+		entry := AccessEntry{
+			Address: i.Address,
+			Storage: []Hash{},
+		}
+		entry.Storage = append(entry.Storage, i.Storage...)
+		aa = append(aa, entry)
+	}
+	return aa
+}
 
 type CallMsg struct {
 	From     Address
@@ -277,6 +294,7 @@ type Receipt struct {
 	LogsBloom         []byte
 	Logs              []*Log
 	Status            uint64
+	To                *Address
 }
 
 func (r *Receipt) Copy() *Receipt {
