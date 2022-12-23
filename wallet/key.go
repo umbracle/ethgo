@@ -4,8 +4,10 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"fmt"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
+	btcecdsa "github.com/btcsuite/btcd/btcec/v2/ecdsa"
 	"github.com/umbracle/ethgo"
 )
 
@@ -16,8 +18,8 @@ var _ ethgo.Key = &Key{}
 
 // Key is an implementation of the Key interface with a private key
 type Key struct {
-	priv *ecdsa.PrivateKey
-	pub  *ecdsa.PublicKey
+	priv *btcec.PrivateKey
+	pub  *btcec.PublicKey
 	addr ethgo.Address
 }
 
@@ -34,7 +36,7 @@ func (k *Key) SignMsg(msg []byte) ([]byte, error) {
 }
 
 func (k *Key) Sign(hash []byte) ([]byte, error) {
-	sig, err := btcec.SignCompact(S256, (*btcec.PrivateKey)(k.priv), hash, false)
+	sig, err := btcecdsa.SignCompact(k.priv, hash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -46,12 +48,18 @@ func (k *Key) Sign(hash []byte) ([]byte, error) {
 }
 
 // NewKey creates a new key with a private key
-func NewKey(priv *ecdsa.PrivateKey) *Key {
-	return &Key{
-		priv: priv,
-		pub:  &priv.PublicKey,
-		addr: pubKeyToAddress(&priv.PublicKey),
+func NewKey(prv *ecdsa.PrivateKey) (*Key, error) {
+	var priv btcec.PrivateKey
+	if overflow := priv.Key.SetByteSlice(prv.D.Bytes()); overflow || priv.Key.IsZero() {
+		return nil, fmt.Errorf("invalid key: overflow")
 	}
+
+	k := &Key{
+		priv: &priv,
+		pub:  priv.PubKey(),
+		addr: pubKeyToAddress(priv.PubKey().ToECDSA()),
+	}
+	return k, nil
 }
 
 func pubKeyToAddress(pub *ecdsa.PublicKey) (addr ethgo.Address) {
@@ -66,7 +74,7 @@ func GenerateKey() (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewKey(priv), nil
+	return NewKey(priv)
 }
 
 func EcrecoverMsg(msg, signature []byte) (ethgo.Address, error) {
@@ -89,7 +97,7 @@ func RecoverPubkey(signature, hash []byte) (*ecdsa.PublicKey, error) {
 	}
 
 	sig := append([]byte{term}, signature[:size-1]...)
-	pub, _, err := btcec.RecoverCompact(S256, sig, hash)
+	pub, _, err := btcecdsa.RecoverCompact(sig, hash)
 	if err != nil {
 		return nil, err
 	}

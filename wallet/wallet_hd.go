@@ -6,8 +6,8 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/btcsuite/btcd/btcutil/hdkeychain"
 	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -88,5 +88,5 @@ func NewWalletFromMnemonic(mnemonic string) (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewKey(priv), nil
+	return NewKey(priv)
 }
