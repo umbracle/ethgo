@@ -1,11 +1,11 @@
 package abi
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAbi(t *testing.T) {
@@ -106,12 +106,33 @@ func TestAbi(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(abi, c.Output) {
-				fmt.Println(reflect.DeepEqual(abi.Methods["balanceOf"].Outputs, c.Output.Methods["balanceOf"].Outputs))
 				t.Fatal("bad")
 			}
-
 		})
 	}
+}
+
+func TestAbi_InternalType(t *testing.T) {
+	const abiStr = `[
+        {
+            "inputs": [
+                {
+                    "internalType": "custom_address",
+                    "name": "_to",
+                    "type": "address"
+                }
+			],
+			"outputs": [],
+			"name": "transfer",
+			"type": "function"
+		}
+	]`
+
+	abi, err := NewABI(abiStr)
+	require.NoError(t, err)
+
+	typ := abi.GetMethod("transfer").Inputs
+	require.Equal(t, typ.tuple[0].Elem.InternalType(), "custom_address")
 }
 
 func TestAbi_Polymorphism(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestType(t *testing.T) {
@@ -361,6 +362,30 @@ func TestType(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTypeArgument_InternalFields(t *testing.T) {
+	arg := &ArgumentStr{
+		Type: "tuple",
+		Components: []*ArgumentStr{
+			{
+				Type: "tuple",
+				Components: []*ArgumentStr{
+					{
+						Type:         "int32",
+						InternalType: "c",
+					},
+				},
+				InternalType: "b",
+			},
+		},
+	}
+
+	res, err := NewTypeFromArgument(arg)
+	require.NoError(t, err)
+
+	require.Equal(t, res.tuple[0].Elem.itype, "b")
+	require.Equal(t, res.tuple[0].Elem.tuple[0].Elem.itype, "c")
 }
 
 func TestSize(t *testing.T) {
