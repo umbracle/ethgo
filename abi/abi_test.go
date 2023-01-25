@@ -116,6 +116,21 @@ func TestAbi_InternalType(t *testing.T) {
 	const abiStr = `[
         {
             "inputs": [
+				{
+					"components": [
+						{
+							"internalType": "address",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256[4]",
+							"type": "uint256[4]"
+						}
+					],
+					"internalType": "struct X",
+					"name": "newSet",
+					"type": "tuple[]"
+				},
                 {
                     "internalType": "custom_address",
                     "name": "_to",
@@ -132,7 +147,10 @@ func TestAbi_InternalType(t *testing.T) {
 	require.NoError(t, err)
 
 	typ := abi.GetMethod("transfer").Inputs
-	require.Equal(t, typ.tuple[0].Elem.InternalType(), "custom_address")
+	require.Equal(t, typ.tuple[0].Elem.InternalType(), "struct X")
+	require.Equal(t, typ.tuple[0].Elem.elem.tuple[0].Elem.InternalType(), "address")
+	require.Equal(t, typ.tuple[0].Elem.elem.tuple[1].Elem.InternalType(), "uint256[4]")
+	require.Equal(t, typ.tuple[1].Elem.InternalType(), "custom_address")
 }
 
 func TestAbi_Polymorphism(t *testing.T) {

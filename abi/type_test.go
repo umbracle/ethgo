@@ -369,7 +369,7 @@ func TestTypeArgument_InternalFields(t *testing.T) {
 		Type: "tuple",
 		Components: []*ArgumentStr{
 			{
-				Type: "tuple",
+				Type: "tuple[]",
 				Components: []*ArgumentStr{
 					{
 						Type:         "int32",
@@ -385,7 +385,7 @@ func TestTypeArgument_InternalFields(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, res.tuple[0].Elem.itype, "b")
-	require.Equal(t, res.tuple[0].Elem.tuple[0].Elem.itype, "c")
+	require.Equal(t, res.tuple[0].Elem.elem.tuple[0].Elem.itype, "c")
 }
 
 func TestSize(t *testing.T) {
