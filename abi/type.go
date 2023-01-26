@@ -104,6 +104,7 @@ type Type struct {
 	elem  *Type
 	tuple []*TupleElem
 	t     reflect.Type
+	itype string
 }
 
 func NewTupleType(inputs []*TupleElem) *Type {
@@ -143,6 +144,11 @@ func (t *Type) Decode(input []byte) (interface{}, error) {
 // DecodeStruct decodes an object using this type to the out param
 func (t *Type) DecodeStruct(input []byte, out interface{}) error {
 	return DecodeStruct(t, input, out)
+}
+
+// InternalType returns the internal type
+func (t *Type) InternalType() string {
+	return t.itype
 }
 
 // Encode encodes an object using this type
@@ -280,7 +286,50 @@ func NewTypeFromArgument(arg *ArgumentStr) (*Type, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewType(str)
+	typ, err := NewType(str)
+	if err != nil {
+		return nil, err
+	}
+
+	// fill-in the `internalType` field into the type elems
+	fillIn(typ, arg)
+
+	return typ, nil
+}
+
+func fillIn(typ *Type, arg *ArgumentStr) error {
+	typ.itype = arg.InternalType
+
+	if len(arg.Components) == 0 {
+		// no more items, nothing else to do
+		return nil
+	}
+
+	// tuple types in the ABI with slices are represented as
+	// tuple()[] or tuple()[2]. Thus, there might be element in the components
+	// section of the abi but the next item not be a tuple.
+	for {
+		kind := typ.kind
+		if kind == KindTuple {
+			break
+		}
+		if kind != KindArray && kind != KindSlice {
+			// error
+			return fmt.Errorf("array or slice not found")
+		}
+		typ = typ.Elem()
+	}
+
+	if len(arg.Components) != len(typ.tuple) {
+		// incorrect length
+		return fmt.Errorf("incorrect size")
+	}
+
+	for indx, i := range arg.Components {
+		fillIn(typ.tuple[indx].Elem, i)
+	}
+
+	return nil
 }
 
 // NewType parses a type in string format

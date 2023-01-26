@@ -404,10 +404,11 @@ func buildSignature(name string, typ *Type) string {
 
 // ArgumentStr encodes a type object
 type ArgumentStr struct {
-	Name       string
-	Type       string
-	Indexed    bool
-	Components []*ArgumentStr
+	Name         string
+	Type         string
+	Indexed      bool
+	Components   []*ArgumentStr
+	InternalType string
 }
 
 var keccakPool = sync.Pool{
