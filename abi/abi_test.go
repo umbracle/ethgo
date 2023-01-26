@@ -247,49 +247,49 @@ func TestAbi_HumanReadable(t *testing.T) {
 			Inputs: MustNewType("tuple(string symbol, string name)"),
 		},
 		Methods: map[string]*Method{
-			"transferFrom": &Method{
+			"transferFrom": {
 				Name:    "transferFrom",
 				Inputs:  MustNewType("tuple(address from, address to, uint256 value)"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"balanceOf": &Method{
+			"balanceOf": {
 				Name:    "balanceOf",
 				Inputs:  MustNewType("tuple(address owner)"),
 				Outputs: MustNewType("tuple(uint256 balance)"),
 			},
-			"balanceOf0": &Method{
+			"balanceOf0": {
 				Name:    "balanceOf",
 				Inputs:  MustNewType("tuple()"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"addPerson": &Method{
+			"addPerson": {
 				Name:    "addPerson",
 				Inputs:  MustNewType("tuple(tuple(string name, uint16 age) person)"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"addPeople": &Method{
+			"addPeople": {
 				Name:    "addPeople",
 				Inputs:  MustNewType("tuple(tuple(string name, uint16 age)[] person)"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"getPerson": &Method{
+			"getPerson": {
 				Name:    "getPerson",
 				Inputs:  MustNewType("tuple(uint256 id)"),
 				Outputs: MustNewType("tuple(tuple(string name, uint16 age))"),
 			},
 		},
 		Events: map[string]*Event{
-			"Transfer": &Event{
+			"Transfer": {
 				Name:   "Transfer",
 				Inputs: MustNewType("tuple(address indexed from, address indexed to, address value)"),
 			},
-			"PersonAdded": &Event{
+			"PersonAdded": {
 				Name:   "PersonAdded",
 				Inputs: MustNewType("tuple(uint256 indexed id, tuple(string name, uint16 age) person)"),
 			},
 		},
 		Errors: map[string]*Error{
-			"InsufficientBalance": &Error{
+			"InsufficientBalance": {
 				Name:   "InsufficientBalance",
 				Inputs: MustNewType("tuple(address owner, uint256 balance)"),
 			},
