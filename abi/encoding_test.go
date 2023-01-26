@@ -621,8 +621,33 @@ func TestRandomEncoding(t *testing.T) {
 			if err := testEncodeDecode(t, server, tt, input); err != nil {
 				t.Fatal(err)
 			}
+
+			if err := testDecodePanic(tt, input); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
+}
+
+func testDecodePanic(tt *Type, input interface{}) error {
+	// test that the encoded input and random permutattions of the response do not cause
+	// panics on Decode function
+	res1, err := Encode(input, tt)
+	if err != nil {
+		return err
+	}
+
+	buf := make([]byte, len(res1))
+
+	// change each bit of the input with 1
+	for i := 0; i < len(res1); i++ {
+		copy(buf, res1)
+		buf[i] = 0xff
+
+		Decode(tt, buf)
+	}
+
+	return nil
 }
 
 func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) error {
