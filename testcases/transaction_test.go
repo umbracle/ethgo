@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/wallet"
 )
@@ -75,6 +76,10 @@ func TestTransactions(t *testing.T) {
 		txnRaw, err := signedTxn.MarshalRLPTo(nil)
 		assert.NoError(t, err)
 		assert.Equal(t, txnRaw, c.SignedTransaction.Bytes())
+
+		sender, err := signer.RecoverSender(signedTxn)
+		require.NoError(t, err)
+		require.Equal(t, sender, key.Address())
 	}
 }
 
@@ -148,5 +153,9 @@ func TestTypedTransactions(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, txnRaw, c.Signed.Bytes())
+
+		sender, err := signer.RecoverSender(signedTxn)
+		require.NoError(t, err)
+		require.Equal(t, sender, key.Address())
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/wallet"
 )
@@ -19,7 +20,13 @@ func TestAccounts(t *testing.T) {
 	}
 	ReadTestCase(t, "accounts", &walletSpec)
 
+	msg := []byte("msg")
+
 	for _, spec := range walletSpec {
+		// test that an string address can be checksumed
+		addr := ethgo.HexToAddress(spec.Address)
+		assert.Equal(t, addr.String(), spec.Checksum)
+
 		if spec.PrivateKey != nil {
 			// test that we can decode the private key
 			priv, err := hex.DecodeString(strings.TrimPrefix(*spec.PrivateKey, "0x"))
@@ -29,10 +36,14 @@ func TestAccounts(t *testing.T) {
 			assert.NoError(t, err)
 
 			assert.Equal(t, key.Address().String(), spec.Checksum)
-		}
 
-		// test that an string address can be checksumed
-		addr := ethgo.HexToAddress(spec.Address)
-		assert.Equal(t, addr.String(), spec.Checksum)
+			// test that we can sign and recover address
+			sig, err := key.SignMsg(msg)
+			require.NoError(t, err)
+
+			recoveredAddr, err := wallet.EcrecoverMsg(msg, sig)
+			require.NoError(t, err)
+			require.Equal(t, recoveredAddr, addr)
+		}
 	}
 }

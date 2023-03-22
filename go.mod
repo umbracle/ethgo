@@ -18,6 +18,7 @@ require (
 	go.etcd.io/bbolt v1.3.6
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/text v0.3.2
+	pgregory.net/rapid v0.5.5
 )
 
 require (
