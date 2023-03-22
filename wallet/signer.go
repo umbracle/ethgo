@@ -25,9 +25,13 @@ func NewEIP155Signer(chainID uint64) *EIP1155Signer {
 
 func (e *EIP1155Signer) RecoverSender(tx *ethgo.Transaction) (ethgo.Address, error) {
 	v := new(big.Int).SetBytes(tx.V).Uint64()
-	v -= e.chainID * 2
-	v -= 8
-	v -= 27
+	if v > 1 {
+		v -= 27
+		if v > 1 {
+			v -= e.chainID * 2
+			v -= 8
+		}
+	}
 
 	sig, err := encodeSignature(tx.R, tx.S, byte(v))
 	if err != nil {
