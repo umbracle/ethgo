@@ -171,9 +171,14 @@ func (e *Eth) GasPrice() (uint64, error) {
 }
 
 // Call executes a new message call immediately without creating a transaction on the block chain.
-func (e *Eth) Call(msg *ethgo.CallMsg, block ethgo.BlockNumber) (string, error) {
+func (e *Eth) Call(msg *ethgo.CallMsg, block ethgo.BlockNumber, override ...*ethgo.StateOverride) (string, error) {
+	var cleanOverride *ethgo.StateOverride
+	if len(override) == 1 && override[0] != nil {
+		cleanOverride = override[0]
+	}
+
 	var out string
-	if err := e.c.Call("eth_call", &out, msg, block.String()); err != nil {
+	if err := e.c.Call("eth_call", &out, msg, block.String(), cleanOverride); err != nil {
 		return "", err
 	}
 	return out, nil

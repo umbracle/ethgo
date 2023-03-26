@@ -392,3 +392,13 @@ func completeHex(str string, num int) []byte {
 	}
 	return []byte("0x" + str)
 }
+
+type OverrideAccount struct {
+	Nonce     *uint64
+	Code      *[]byte
+	Balance   *big.Int
+	State     *map[Hash]Hash
+	StateDiff *map[Hash]Hash
+}
+
+type StateOverride map[Address]OverrideAccount
