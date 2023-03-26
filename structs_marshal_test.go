@@ -2,9 +2,11 @@ package ethgo
 
 import (
 	"encoding/json"
+	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func generateHashPtr(input string) *Hash {
@@ -93,4 +95,29 @@ func TestLogFilter_MarshalJSON(t *testing.T) {
 			assert.Equal(t, defaultLogFilter, reverseOutput)
 		})
 	}
+}
+
+func TestMarshal_StateOverride(t *testing.T) {
+	nonce := uint64(1)
+	code := []byte{0x1}
+
+	o := StateOverride{
+		{0x0}: OverrideAccount{
+			Nonce:   &nonce,
+			Balance: big.NewInt(1),
+			Code:    &code,
+			State: &map[Hash]Hash{
+				{0x1}: {0x1},
+			},
+			StateDiff: &map[Hash]Hash{
+				{0x1}: {0x1},
+			},
+		},
+	}
+
+	res, err := o.MarshalJSON()
+	require.NoError(t, err)
+
+	expected := `{"0x0000000000000000000000000000000000000000":{"nonce":"0x1","balance":"0x1","code":"0x01","state":{"0x0100000000000000000000000000000000000000000000000000000000000000":"0x0100000000000000000000000000000000000000000000000000000000000000"},"stateDiff":{"0x0100000000000000000000000000000000000000000000000000000000000000":"0x0100000000000000000000000000000000000000000000000000000000000000"}}}`
+	require.Equal(t, expected, string(res))
 }

@@ -254,3 +254,41 @@ func (l *LogFilter) MarshalJSON() ([]byte, error) {
 	defaultArena.Put(a)
 	return res, nil
 }
+
+func (s StateOverride) MarshalJSON() ([]byte, error) {
+	a := defaultArena.Get()
+
+	o := a.NewObject()
+	for addr, obj := range s {
+		oo := a.NewObject()
+		if obj.Nonce != nil {
+			oo.Set("nonce", a.NewString(fmt.Sprintf("0x%x", *obj.Nonce)))
+		}
+		if obj.Balance != nil {
+			oo.Set("balance", a.NewString(fmt.Sprintf("0x%x", obj.Balance)))
+		}
+		if obj.Code != nil {
+			oo.Set("code", a.NewString("0x"+hex.EncodeToString(*obj.Code)))
+		}
+		if obj.State != nil {
+			ooo := a.NewObject()
+			for k, v := range *obj.State {
+				ooo.Set(k.String(), a.NewString(v.String()))
+			}
+			oo.Set("state", ooo)
+		}
+		if obj.StateDiff != nil {
+			ooo := a.NewObject()
+			for k, v := range *obj.StateDiff {
+				ooo.Set(k.String(), a.NewString(v.String()))
+			}
+			oo.Set("stateDiff", ooo)
+		}
+		o.Set(addr.String(), oo)
+	}
+
+	res := o.MarshalTo(nil)
+	defaultArena.Put(a)
+
+	return res, nil
+}

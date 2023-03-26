@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/umbracle/ethgo"
+	"github.com/umbracle/ethgo/abi"
 	"github.com/umbracle/ethgo/testutil"
 )
 
@@ -243,6 +244,54 @@ func TestEthChainID(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, num.Uint64(), uint64(1337)) // chainid of geth-dev
 	})
+}
+
+func TestEthCall(t *testing.T) {
+	s := testutil.NewTestServer(t)
+
+	c, _ := NewClient(s.HTTPAddr())
+	cc := &testutil.Contract{}
+
+	// add global variables
+	cc.AddCallback(func() string {
+		return "uint256 val = 1;"
+	})
+
+	// add setter method
+	cc.AddCallback(func() string {
+		return `function getValue() public returns (uint256) {
+			return val;
+		}`
+	})
+
+	_, addr, err := s.DeployContract(cc)
+	require.NoError(t, err)
+
+	input := abi.MustNewMethod("function getValue() public returns (uint256)").ID()
+
+	resp, err := c.Eth().Call(&ethgo.CallMsg{To: &addr, Data: input}, ethgo.Latest)
+	require.NoError(t, err)
+
+	require.Equal(t, "0x0000000000000000000000000000000000000000000000000000000000000001", resp)
+
+	nonce := uint64(1)
+
+	// override the state
+	override := &ethgo.StateOverride{
+		addr: ethgo.OverrideAccount{
+			Nonce:   &nonce,
+			Balance: big.NewInt(1),
+			StateDiff: &map[ethgo.Hash]ethgo.Hash{
+				// storage slot 0 stores the 'val' uint256 value
+				{0x0}: {0x3},
+			},
+		},
+	}
+
+	resp, err = c.Eth().Call(&ethgo.CallMsg{To: &addr, Data: input}, ethgo.Latest, override)
+	require.NoError(t, err)
+
+	require.Equal(t, "0x0300000000000000000000000000000000000000000000000000000000000000", resp)
 }
 
 func TestEthGetNonce(t *testing.T) {
