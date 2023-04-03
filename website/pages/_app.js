@@ -13,7 +13,7 @@ export default function Nextra({ Component, pageProps }) {
     <>
       <Head>
         {prod &&
-          <script defer data-domain="ethgo.dev" src="https://plausible.io/js/plausible.js"></script>
+          <script defer data-domain="ethgoproject.io" src="https://plausible.io/js/script.js"></script>
         }
       </Head>
       <Component {...pageProps} />
