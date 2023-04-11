@@ -103,6 +103,18 @@ func decodeTypes(val reflect.Type, result *map[string][]*EIP712Type) string {
 	case reflect.Struct:
 		return decodeStructType(val, result)
 
+	case reflect.String:
+		return "string"
+
+	case reflect.Uint8:
+		return "uint8"
+
+	case reflect.Uint16:
+		return "uint16"
+
+	case reflect.Uint32:
+		return "uint32"
+
 	case reflect.Uint64:
 		return "uint64"
 
@@ -139,14 +151,19 @@ func structToMap(v reflect.Value) map[string]interface{} {
 		field := typ.Field(i)
 		fieldValue := v.Field(i)
 
-		if fieldValue.Kind() == reflect.Ptr {
-			fieldValue = fieldValue.Elem()
-		}
-
 		fieldName := field.Name
 		// use a tag as a name (if any)
 		if tagVal := field.Tag.Get("eip712"); tagVal != "" {
 			fieldName = tagVal
+		}
+
+		if field.Type == bigIntT {
+			result[fieldName] = fieldValue.Interface()
+			continue
+		}
+
+		if fieldValue.Kind() == reflect.Ptr {
+			fieldValue = fieldValue.Elem()
 		}
 
 		if fieldValue.Kind() == reflect.Struct {
