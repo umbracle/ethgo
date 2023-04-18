@@ -8,7 +8,7 @@
 
 Ethgo is a lightweight SDK in Go to interact with Ethereum compatible blockchains.
 
-- Website: https://ethgo.dev
+- Website: https://www.ethgoproject.io
 
 Ethgo provides the next key features:
 
