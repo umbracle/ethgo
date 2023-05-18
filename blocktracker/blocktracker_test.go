@@ -2,8 +2,6 @@ package blocktracker
 
 import (
 	"context"
-	"log"
-	"os"
 	"testing"
 	"time"
 
@@ -60,8 +58,7 @@ func TestBlockTracker_Listener_JsonRPC(t *testing.T) {
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 	defer c.Close()
 
-	logger := log.New(os.Stderr, "", log.LstdFlags)
-	tracker := NewJSONBlockTracker(logger, c.Eth())
+	tracker := NewJSONBlockTracker(c.Eth())
 	tracker.PollInterval = 1 * time.Second
 	testListener(t, s, tracker)
 }
@@ -74,8 +71,7 @@ func TestBlockTracker_Listener_Websocket(t *testing.T) {
 	c, _ := jsonrpc.NewClient(s.WSAddr())
 	defer c.Close()
 
-	logger := log.New(os.Stderr, "", log.LstdFlags)
-	tracker, err := NewSubscriptionBlockTracker(logger, c)
+	tracker, err := NewSubscriptionBlockTracker(c)
 	if err != nil {
 		t.Fatal(err)
 	}
