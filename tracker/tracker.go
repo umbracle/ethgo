@@ -567,7 +567,8 @@ func (t *Tracker) BatchSync(ctx context.Context) error {
 	return nil
 }
 
-// Sync syncs a specific filter
+// Sync syncs a specific filter.
+// This can take a long time so should be run concurrently.
 func (t *Tracker) Sync(ctx context.Context) error {
 	if err := t.BatchSync(ctx); err != nil {
 		return err

@@ -323,7 +323,8 @@ func NewJSONBlockTracker(provider BlockProvider) *JSONBlockTracker {
 	}
 }
 
-// Track implements the BlockTracker interface
+// Track implements the BlockTracker interface.
+// This can take a long time so should be run concurrently.
 func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
 	var lastBlock *ethgo.Block
 
@@ -368,6 +369,7 @@ func NewSubscriptionBlockTracker(client *jsonrpc.Client) (*SubscriptionBlockTrac
 }
 
 // Track implements the BlockTracker interface
+// This can take a long time so should be run concurrently.
 func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
 	data := make(chan []byte)
 	defer close(data)
