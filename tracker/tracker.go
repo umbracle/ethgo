@@ -575,18 +575,16 @@ func (t *Tracker) Sync(ctx context.Context) error {
 
 	// subscribe and sync
 	sub := t.blockTracker.Subscribe()
-	go func() {
-		for {
-			select {
-			case evnt := <-sub:
-				t.handleBlockEvnt(evnt)
-			case <-ctx.Done():
-				return
+	for {
+		select {
+		case evnt := <-sub:
+			if err := t.handleBlockEvnt(evnt); err != nil {
+				return err
 			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-	}()
-
-	return nil
+	}
 }
 
 func (t *Tracker) syncImpl(ctx context.Context) error {
