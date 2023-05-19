@@ -387,7 +387,9 @@ func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block 
 			if err := block.UnmarshalJSON(buf); err != nil {
 				return err
 			}
-			handle(&block)
+			if err := handle(&block); err != nil {
+				return err
+			}
 
 		case <-ctx.Done():
 			return ctx.Err()
