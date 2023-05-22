@@ -34,10 +34,18 @@ func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	if err := tt.Sync(ctx); err != nil {
-		t.Fatal(err)
+	go func() {
+		if err := tt.Sync(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	// wait for the bulk sync to finish
+	select {
+	case <-time.After(1 * time.Second):
+		t.Fatal("timeout to sync")
+	case <-tt.EventCh:
+	case <-tt.DoneCh:
 	}
-
 	return tt.entry.(*inmem.Entry).Logs()
 }
 
