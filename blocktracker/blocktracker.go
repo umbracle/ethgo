@@ -112,8 +112,12 @@ func (t *BlockTracker) Init() (err error) {
 				break
 			}
 			block, err = t.provider.GetBlockByHash(block.ParentHash, false)
-			// if block does not exist (for example reorg happened) GetBlockByHash will return nil, nil
-			if err != nil || block == nil {
+			if err != nil {
+				return
+			} else if block == nil {
+				// if block does not exist (for example reorg happened) GetBlockByHash will return nil, nil
+				err = fmt.Errorf("block with hash %s not found", block.ParentHash)
+
 				return
 			}
 		}
