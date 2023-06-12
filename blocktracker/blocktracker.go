@@ -112,7 +112,8 @@ func (t *BlockTracker) Init() (err error) {
 				break
 			}
 			block, err = t.provider.GetBlockByHash(block.ParentHash, false)
-			if err != nil {
+			// if block does not exist (for example reorg happened) GetBlockByHash will return nil, nil
+			if err != nil || block == nil {
 				return
 			}
 		}
@@ -231,6 +232,9 @@ func (t *BlockTracker) handleReconcileImpl(block *ethgo.Block) ([]*ethgo.Block, 
 
 		parent, err := t.provider.GetBlockByHash(block.ParentHash, false)
 		if err != nil {
+			return nil, -1, fmt.Errorf("parent with hash retrieving error: %w", err)
+		} else if parent == nil {
+			// if block does not exist (for example reorg happened) GetBlockByHash will return nil, nil
 			return nil, -1, fmt.Errorf("parent with hash %s not found", block.ParentHash)
 		}
 
