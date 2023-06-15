@@ -775,12 +775,9 @@ func TestTooMuchDataRequested(t *testing.T) {
 	tt, _ := NewTracker(mm,
 		WithFilter(&FilterConfig{Async: true}),
 	)
-	go func() {
-		if err := tt.Sync(context.Background()); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	time.Sleep(3 * time.Second)
+	if err := tt.BatchSync(context.Background()); err != nil {
+		t.Fatal(err)
+	}
 	if count != len(tt.entry.(*inmem.Entry).Logs()) {
 		t.Fatal("not the same count")
 	}
