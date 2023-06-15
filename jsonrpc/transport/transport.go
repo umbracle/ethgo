@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"os"
 	"strings"
 )
@@ -20,7 +21,7 @@ type Transport interface {
 // PubSubTransport is a transport that allows subscriptions
 type PubSubTransport interface {
 	// Subscribe starts a subscription to a new event
-	Subscribe(method string, callback func(b []byte)) (func() error, error)
+	Subscribe(context context.Context, method string, callback func(b []byte)) error
 }
 
 const (

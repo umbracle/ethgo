@@ -1,11 +1,11 @@
 package jsonrpc
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/testutil"
 )
@@ -19,8 +19,9 @@ func TestSubscribeNewHead(t *testing.T) {
 		c, _ := NewClient(addr)
 		defer c.Close()
 
+		ctx, cancel := context.WithCancel(context.Background())
 		data := make(chan []byte)
-		cancel, err := c.Subscribe("newHeads", func(b []byte) {
+		err := c.Subscribe(ctx, "newHeads", func(b []byte) {
 			data <- b
 		})
 		if err != nil {
@@ -59,12 +60,10 @@ func TestSubscribeNewHead(t *testing.T) {
 		s.ProcessBlock()
 		recv(true)
 
-		assert.NoError(t, cancel())
-
 		s.ProcessBlock()
 		recv(false)
 
-		// subscription already closed
-		assert.Error(t, cancel())
+		cancel()
+		close(data)
 	})
 }
