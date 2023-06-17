@@ -370,17 +370,34 @@ func NewSubscriptionBlockTracker(client *jsonrpc.Client) (*SubscriptionBlockTrac
 
 // Track implements the BlockTracker interface
 // This can take a long time so should be run concurrently.
-func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
+// Note that the error return variable must be named so that subscription cancellation errors can be returned in defer.
+func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) (err error) {
 	data := make(chan []byte)
 	defer close(data)
 
-	cancel, err := s.client.Subscribe("newHeads", func(b []byte) {
-		data <- b
-	})
+	// Subscribe with a callback the depends on context
+	callback := func(b []byte) {
+		select {
+		case data <- b:
+		case <-ctx.Done():
+		}
+	}
+	cancel, err := s.client.Subscribe("newHeads", callback)
 	if err != nil {
 		return err
 	}
-	defer cancel()
+
+	// Ensure subscription cancellation errors are returned
+	defer func() {
+		if cerr := cancel(); cerr != nil {
+			// Return variable is named so we can assign it here
+			if err == nil {
+				err = cerr
+				return
+			}
+			err = fmt.Errorf("failed to cancel: %s, after error %w", cerr.Error(), err)
+		}
+	}()
 
 	for {
 		select {
