@@ -1,7 +1,6 @@
 package jsonrpc
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/umbracle/ethgo/jsonrpc/transport"
@@ -14,10 +13,11 @@ func (c *Client) SubscriptionEnabled() bool {
 }
 
 // Subscribe starts a new subscription
-func (c *Client) Subscribe(ctx context.Context, method string, callback func(b []byte)) error {
+func (c *Client) Subscribe(method string, callback func(b []byte)) (func() error, error) {
 	pub, ok := c.transport.(transport.PubSubTransport)
 	if !ok {
-		return fmt.Errorf("transport does not support the subscribe method")
+		return nil, fmt.Errorf("transport does not support the subscribe method")
 	}
-	return pub.Subscribe(ctx, method, callback)
+	close, err := pub.Subscribe(method, callback)
+	return close, err
 }

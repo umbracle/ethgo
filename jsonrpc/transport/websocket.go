@@ -1,7 +1,6 @@
 package transport
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -244,20 +243,17 @@ func (s *stream) setSubscription(id string, callback func(b []byte)) {
 }
 
 // Subscribe implements the PubSubTransport interface
-func (s *stream) Subscribe(ctx context.Context, method string, callback func(b []byte)) error {
+func (s *stream) Subscribe(method string, callback func(b []byte)) (func() error, error) {
 	var out string
 	if err := s.Call("eth_subscribe", &out, method); err != nil {
-		return err
+		return nil, err
 	}
 
 	s.setSubscription(out, callback)
-
-	go func() {
-		<-ctx.Done()
-		s.unsubscribe(out)
-	}()
-
-	return nil
+	cancel := func() error {
+		return s.unsubscribe(out)
+	}
+	return cancel, nil
 }
 
 // SetMaxConnsPerHost implements the transport interface

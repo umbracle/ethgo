@@ -374,15 +374,13 @@ func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block 
 	data := make(chan []byte)
 	defer close(data)
 
-	callback := func(b []byte){
-		select {
-		case data <- b:
-		case <- ctx.Done():
-		}
-	}
-	if err := s.client.Subscribe(ctx, "newHeads", callback); err != nil {
+	cancel, err := s.client.Subscribe("newHeads", func(b []byte) {
+		data <- b
+	})
+	if err != nil {
 		return err
 	}
+	defer cancel()
 
 	for {
 		select {
