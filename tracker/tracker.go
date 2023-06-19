@@ -389,7 +389,7 @@ START:
 	t.emitLogs(EventAdd, logs)
 
 	// update the last block entry
-	block, err := getBlockByNumber(t.provider, dst)
+	block, err := t.getBlockByNumber(dst)
 	if err != nil {
 		return err
 	}
@@ -424,7 +424,7 @@ func (t *Tracker) preSyncCheck() error {
 }
 
 func (t *Tracker) preSyncCheckImpl() error {
-	rGenesis, err := getBlockByNumber(t.provider, 0)
+	rGenesis, err := t.getBlockByNumber(0)
 	if err != nil {
 		return err
 	}
@@ -462,7 +462,7 @@ func (t *Tracker) preSyncCheckImpl() error {
 func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*ethgo.Block, error) {
 	// Try to use first the user provided block if any
 	if filterConfig.Start != 0 {
-		bb, err := getBlockByNumber(t.provider, filterConfig.Start)
+		bb, err := t.getBlockByNumber(filterConfig.Start)
 		if err != nil {
 			return nil, err
 		}
@@ -524,7 +524,7 @@ func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*ethgo.Block, error) {
 			}
 		}
 
-		bb, err := getBlockByNumber(t.provider, minBlock-1)
+		bb, err := t.getBlockByNumber(minBlock - 1)
 		if err != nil {
 			return nil, err
 		}
@@ -656,7 +656,7 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 			return fmt.Errorf("store is more advanced than the chain")
 		}
 
-		pivot, err := getBlockByNumber(t.provider, last.Number)
+		pivot, err := t.getBlockByNumber(last.Number)
 		if err != nil {
 			return err
 		}
@@ -680,7 +680,7 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 			}
 			t.emitLogs(EventDel, logs)
 
-			last, err = getBlockByNumber(t.provider, ancestor)
+			last, err = t.getBlockByNumber(ancestor)
 			if err != nil {
 				return err
 			}
@@ -849,6 +849,18 @@ func (t *Tracker) doFilter(added []*ethgo.Block, removed []*ethgo.Block) (*Event
 	return evnt, nil
 }
 
+func (t *Tracker) getBlockByNumber(blockNumber uint64) (*ethgo.Block, error) {
+	block, err := t.provider.GetBlockByNumber(ethgo.BlockNumber(blockNumber), false)
+	if err != nil {
+		return nil, err
+	} else if block == nil {
+		// if block does not exist (for example reorg happened) GetBlockByNumber will return nil, nil
+		return nil, fmt.Errorf("block with number %d not found", blockNumber)
+	}
+
+	return block, nil
+}
+
 // EventType is the type of the event
 type EventType int
 
@@ -887,16 +899,4 @@ func parseUint64orHex(str string) (uint64, error) {
 		base = 16
 	}
 	return strconv.ParseUint(str, base, 64)
-}
-
-func getBlockByNumber(provider Provider, blockNumber uint64) (*ethgo.Block, error) {
-	block, err := provider.GetBlockByNumber(ethgo.BlockNumber(blockNumber), false)
-	if err != nil {
-		return nil, err
-	} else if block == nil {
-		// if block does not exist (for example reorg happened) GetBlockByNumber will return nil, nil
-		return nil, fmt.Errorf("block with number %d not found", blockNumber)
-	}
-
-	return block, nil
 }
