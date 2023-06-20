@@ -16,8 +16,10 @@ type HTTP struct {
 
 func newHTTP(addr string, headers map[string]string) *HTTP {
 	return &HTTP{
-		addr:    addr,
-		client:  &fasthttp.Client{},
+		addr: addr,
+		client: &fasthttp.Client{
+			DialDualStack: true,
+		},
 		headers: headers,
 	}
 }
