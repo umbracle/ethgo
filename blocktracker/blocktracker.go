@@ -375,22 +375,18 @@ func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block 
 	data := make(chan []byte)
 	defer close(data)
 
-	// Subscribe with a callback the depends on context
+	// Subscribe with a callback. This callback must be unsubscribed
+	// before the data channel is closed, otherwise panic (write to closed channel)
 	callback := func(b []byte) {
-		select {
-		case data <- b:
-		case <-ctx.Done():
-		}
+		data <- b
 	}
-	cancel, err := s.client.Subscribe("newHeads", callback)
+	unsubscribe, err := s.client.Subscribe("newHeads", callback)
 	if err != nil {
 		return err
 	}
-
-	// Ensure subscription cancellation errors are returned
 	defer func() {
-		if cerr := cancel(); cerr != nil {
-			// Return variable is named so we can assign it here
+		if cerr := unsubscribe(); cerr != nil {
+			// Ensure subscription cancellation errors are returned via named return var
 			if err == nil {
 				err = cerr
 				return
