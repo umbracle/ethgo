@@ -34,10 +34,9 @@ func testFilter(t *testing.T, provider Provider, filterConfig *FilterConfig) []*
 	ctx, cancelFn := context.WithCancel(context.Background())
 	defer cancelFn()
 
-	if err := tt.Sync(ctx); err != nil {
-		t.Fatal(err)
+	if err := tt.BatchSync(ctx); err != nil {
+		require.NoError(t, err)
 	}
-
 	return tt.entry.(*inmem.Entry).Logs()
 }
 
@@ -767,7 +766,7 @@ func TestTooMuchDataRequested(t *testing.T) {
 	tt, _ := NewTracker(mm,
 		WithFilter(&FilterConfig{Async: true}),
 	)
-	if err := tt.Sync(context.Background()); err != nil {
+	if err := tt.BatchSync(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if count != len(tt.entry.(*inmem.Entry).Logs()) {

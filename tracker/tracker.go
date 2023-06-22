@@ -573,7 +573,8 @@ func (t *Tracker) BatchSync(ctx context.Context) error {
 	return nil
 }
 
-// Sync syncs a specific filter
+// Sync syncs a specific filter.
+// This can take a long time so should be run concurrently.
 func (t *Tracker) Sync(ctx context.Context) error {
 	if err := t.BatchSync(ctx); err != nil {
 		return err
@@ -581,18 +582,16 @@ func (t *Tracker) Sync(ctx context.Context) error {
 
 	// subscribe and sync
 	sub := t.blockTracker.Subscribe()
-	go func() {
-		for {
-			select {
-			case evnt := <-sub:
-				t.handleBlockEvnt(evnt)
-			case <-ctx.Done():
-				return
+	for {
+		select {
+		case evnt := <-sub:
+			if err := t.handleBlockEvnt(evnt); err != nil {
+				return err
 			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-	}()
-
-	return nil
+	}
 }
 
 func (t *Tracker) syncImpl(ctx context.Context) error {
