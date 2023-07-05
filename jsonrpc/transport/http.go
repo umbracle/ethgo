@@ -2,6 +2,7 @@ package transport
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/umbracle/ethgo/jsonrpc/codec"
 	"github.com/valyala/fasthttp"
@@ -64,6 +65,10 @@ func (h *HTTP) Call(method string, out interface{}, params ...interface{}) error
 
 	if err := h.client.Do(req, res); err != nil {
 		return err
+	}
+
+	if sc := res.StatusCode(); sc != fasthttp.StatusOK {
+		return fmt.Errorf("status code is %d. response = %s", sc, string(res.Body()))
 	}
 
 	// Decode json-rpc response
