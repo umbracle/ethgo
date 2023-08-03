@@ -13,6 +13,7 @@ var defaultArena fastjson.ArenaPool
 // MarshalJSON implements the marshal interface
 func (l *Log) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	if l.Removed {
@@ -46,6 +47,7 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 	}
 
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	o.Set("number", a.NewString(fmt.Sprintf("0x%x", t.Number)))
@@ -97,6 +99,8 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 // MarshalJSON implements the Marshal interface.
 func (t *Transaction) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
+
 	v := t.marshalJSON(a)
 	res := v.MarshalTo(nil)
 	defaultArena.Put(a)
@@ -179,6 +183,7 @@ func (t *AccessList) marshalJSON(a *fastjson.Arena) *fastjson.Value {
 // MarshalJSON implements the Marshal interface.
 func (c *CallMsg) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	o.Set("from", a.NewString(c.From.String()))
@@ -206,6 +211,7 @@ func (c *CallMsg) MarshalJSON() ([]byte, error) {
 // MarshalJSON implements the Marshal interface.
 func (l *LogFilter) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	if len(l.Address) == 1 {
@@ -257,6 +263,7 @@ func (l *LogFilter) MarshalJSON() ([]byte, error) {
 
 func (s StateOverride) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	for addr, obj := range s {
@@ -291,4 +298,4 @@ func (s StateOverride) MarshalJSON() ([]byte, error) {
 	defaultArena.Put(a)
 
 	return res, nil
-}
+} 
