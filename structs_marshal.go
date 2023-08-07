@@ -117,17 +117,19 @@ func (t *Transaction) marshalJSON(a *fastjson.Arena) *fastjson.Value {
 	if t.Value != nil {
 		o.Set("value", a.NewString(fmt.Sprintf("0x%x", t.Value)))
 	}
-	o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", t.GasPrice)))
-
+	if t.Type == TransactionDynamicFee {
+		if t.MaxPriorityFeePerGas != nil {
+			o.Set("maxPriorityFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxPriorityFeePerGas)))
+		}
+		if t.MaxFeePerGas != nil {
+			o.Set("maxFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxFeePerGas)))
+		}
+	} else {
+		o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", t.GasPrice)))
+	}
 	// gas limit fields
 	if t.Gas != 0 {
 		o.Set("gas", a.NewString(fmt.Sprintf("0x%x", t.Gas)))
-	}
-	if t.MaxPriorityFeePerGas != nil {
-		o.Set("maxPriorityFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxPriorityFeePerGas)))
-	}
-	if t.MaxFeePerGas != nil {
-		o.Set("maxFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxFeePerGas)))
 	}
 
 	if t.Nonce != 0 {
@@ -298,4 +300,4 @@ func (s StateOverride) MarshalJSON() ([]byte, error) {
 	defaultArena.Put(a)
 
 	return res, nil
-} 
+}
