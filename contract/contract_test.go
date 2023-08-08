@@ -294,6 +294,7 @@ func TestContract_EIP1559(t *testing.T) {
 	txnObj, err := client.Eth().GetTransactionByHash(txn.Hash())
 	assert.NoError(t, err)
 
+	assert.Zero(t, txnObj.GasPrice)
 	assert.NotZero(t, txnObj.Gas)
 	assert.NotZero(t, txnObj.MaxFeePerGas)
 	assert.NotZero(t, txnObj.MaxPriorityFeePerGas)
