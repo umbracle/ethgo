@@ -403,7 +403,7 @@ func TestEthFeeHistory(t *testing.T) {
 }
 
 func TestEthMaxPriorityFeePerGas(t *testing.T) {
-	s := testutil.DeployTestServer(t, nil)
+	s := testutil.NewTestServer(t)
 	c, err := NewClient(s.HTTPAddr())
 	require.NoError(t, err)
 
