@@ -91,9 +91,7 @@ func (d *MockClient) AddScenario(m MockList) {
 
 		// add logs
 		// remove any other logs for this block in case there are any
-		if _, ok := d.logs[block.Hash]; ok {
-			delete(d.logs, block.Hash)
-		}
+		delete(d.logs, block.Hash)
 
 		d.AddLogs(b.GetLogs())
 	}

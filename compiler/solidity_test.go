@@ -119,7 +119,7 @@ func existsSolidity(t *testing.T, path string) bool {
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("solidity version failed: %s", string(stderr.Bytes()))
+		t.Fatalf("solidity version failed: %s", stderr.String())
 	}
 	if len(stdout.Bytes()) == 0 {
 		t.Fatal("empty output")

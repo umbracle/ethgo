@@ -646,7 +646,9 @@ func decodeHash(h *Hash, v *fastjson.Value, key string) error {
 		h = &Hash{}
 	}
 
-	h.UnmarshalText(b)
+	if err := h.UnmarshalText(b); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -655,7 +657,9 @@ func decodeAddr(a *Address, v *fastjson.Value, key string) error {
 	if len(b) == 0 {
 		return fmt.Errorf("field '%s' not found", key)
 	}
-	a.UnmarshalText(b)
+	if err := a.UnmarshalText(b); err != nil {
+		return err
+	}
 	return nil
 }
 

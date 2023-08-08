@@ -83,7 +83,7 @@ func (s *Solidity) compileImpl(code string, files ...string) (*Output, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("failed to compile: %s", string(stderr.Bytes()))
+		return nil, fmt.Errorf("failed to compile: %s", stderr.String())
 	}
 
 	var output *Output

@@ -64,10 +64,12 @@ func decodeStructType(typ reflect.Type, result *map[string][]*EIP712Type) string
 	return name
 }
 
+//nolint:unused
 func isByteSlice(t reflect.Type) bool {
 	return t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8
 }
 
+//nolint:unused
 func isByteArray(t reflect.Type) bool {
 	return t.Kind() == reflect.Array && t.Elem().Kind() == reflect.Uint8
 }

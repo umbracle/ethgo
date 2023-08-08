@@ -583,7 +583,7 @@ func testEncodeDecode(t *testing.T, server *testutil.TestServer, tt *Type, input
 	return nil
 }
 
-func generateRandomArgs(n int) *Type {
+func generateRandomArgs(r *rand.Rand, n int) *Type {
 	inputs := []*TupleElem{}
 	for i := 0; i < randomInt(1, 10); i++ {
 		ttt, err := NewType(randomType())
@@ -602,7 +602,7 @@ func generateRandomArgs(n int) *Type {
 }
 
 func TestRandomEncoding(t *testing.T) {
-	rand.Seed(time.Now().UTC().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	nStr := os.Getenv("RANDOM_TESTS")
 	n, err := strconv.Atoi(nStr)
@@ -616,7 +616,7 @@ func TestRandomEncoding(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
-			tt := generateRandomArgs(randomInt(1, 4))
+			tt := generateRandomArgs(r, randomInt(1, 4))
 			input := generateRandomType(tt)
 
 			if err := testEncodeDecode(t, server, tt, input); err != nil {
