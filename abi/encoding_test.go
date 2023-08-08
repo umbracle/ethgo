@@ -317,7 +317,8 @@ func TestEncoding(t *testing.T) {
 	server := testutil.NewTestServer(t)
 
 	for _, c := range cases {
-		t.Run("", func(t *testing.T) {
+		c := c
+		t.Run(fmt.Sprintf("Encoding type %s", c.Type), func(t *testing.T) {
 			t.Parallel()
 
 			tt, err := NewType(c.Type)
@@ -644,7 +645,9 @@ func testDecodePanic(tt *Type, input interface{}) error {
 		copy(buf, res1)
 		buf[i] = 0xff
 
-		Decode(tt, buf)
+		if _, err = Decode(tt, buf); err != nil {
+			return err
+		}
 	}
 
 	return nil

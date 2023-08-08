@@ -56,7 +56,10 @@ func TestPolling(t *testing.T) {
 
 	// send 5 txns
 	for i := 0; i < 5; i++ {
-		s.TxnTo(addr0, "setA1")
+		receipt, err := s.TxnTo(addr0, "setA1")
+		require.NoError(t, err)
+		require.NotNil(t, receipt)
+		require.Equal(t, uint64(1), receipt.Status)
 	}
 
 	tt, err := NewTracker(client.Eth())
@@ -255,7 +258,9 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 			panic(err)
 		}
 	}()
-	tt0.WaitDuration(2 * time.Second)
+
+	err = tt0.WaitDuration(2 * time.Second)
+	assert.NoError(t, err)
 
 	// create a fork at 'forkNum' and continue to 'endLen'
 	l1 := testutil.MockList{}
@@ -286,7 +291,8 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 			panic(err)
 		}
 	}()
-	tt1.WaitDuration(2 * time.Second)
+	err = tt1.WaitDuration(2 * time.Second)
+	assert.NoError(t, err)
 
 	logs := tt1.entry.(*inmem.Entry).Logs()
 
@@ -653,18 +659,18 @@ func TestTrackerReconcile(t *testing.T) {
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
-				tt.blockTracker.AddBlockLocked(b)
+				err = tt.blockTracker.AddBlockLocked(b)
+				require.NoError(t, err)
 			}
 			// add the history to the store
 			for _, b := range c.History {
-				tt.entry.StoreLogs(b.GetLogs())
+				err = tt.entry.StoreLogs(b.GetLogs())
+				require.NoError(t, err)
 			}
 
 			for _, b := range c.Reconcile {
 				aux, err := tt.blockTracker.HandleBlockEvent(b.block.Block())
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.NoError(t, err)
 				if aux == nil {
 					continue
 				}
@@ -716,7 +722,7 @@ func TestTrackerReconcile(t *testing.T) {
 
 type mockClientWithLimit struct {
 	limit uint64
-	testutil.MockClient
+	*testutil.MockClient
 }
 
 func (m *mockClientWithLimit) GetLogs(filter *ethgo.LogFilter) ([]*ethgo.Log, error) {
@@ -757,7 +763,7 @@ func TestTooMuchDataRequested(t *testing.T) {
 
 	mm := &mockClientWithLimit{
 		limit:      3,
-		MockClient: *m,
+		MockClient: m,
 	}
 
 	config := DefaultConfig()

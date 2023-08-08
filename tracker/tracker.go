@@ -276,8 +276,8 @@ func (t *Tracker) IsSynced() bool {
 }
 
 // Wait waits the filter to finish
-func (t *Tracker) Wait() {
-	t.WaitDuration(0)
+func (t *Tracker) Wait() error {
+	return t.WaitDuration(0)
 }
 
 // WaitDuration waits for the filter to finish up to duration
@@ -679,7 +679,7 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 			}
 			t.emitLogs(EventDel, logs)
 
-			last, err = t.getBlockByNumber(ancestor)
+			_, err = t.getBlockByNumber(ancestor)
 			if err != nil {
 				return err
 			}

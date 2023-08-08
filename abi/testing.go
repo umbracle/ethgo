@@ -162,8 +162,6 @@ func generateRandomType(t *Type) interface{} {
 	}
 }
 
-const hexLetters = "0123456789abcdef"
-
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func randString(n int, dict string) string {

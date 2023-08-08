@@ -96,9 +96,7 @@ func (e *Entry) Logs() []*ethgo.Log {
 func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 	e.l.Lock()
 	defer e.l.Unlock()
-	for _, log := range logs {
-		e.logs = append(e.logs, log)
-	}
+	e.logs = append(e.logs, logs...)
 	return nil
 }
 

@@ -16,7 +16,7 @@ import (
 
 func getRand(size int) []byte {
 	buf := make([]byte, size)
-	rand.Read(buf)
+	rand.Read(buf) //nolint:errcheck
 	return buf
 }
 
