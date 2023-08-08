@@ -156,8 +156,17 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 	if err = decodeAddr(&t.From, v, "from"); err != nil {
 		return err
 	}
-	if t.GasPrice, err = decodeUint(v, "gasPrice"); err != nil {
-		return err
+	if typ == TransactionDynamicFee {
+		if t.MaxPriorityFeePerGas, err = decodeBigInt(t.MaxPriorityFeePerGas, v, "maxPriorityFeePerGas"); err != nil {
+			return err
+		}
+		if t.MaxFeePerGas, err = decodeBigInt(t.MaxFeePerGas, v, "maxFeePerGas"); err != nil {
+			return err
+		}
+	} else {
+		if t.GasPrice, err = decodeUint(v, "gasPrice"); err != nil {
+			return err
+		}
 	}
 	if t.Input, err = decodeBytes(t.Input[:0], v, "input"); err != nil {
 		return err
@@ -205,15 +214,6 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 
 	if t.Gas, err = decodeUint(v, "gas"); err != nil {
 		return err
-	}
-
-	if typ == TransactionDynamicFee {
-		if t.MaxPriorityFeePerGas, err = decodeBigInt(t.MaxPriorityFeePerGas, v, "maxPriorityFeePerGas"); err != nil {
-			return err
-		}
-		if t.MaxFeePerGas, err = decodeBigInt(t.MaxFeePerGas, v, "maxFeePerGas"); err != nil {
-			return err
-		}
 	}
 
 	// Check if the block hash field is set

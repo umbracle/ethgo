@@ -394,10 +394,46 @@ func TestEthFeeHistory(t *testing.T) {
 	lastBlock, err := c.Eth().BlockNumber()
 	assert.NoError(t, err)
 
-	from := ethgo.BlockNumber(lastBlock - 2)
-	to := ethgo.BlockNumber(lastBlock)
-
-	fee, err := c.Eth().FeeHistory(from, to)
+	fee, err := c.Eth().FeeHistory(1, ethgo.BlockNumber(lastBlock), []float64{25, 75})
 	assert.NoError(t, err)
 	assert.NotNil(t, fee)
+}
+
+func TestEthMaxPriorityFeePerGas(t *testing.T) {
+	s := testutil.NewTestServer(t)
+	c, err := NewClient(s.HTTPAddr())
+	require.NoError(t, err)
+
+	initialMaxPriorityFee, err := c.Eth().MaxPriorityFeePerGas()
+	require.NoError(t, err)
+
+	// wait for 2 blocks
+	require.NoError(t, s.ProcessBlock())
+	require.NoError(t, s.ProcessBlock())
+
+	txn := &ethgo.Transaction{
+		To:                   &testutil.DummyAddr,
+		Value:                ethgo.Gwei(1),
+		Type:                 ethgo.TransactionDynamicFee,
+		MaxPriorityFeePerGas: ethgo.Gwei(1),
+	}
+
+	latestBlock, err := c.Eth().BlockNumber()
+	require.NoError(t, err)
+
+	feeHistory, err := c.Eth().FeeHistory(1, ethgo.BlockNumber(latestBlock), nil)
+	require.NoError(t, err)
+
+	latestBaseFee := feeHistory.BaseFee[len(feeHistory.BaseFee)-1]
+	txn.MaxFeePerGas = new(big.Int).Add(latestBaseFee, txn.MaxPriorityFeePerGas)
+
+	receipt, err := s.SendTxn(txn)
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), receipt.Status)
+
+	newMaxPriorityFee, err := c.Eth().MaxPriorityFeePerGas()
+	t.Log(initialMaxPriorityFee)
+	t.Log(newMaxPriorityFee)
+	require.NoError(t, err)
+	require.True(t, initialMaxPriorityFee.Cmp(newMaxPriorityFee) <= 0)
 }

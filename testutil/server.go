@@ -247,8 +247,15 @@ func (t *TestServer) SendTxn(txn *ethgo.Transaction) (*ethgo.Receipt, error) {
 	if isEmptyAddr(txn.From) {
 		txn.From = t.Account(0)
 	}
-	if txn.GasPrice == 0 {
-		txn.GasPrice = DefaultGasPrice
+
+	if txn.Type == ethgo.TransactionDynamicFee {
+		if txn.MaxPriorityFeePerGas == nil || txn.MaxPriorityFeePerGas.Cmp(big.NewInt(0)) == 0 {
+			txn.MaxPriorityFeePerGas = new(big.Int).SetUint64(DefaultGasPrice)
+		}
+	} else {
+		if txn.GasPrice == 0 {
+			txn.GasPrice = DefaultGasPrice
+		}
 	}
 	if txn.Gas == 0 {
 		txn.Gas = DefaultGasLimit
