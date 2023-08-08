@@ -394,10 +394,7 @@ func TestEthFeeHistory(t *testing.T) {
 	lastBlock, err := c.Eth().BlockNumber()
 	assert.NoError(t, err)
 
-	from := ethgo.BlockNumber(lastBlock - 2)
-	to := ethgo.BlockNumber(lastBlock)
-
-	fee, err := c.Eth().FeeHistory(from, to)
+	fee, err := c.Eth().FeeHistory(1, ethgo.BlockNumber(lastBlock), []float64{25, 75})
 	assert.NoError(t, err)
 	assert.NotNil(t, fee)
 }
@@ -424,7 +421,7 @@ func TestEthMaxPriorityFeePerGas(t *testing.T) {
 	latestBlock, err := c.Eth().BlockNumber()
 	require.NoError(t, err)
 
-	feeHistory, err := c.Eth().FeeHistory(ethgo.BlockNumber(latestBlock-1), ethgo.BlockNumber(latestBlock))
+	feeHistory, err := c.Eth().FeeHistory(1, ethgo.BlockNumber(latestBlock), nil)
 	require.NoError(t, err)
 
 	latestBaseFee := feeHistory.BaseFee[len(feeHistory.BaseFee)-1]

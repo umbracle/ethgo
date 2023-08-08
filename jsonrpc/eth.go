@@ -266,9 +266,9 @@ func (f *FeeHistory) UnmarshalJSON(data []byte) error {
 }
 
 // FeeHistory returns base fee per gas and transaction effective priority fee
-func (e *Eth) FeeHistory(from, to ethgo.BlockNumber) (*FeeHistory, error) {
+func (e *Eth) FeeHistory(blockCount uint64, newestBlock ethgo.BlockNumber, rewardPercentiles []float64) (*FeeHistory, error) {
 	var out *FeeHistory
-	if err := e.c.Call("eth_feeHistory", &out, from.String(), to.String(), nil); err != nil {
+	if err := e.c.Call("eth_feeHistory", &out, blockCount, newestBlock.String(), rewardPercentiles); err != nil {
 		return nil, err
 	}
 	return out, nil
