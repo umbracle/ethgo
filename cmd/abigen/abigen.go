@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -117,7 +116,7 @@ func processAbi(sources []string, config *config) (map[string]*compiler.Artifact
 	artifacts := map[string]*compiler.Artifact{}
 
 	for _, abiPath := range sources {
-		content, err := ioutil.ReadFile(abiPath)
+		content, err := os.ReadFile(abiPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read abi file (%s): %v", abiPath, err)
 		}
@@ -128,7 +127,7 @@ func processAbi(sources []string, config *config) (map[string]*compiler.Artifact
 		name = strings.TrimSuffix(name, filepath.Ext(name))
 		binPath := filepath.Join(path, name+".bin")
 
-		bin, err := ioutil.ReadFile(binPath)
+		bin, err := os.ReadFile(binPath)
 		if err != nil {
 			// bin not found
 			bin = []byte{}
@@ -150,7 +149,7 @@ func processJson(sources []string) (map[string]*compiler.Artifact, error) {
 	artifacts := map[string]*compiler.Artifact{}
 
 	for _, jsonPath := range sources {
-		content, err := ioutil.ReadFile(jsonPath)
+		content, err := os.ReadFile(jsonPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read abi file (%s): %v", jsonPath, err)
 		}

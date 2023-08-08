@@ -2,14 +2,14 @@ package wallet
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWallet_JSON(t *testing.T) {
-	raw, err := ioutil.ReadFile("./fixtures/wallet_json.json")
+	raw, err := os.ReadFile("./fixtures/wallet_json.json")
 	assert.NoError(t, err)
 
 	var cases []struct {

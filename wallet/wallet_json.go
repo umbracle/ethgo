@@ -1,13 +1,13 @@
 package wallet
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/umbracle/ethgo/keystore"
 )
 
 func NewJSONWalletFromFile(path string, password string) (*Key, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
