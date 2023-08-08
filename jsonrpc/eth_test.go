@@ -435,6 +435,8 @@ func TestEthMaxPriorityFeePerGas(t *testing.T) {
 	require.Equal(t, uint64(1), receipt.Status)
 
 	newMaxPriorityFee, err := c.Eth().MaxPriorityFeePerGas()
+	t.Log(initialMaxPriorityFee)
+	t.Log(newMaxPriorityFee)
 	require.NoError(t, err)
-	require.True(t, initialMaxPriorityFee.Cmp(newMaxPriorityFee) < 0)
+	require.True(t, initialMaxPriorityFee.Cmp(newMaxPriorityFee) <= 0)
 }

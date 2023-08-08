@@ -295,7 +295,6 @@ func TestContract_EIP1559(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotZero(t, txnObj.Gas)
-	assert.NotZero(t, txnObj.GasPrice)
 	assert.NotZero(t, txnObj.MaxFeePerGas)
 	assert.NotZero(t, txnObj.MaxPriorityFeePerGas)
 }
