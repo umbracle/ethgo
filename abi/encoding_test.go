@@ -4,12 +4,10 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"os"
 	"reflect"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/umbracle/ethgo"
 	"github.com/umbracle/ethgo/compiler"
@@ -583,7 +581,7 @@ func testEncodeDecode(t *testing.T, server *testutil.TestServer, tt *Type, input
 	return nil
 }
 
-func generateRandomArgs(r *rand.Rand, n int) *Type {
+func generateRandomArgs(n int) *Type {
 	inputs := []*TupleElem{}
 	for i := 0; i < randomInt(1, 10); i++ {
 		ttt, err := NewType(randomType())
@@ -602,8 +600,6 @@ func generateRandomArgs(r *rand.Rand, n int) *Type {
 }
 
 func TestRandomEncoding(t *testing.T) {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-
 	nStr := os.Getenv("RANDOM_TESTS")
 	n, err := strconv.Atoi(nStr)
 	if err != nil {
@@ -616,7 +612,7 @@ func TestRandomEncoding(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
-			tt := generateRandomArgs(r, randomInt(1, 4))
+			tt := generateRandomArgs(randomInt(1, 4))
 			input := generateRandomType(tt)
 
 			if err := testEncodeDecode(t, server, tt, input); err != nil {

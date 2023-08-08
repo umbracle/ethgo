@@ -2,7 +2,6 @@ package compiler
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -128,7 +127,7 @@ func existsSolidity(t *testing.T, path string) bool {
 }
 
 func TestDownloadSolidityCompiler(t *testing.T) {
-	dst1, err := ioutil.TempDir("/tmp", "ethgo-")
+	dst1, err := os.MkdirTemp("/tmp", "ethgo-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +143,7 @@ func TestDownloadSolidityCompiler(t *testing.T) {
 		t.Fatal("it should exist")
 	}
 
-	dst2, err := ioutil.TempDir("/tmp", "ethgo-")
+	dst2, err := os.MkdirTemp("/tmp", "ethgo-")
 	if err != nil {
 		t.Fatal(err)
 	}

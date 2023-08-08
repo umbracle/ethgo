@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"net"
@@ -76,7 +75,7 @@ type TestServer struct {
 
 // DeployTestServer creates a new Geth test server
 func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
-	tmpDir, err := ioutil.TempDir("/tmp", "geth-")
+	tmpDir, err := os.MkdirTemp("/tmp", "geth-")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
