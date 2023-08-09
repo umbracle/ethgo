@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"encoding/binary"
 	"math/big"
 
 	"github.com/umbracle/ethgo"
@@ -75,10 +76,11 @@ func (e *EIP1155Signer) SignTx(tx *ethgo.Transaction, key ethgo.Key) (*ethgo.Tra
 
 func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	a := fastrlp.DefaultArenaPool.Get()
+	defer fastrlp.DefaultArenaPool.Put(a)
 
 	v := a.NewArray()
 
-	if tx.Type != 0 {
+	if tx.Type != ethgo.TransactionLegacy {
 		// either dynamic and access type
 		v.Set(a.NewBigInt(tx.ChainID))
 	}
@@ -113,7 +115,7 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	}
 
 	// EIP155
-	if chainID != 0 && tx.Type == 0 {
+	if chainID != 0 && tx.Type == ethgo.TransactionLegacy {
 		v.Set(a.NewUint(chainID))
 		v.Set(a.NewUint(0))
 		v.Set(a.NewUint(0))
@@ -122,15 +124,13 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	dst := v.MarshalTo(nil)
 
 	// append the tx type byte
-	if tx.Type == ethgo.TransactionAccessList {
-		dst = append([]byte{0x1}, dst...)
-	} else if tx.Type == ethgo.TransactionDynamicFee {
-		dst = append([]byte{0x2}, dst...)
+	if tx.Type != ethgo.TransactionLegacy {
+		typeBytes := make([]byte, 4)
+		binary.BigEndian.PutUint32(typeBytes, uint32(tx.Type))
+		dst = append(typeBytes, dst...)
 	}
 
-	hash := ethgo.Keccak256(dst)
-	fastrlp.DefaultArenaPool.Put(a)
-	return hash
+	return ethgo.Keccak256(dst)
 }
 
 func encodeSignature(R, S []byte, V byte) ([]byte, error) {
