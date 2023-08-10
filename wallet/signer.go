@@ -75,12 +75,13 @@ func (e *EIP1155Signer) SignTx(tx *ethgo.Transaction, key ethgo.Key) (*ethgo.Tra
 
 func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	a := fastrlp.DefaultArenaPool.Get()
+	defer fastrlp.DefaultArenaPool.Put(a)
 
 	v := a.NewArray()
 
-	if tx.Type != 0 {
+	if tx.Type != ethgo.TransactionLegacy {
 		// either dynamic and access type
-		v.Set(a.NewBigInt(tx.ChainID))
+		v.Set(a.NewBigInt(new(big.Int).SetUint64(chainID)))
 	}
 
 	v.Set(a.NewUint(tx.Nonce))
@@ -103,7 +104,7 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	v.Set(a.NewBigInt(tx.Value))
 	v.Set(a.NewCopyBytes(tx.Input))
 
-	if tx.Type != 0 {
+	if tx.Type != ethgo.TransactionLegacy {
 		// either dynamic and access type
 		accessList, err := tx.AccessList.MarshalRLPWith(a)
 		if err != nil {
@@ -113,7 +114,7 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	}
 
 	// EIP155
-	if chainID != 0 && tx.Type == 0 {
+	if chainID != 0 && tx.Type == ethgo.TransactionLegacy {
 		v.Set(a.NewUint(chainID))
 		v.Set(a.NewUint(0))
 		v.Set(a.NewUint(0))
@@ -122,15 +123,10 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	dst := v.MarshalTo(nil)
 
 	// append the tx type byte
-	if tx.Type == ethgo.TransactionAccessList {
-		dst = append([]byte{0x1}, dst...)
-	} else if tx.Type == ethgo.TransactionDynamicFee {
-		dst = append([]byte{0x2}, dst...)
+	if tx.Type != ethgo.TransactionLegacy {
+		dst = append([]byte{byte(tx.Type)}, dst...)
 	}
-
-	hash := ethgo.Keccak256(dst)
-	fastrlp.DefaultArenaPool.Put(a)
-	return hash
+	return ethgo.Keccak256(dst)
 }
 
 func encodeSignature(R, S []byte, V byte) ([]byte, error) {

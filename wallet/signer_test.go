@@ -12,8 +12,6 @@ import (
 
 func TestSigner_SignAndRecover(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		istyped := rapid.Bool().Draw(t, "istyped")
-
 		// fill in common types for a transaction
 		txn := &ethgo.Transaction{}
 
@@ -22,15 +20,24 @@ func TestSigner_SignAndRecover(t *testing.T) {
 			txn.To = &to
 		}
 
+		txType := rapid.IntRange(0, 2).Draw(t, "tx type")
+
 		// fill in specific fields depending on the type
 		// of the transaction.
-		if istyped {
-			txn.Type = ethgo.TransactionAccessList
+		txn.Type = ethgo.TransactionType(txType)
+		if txn.Type == ethgo.TransactionDynamicFee {
+			maxFeePerGas := rapid.Int64Range(1, 1000000000).Draw(t, "maxFeePerGas")
+			txn.MaxFeePerGas = big.NewInt(maxFeePerGas)
+			maxPriorityFeePerGas := rapid.Int64Range(1, 1000000000).Draw(t, "maxPriorityFeePerGas")
+			txn.MaxPriorityFeePerGas = big.NewInt(maxPriorityFeePerGas)
+		} else {
+			gasPrice := rapid.Uint64Range(1, 1000000000).Draw(t, "gasPrice")
+			txn.GasPrice = gasPrice
 		}
 
 		// signer is from a random chain
-		chainid := rapid.Uint64().Draw(t, "chainid")
-		signer := NewEIP155Signer(chainid)
+		chainId := rapid.Uint64().Draw(t, "chainId")
+		signer := NewEIP155Signer(chainId)
 
 		key, err := GenerateKey()
 		require.NoError(t, err)

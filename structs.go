@@ -164,7 +164,7 @@ func (b *Block) Copy() *Block {
 	return bb
 }
 
-type TransactionType int
+type TransactionType uint8
 
 const (
 	TransactionLegacy TransactionType = 0
