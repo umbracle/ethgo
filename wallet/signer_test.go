@@ -26,18 +26,18 @@ func TestSigner_SignAndRecover(t *testing.T) {
 		// of the transaction.
 		txn.Type = ethgo.TransactionType(txType)
 		if txn.Type == ethgo.TransactionDynamicFee {
-			maxFeePerGas := rapid.Int64Range(1, 1000000000).Draw(t, "max fee per gas")
+			maxFeePerGas := rapid.Int64Range(1, 1000000000).Draw(t, "maxFeePerGas")
 			txn.MaxFeePerGas = big.NewInt(maxFeePerGas)
-			maxPriorityFeePerGas := rapid.Int64Range(1, 1000000000).Draw(t, "max priority fee per gas")
+			maxPriorityFeePerGas := rapid.Int64Range(1, 1000000000).Draw(t, "maxPriorityFeePerGas")
 			txn.MaxPriorityFeePerGas = big.NewInt(maxPriorityFeePerGas)
 		} else {
-			gasPrice := rapid.Uint64Range(1, 1000000000).Draw(t, "gas price")
+			gasPrice := rapid.Uint64Range(1, 1000000000).Draw(t, "gasPrice")
 			txn.GasPrice = gasPrice
 		}
 
 		// signer is from a random chain
-		chainid := rapid.Uint64().Draw(t, "chainid")
-		signer := NewEIP155Signer(chainid)
+		chainId := rapid.Uint64().Draw(t, "chainId")
+		signer := NewEIP155Signer(chainId)
 
 		key, err := GenerateKey()
 		require.NoError(t, err)

@@ -82,7 +82,7 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 
 	if tx.Type != ethgo.TransactionLegacy {
 		// either dynamic and access type
-		v.Set(a.NewBigInt(tx.ChainID))
+		v.Set(a.NewBigInt(new(big.Int).SetUint64(chainID)))
 	}
 
 	v.Set(a.NewUint(tx.Nonce))
@@ -105,7 +105,7 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 	v.Set(a.NewBigInt(tx.Value))
 	v.Set(a.NewCopyBytes(tx.Input))
 
-	if tx.Type != 0 {
+	if tx.Type != ethgo.TransactionLegacy {
 		// either dynamic and access type
 		accessList, err := tx.AccessList.MarshalRLPWith(a)
 		if err != nil {
