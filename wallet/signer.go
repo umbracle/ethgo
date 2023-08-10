@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"encoding/binary"
 	"math/big"
 
 	"github.com/umbracle/ethgo"
@@ -125,11 +124,8 @@ func signHash(tx *ethgo.Transaction, chainID uint64) []byte {
 
 	// append the tx type byte
 	if tx.Type != ethgo.TransactionLegacy {
-		typeBytes := make([]byte, 4)
-		binary.BigEndian.PutUint32(typeBytes, uint32(tx.Type))
-		dst = append(typeBytes, dst...)
+		dst = append([]byte{byte(tx.Type)}, dst...)
 	}
-
 	return ethgo.Keccak256(dst)
 }
 
