@@ -65,6 +65,7 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 	o.Set("extraData", a.NewString("0x"+hex.EncodeToString(t.ExtraData)))
 	o.Set("mixHash", a.NewString("0x"+hex.EncodeToString(t.MixHash[:])))
 	o.Set("nonce", a.NewString("0x"+hex.EncodeToString(t.Nonce[:])))
+	o.Set("baseFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.BaseFee)))
 
 	// uncles
 	if len(t.Uncles) != 0 {
