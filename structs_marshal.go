@@ -67,7 +67,7 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 	o.Set("nonce", a.NewString("0x"+hex.EncodeToString(t.Nonce[:])))
 
 	if t.BaseFee != nil {
-		o.Set("baseFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.BaseFee)))
+		o.Set("baseFee", a.NewString(fmt.Sprintf("0x%x", t.BaseFee)))
 	}
 
 	// uncles
