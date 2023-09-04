@@ -104,6 +104,10 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 		b.Uncles = append(b.Uncles, h)
 	}
 
+	if b.BaseFee, err = decodeUint(v, "baseFeePerGas"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
