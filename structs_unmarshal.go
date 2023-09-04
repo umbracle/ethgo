@@ -67,6 +67,9 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 	if b.ExtraData, err = decodeBytes(b.ExtraData[:0], v, "extraData"); err != nil {
 		return err
 	}
+	if b.BaseFee, err = decodeUint(v, "baseFeePerGas"); err != nil {
+		return err
+	}
 
 	b.TransactionsHashes = b.TransactionsHashes[:0]
 	b.Transactions = b.Transactions[:0]
@@ -102,10 +105,6 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 			return err
 		}
 		b.Uncles = append(b.Uncles, h)
-	}
-
-	if b.BaseFee, err = decodeUint(v, "baseFeePerGas"); err != nil {
-		return err
 	}
 
 	return nil
