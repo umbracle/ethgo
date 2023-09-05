@@ -68,7 +68,7 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 		return err
 	}
 	if b.BaseFee, err = decodeBigInt(b.BaseFee, v, "baseFee"); err != nil {
-		if err.Error() != "field baseFee not found" {
+		if err.Error() != "field 'baseFee' not found" {
 			return err
 		}
 	}
