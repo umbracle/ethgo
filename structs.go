@@ -148,6 +148,7 @@ type Block struct {
 	Transactions       []*Transaction
 	TransactionsHashes []Hash
 	Uncles             []Hash
+	BaseFee            *big.Int
 }
 
 func (b *Block) Copy() *Block {

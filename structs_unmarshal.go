@@ -67,6 +67,11 @@ func (b *Block) UnmarshalJSON(buf []byte) error {
 	if b.ExtraData, err = decodeBytes(b.ExtraData[:0], v, "extraData"); err != nil {
 		return err
 	}
+	if b.BaseFee, err = decodeBigInt(b.BaseFee, v, "baseFee"); err != nil {
+		if err.Error() != "field 'baseFee' not found" {
+			return err
+		}
+	}
 
 	b.TransactionsHashes = b.TransactionsHashes[:0]
 	b.Transactions = b.Transactions[:0]
