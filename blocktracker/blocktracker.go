@@ -87,7 +87,7 @@ func (b *BlockTracker) Subscribe() chan *BlockEvent {
 }
 
 func (b *BlockTracker) AcquireLock() Lock {
-	return Lock{lock: &b.blocksLock}
+	return NewLock(&b.blocksLock)
 }
 
 func (t *BlockTracker) Init() (err error) {
@@ -423,6 +423,10 @@ func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block 
 type Lock struct {
 	Locked bool
 	lock   *sync.Mutex
+}
+
+func NewLock(lock *sync.Mutex) Lock {
+	return Lock{lock: lock}
 }
 
 func (l *Lock) Lock() {

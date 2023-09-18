@@ -31,9 +31,23 @@ var (
 )
 
 const (
-	defaultMaxBlockBacklog = 10
-	defaultBatchSize       = 100
+	defaultBatchSize = 100
 )
+
+// BlockTracking defines interface for block tracker implementations
+type BlockTracking interface {
+	BlocksBlocked() []*ethgo.Block
+	AddBlockLocked(block *ethgo.Block) error
+	MaxBlockBacklog() uint64
+	Init() error
+	Start() error
+	Close() error
+	Subscribe() chan *blocktracker.BlockEvent
+	AcquireLock() blocktracker.Lock
+	LastBlocked() *ethgo.Block
+	HandleBlockEvent(block *ethgo.Block) (*blocktracker.BlockEvent, error)
+	Len() int
+}
 
 // FilterConfig is a tracker filter configuration
 type FilterConfig struct {
@@ -83,7 +97,7 @@ func (f *FilterConfig) getFilterSearch() *ethgo.LogFilter {
 // Config is the configuration of the tracker
 type Config struct {
 	BatchSize       uint64
-	BlockTracker    *blocktracker.BlockTracker // move to interface
+	BlockTracker    BlockTracking
 	EtherscanAPIKey string
 	Filter          *FilterConfig
 	Store           store.Store
@@ -97,7 +111,7 @@ func WithBatchSize(b uint64) ConfigOption {
 	}
 }
 
-func WithBlockTracker(b *blocktracker.BlockTracker) ConfigOption {
+func WithBlockTracker(b BlockTracking) ConfigOption {
 	return func(c *Config) {
 		c.BlockTracker = b
 	}
@@ -148,7 +162,7 @@ type Tracker struct {
 	store        store.Store
 	entry        store.Entry
 	preSyncOnce  sync.Once
-	blockTracker *blocktracker.BlockTracker
+	blockTracker BlockTracking
 	synced       int32
 	BlockCh      chan *blocktracker.BlockEvent
 	ReadyCh      chan struct{}
