@@ -18,7 +18,7 @@ type TraceTransactionOptions struct {
 	EnableReturnData bool
 	Timeout          string
 	Tracer           string
-	TracerConfig     map[string]interface{} `json:"tracerConfig,omitempty"`
+	TracerConfig     map[string]interface{}
 }
 
 type TransactionTrace struct {
