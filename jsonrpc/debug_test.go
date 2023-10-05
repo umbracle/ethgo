@@ -35,6 +35,11 @@ func Test_toTraceTransactionOpts(t *testing.T) {
 		want map[string]interface{}
 	}{
 		{
+			name: "nil options provided",
+			opts: nil,
+			want: map[string]interface{}{},
+		},
+		{
 			name: "all fields are provided",
 			opts: &TraceTransactionOptions{
 				EnableMemory:     true,
