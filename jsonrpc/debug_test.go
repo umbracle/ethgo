@@ -22,7 +22,7 @@ func TestDebug_TraceTransaction(t *testing.T) {
 	r, err := s.TxnTo(addr, "setA2")
 	require.NoError(t, err)
 
-	trace, err := c.Debug().TraceTransaction(r.TransactionHash)
+	trace, err := c.Debug().TraceTransaction(r.TransactionHash, TraceTransactionOptions{})
 	assert.NoError(t, err)
 	assert.Greater(t, trace.Gas, uint64(20000))
 	assert.NotEmpty(t, trace.StructLogs)
