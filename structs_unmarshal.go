@@ -141,18 +141,23 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return nil
 	}
 
-	// detect transaction type
-	var typ TransactionType
-	if isKeySet(v, "chainId") {
-		if isKeySet(v, "maxFeePerGas") {
-			typ = TransactionDynamicFee
-		} else {
-			typ = TransactionAccessList
+	if isKeySet(v, "type") {
+		txnType, err := decodeUint(v, "type")
+		if err != nil {
+			return err
 		}
+		t.Type = TransactionType(txnType)
 	} else {
-		typ = TransactionLegacy
+		if isKeySet(v, "chainId") {
+			if isKeySet(v, "maxFeePerGas") {
+				t.Type = TransactionDynamicFee
+			} else {
+				t.Type = TransactionAccessList
+			}
+		} else {
+			t.Type = TransactionLegacy
+		}
 	}
-	t.Type = typ
 
 	var err error
 	if err := decodeHash(&t.Hash, v, "hash"); err != nil {
@@ -161,14 +166,14 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 	if err = decodeAddr(&t.From, v, "from"); err != nil {
 		return err
 	}
-	if typ == TransactionDynamicFee {
+	if t.Type == TransactionDynamicFee {
 		if t.MaxPriorityFeePerGas, err = decodeBigInt(t.MaxPriorityFeePerGas, v, "maxPriorityFeePerGas"); err != nil {
 			return err
 		}
 		if t.MaxFeePerGas, err = decodeBigInt(t.MaxFeePerGas, v, "maxFeePerGas"); err != nil {
 			return err
 		}
-	} else {
+	} else if t.Type == TransactionLegacy || t.Type == TransactionAccessList {
 		if t.GasPrice, err = decodeUint(v, "gasPrice"); err != nil {
 			return err
 		}
@@ -206,7 +211,7 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return err
 	}
 
-	if typ != TransactionLegacy {
+	if t.Type == TransactionDynamicFee || t.Type == TransactionAccessList {
 		if t.ChainID, err = decodeBigInt(t.ChainID, v, "chainId"); err != nil {
 			return err
 		}

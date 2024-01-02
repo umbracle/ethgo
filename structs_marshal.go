@@ -113,6 +113,7 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 
 func (t *Transaction) marshalJSON(a *fastjson.Arena) *fastjson.Value {
 	o := a.NewObject()
+	o.Set("type", a.NewString(fmt.Sprintf("0x%x", t.Type)))
 	o.Set("hash", a.NewString(t.Hash.String()))
 	o.Set("from", a.NewString(t.From.String()))
 	if len(t.Input) != 0 {
