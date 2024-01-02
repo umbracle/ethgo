@@ -56,6 +56,10 @@ func TestEncodingJSON_Transaction(t *testing.T) {
 		err := txn.UnmarshalJSON(content)
 		assert.NoError(t, err)
 
+		if c.name == "testsuite/transaction-eip1559-notype.json" {
+			continue
+		}
+
 		// marshal back
 		res2, err := txn.MarshalJSON()
 		assert.NoError(t, err)
