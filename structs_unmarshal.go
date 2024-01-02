@@ -141,27 +141,19 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return nil
 	}
 
-	// detect transaction type
-	var typ TransactionType
-	if isKeySet(v, "chainId") {
-		if isKeySet(v, "maxFeePerGas") {
-			typ = TransactionDynamicFee
-		} else {
-			typ = TransactionAccessList
-		}
-	} else {
-		typ = TransactionLegacy
+	txnType, err := decodeUint(v, "type")
+	if err != nil {
+		return err
 	}
-	t.Type = typ
+	t.Type = TransactionType(txnType)
 
-	var err error
 	if err := decodeHash(&t.Hash, v, "hash"); err != nil {
 		return err
 	}
 	if err = decodeAddr(&t.From, v, "from"); err != nil {
 		return err
 	}
-	if typ == TransactionDynamicFee {
+	if t.Type == TransactionDynamicFee {
 		if t.MaxPriorityFeePerGas, err = decodeBigInt(t.MaxPriorityFeePerGas, v, "maxPriorityFeePerGas"); err != nil {
 			return err
 		}
@@ -206,7 +198,7 @@ func (t *Transaction) unmarshalJSON(v *fastjson.Value) error {
 		return err
 	}
 
-	if typ != TransactionLegacy {
+	if t.Type == TransactionDynamicFee || t.Type == TransactionAccessList {
 		if t.ChainID, err = decodeBigInt(t.ChainID, v, "chainId"); err != nil {
 			return err
 		}

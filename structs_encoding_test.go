@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func compactJSON(s string) string {
@@ -16,6 +17,17 @@ func compactJSON(s string) string {
 		panic(err)
 	}
 	return buffer.String()
+}
+
+func TestDecodeL2Block(t *testing.T) {
+	c := readTestsuite(t, "./testsuite/arbitrum-block-full.json")
+
+	block := new(Block)
+	require.NoError(t, block.UnmarshalJSON(c[0].content))
+
+	for _, txn := range block.Transactions {
+		require.NotEqual(t, txn.Type, 0)
+	}
 }
 
 func TestEncodingJSON_Block(t *testing.T) {
