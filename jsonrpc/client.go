@@ -56,6 +56,11 @@ func (c *Client) Close() error {
 	return c.transport.Close()
 }
 
+// ErrCh returns a chan to send errors that occurred in the client
+func (c *Client) ErrCh() chan error {
+	return c.transport.ErrCh()
+}
+
 // Call makes a jsonrpc call
 func (c *Client) Call(method string, out interface{}, params ...interface{}) error {
 	return c.transport.Call(method, out, params...)
