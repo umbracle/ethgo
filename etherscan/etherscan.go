@@ -42,7 +42,7 @@ func NewEtherscanFromNetwork(n ethgo.Network, apiKey string) (*Etherscan, error)
 
 // NewEtherscan creates a new Etherscan service from a url
 func NewEtherscan(url, apiKey string) *Etherscan {
-	return &Etherscan{url: url}
+	return &Etherscan{url: url, apiKey: apiKey}
 }
 
 type proxyResponse struct {

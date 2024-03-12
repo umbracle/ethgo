@@ -16,6 +16,14 @@ func testEtherscanMainnet(t *testing.T) *Etherscan {
 	return &Etherscan{url: "https://api.etherscan.io", apiKey: apiKey}
 }
 
+func TestNewEtherscan(t *testing.T) {
+	wantUrl := "http://test.url/"
+	wantApiKey := "abc123"
+	e := NewEtherscan(wantUrl, wantApiKey)
+	assert.Equal(t, wantUrl, e.url)
+	assert.Equal(t, wantApiKey, e.apiKey)
+}
+
 func TestBlockByNumber(t *testing.T) {
 	e := testEtherscanMainnet(t)
 	n, err := e.BlockNumber()
