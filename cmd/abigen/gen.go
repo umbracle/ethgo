@@ -3,7 +3,7 @@ package abigen
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -158,7 +158,7 @@ func gen(artifacts map[string]*compiler.Artifact, config *config, hash string) e
 		if err := tmplAbi.Execute(&b, input); err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(filepath.Join(config.Output, filename+".go"), []byte(b.Bytes()), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(config.Output, filename+".go"), []byte(b.Bytes()), 0644); err != nil {
 			return err
 		}
 
@@ -166,7 +166,7 @@ func gen(artifacts map[string]*compiler.Artifact, config *config, hash string) e
 		if err := tmplBin.Execute(&b, input); err != nil {
 			return err
 		}
-		if err := ioutil.WriteFile(filepath.Join(config.Output, filename+"_artifacts.go"), []byte(b.Bytes()), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(config.Output, filename+"_artifacts.go"), []byte(b.Bytes()), 0644); err != nil {
 			return err
 		}
 	}

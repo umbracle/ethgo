@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"net"
@@ -31,10 +30,10 @@ var (
 )
 
 func getOpenPort() string {
-	rand.Seed(time.Now().UnixNano())
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	min, max := 12000, 15000
 	for {
-		port := strconv.Itoa(rand.Intn(max-min) + min)
+		port := strconv.Itoa(r.Intn(max-min) + min)
 		server, err := net.Listen("tcp", ":"+port)
 		if err == nil {
 			server.Close()
@@ -76,7 +75,7 @@ type TestServer struct {
 
 // DeployTestServer creates a new Geth test server
 func DeployTestServer(t *testing.T, cb ServerConfigCallback) *TestServer {
-	tmpDir, err := ioutil.TempDir("/tmp", "geth-")
+	tmpDir, err := os.MkdirTemp("/tmp", "geth-")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
@@ -181,7 +180,7 @@ func (t *TestServer) IPCPath() string {
 
 // WSAddr returns the websocket endpoint
 func (t *TestServer) WSAddr() string {
-	return fmt.Sprintf("ws://localhost:8546")
+	return "ws://localhost:8546"
 }
 
 // HTTPAddr returns the http endpoint

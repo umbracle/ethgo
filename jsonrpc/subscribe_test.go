@@ -53,15 +53,15 @@ func TestSubscribeNewHead(t *testing.T) {
 			}
 		}
 
-		s.ProcessBlock()
+		assert.NoError(t, s.ProcessBlock())
 		recv(true)
 
-		s.ProcessBlock()
+		assert.NoError(t, s.ProcessBlock())
 		recv(true)
 
 		assert.NoError(t, cancel())
 
-		s.ProcessBlock()
+		assert.NoError(t, s.ProcessBlock())
 		recv(false)
 
 		// subscription already closed

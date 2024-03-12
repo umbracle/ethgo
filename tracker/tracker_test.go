@@ -21,6 +21,8 @@ import (
 	"github.com/umbracle/ethgo/tracker/store/inmem"
 )
 
+var randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 func testConfig() ConfigOption {
 	return func(c *Config) {
 		c.BatchSize = 10
@@ -56,7 +58,10 @@ func TestPolling(t *testing.T) {
 
 	// send 5 txns
 	for i := 0; i < 5; i++ {
-		s.TxnTo(addr0, "setA1")
+		receipt, err := s.TxnTo(addr0, "setA1")
+		require.NoError(t, err)
+		require.NotNil(t, receipt)
+		require.Equal(t, uint64(1), receipt.Status)
 	}
 
 	tt, err := NewTracker(client.Eth())
@@ -154,7 +159,7 @@ func TestPreflight(t *testing.T) {
 
 	l0 := testutil.MockList{}
 	l0.Create(0, 100, func(b *testutil.MockBlock) {
-		b = b.Extra("1")
+		b.Extra("1")
 	})
 
 	m.AddScenario(l0)
@@ -184,7 +189,7 @@ func TestTrackerSyncerRestarts(t *testing.T) {
 		if len(void) == 0 {
 			l.Create(first, last, func(b *testutil.MockBlock) {
 				if b.GetNum()%5 == 0 {
-					b = b.Log("0x1")
+					b.Log("0x1")
 				}
 			})
 			m.AddScenario(l)
@@ -235,7 +240,7 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 	// test that the syncer can reconcile if there is a fork in the saved state
 	l := testutil.MockList{}
 	l.Create(0, iniLen, func(b *testutil.MockBlock) {
-		b = b.Log("0x01")
+		b.Log("0x01")
 	})
 
 	m := &testutil.MockClient{}
@@ -255,20 +260,22 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 			panic(err)
 		}
 	}()
-	tt0.WaitDuration(2 * time.Second)
+
+	err = tt0.WaitDuration(2 * time.Second)
+	assert.NoError(t, err)
 
 	// create a fork at 'forkNum' and continue to 'endLen'
 	l1 := testutil.MockList{}
 	l1.Create(0, endLen, func(b *testutil.MockBlock) {
 		if b.GetNum() < forkNum {
-			b = b.Log("0x01") // old fork
+			b.Log("0x01") // old fork
 		} else {
 			if b.GetNum() == forkNum {
-				b = b.Log("0x02")
+				b.Log("0x02")
 			} else {
-				b = b.Log("0x03")
+				b.Log("0x03")
 			}
-			b = b.Extra("123") // used to set the new fork
+			b.Extra("123") // used to set the new fork
 		}
 	})
 
@@ -286,7 +293,8 @@ func testSyncerReconcile(t *testing.T, iniLen, forkNum, endLen int) {
 			panic(err)
 		}
 	}()
-	tt1.WaitDuration(2 * time.Second)
+	err = tt1.WaitDuration(2 * time.Second)
+	assert.NoError(t, err)
 
 	logs := tt1.entry.(*inmem.Entry).Logs()
 
@@ -324,7 +332,7 @@ func TestTrackerSyncerReconcile(t *testing.T) {
 }
 
 func randomInt(min, max int) int {
-	return min + rand.Intn(max-min)
+	return min + randomGen.Intn(max-min)
 }
 
 func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
@@ -363,10 +371,11 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 		count := 0
 
 		for j := c; j < c+num; j++ {
-			bb := testutil.Mock(j).Extra(forkID)
+			bb := testutil.Mock(j)
+			bb.Extra(forkID)
 			if j != 0 {
 				count++
-				bb = bb.Log(forkID)
+				bb.Log(forkID)
 			}
 			l = append(l, bb)
 		}
@@ -429,8 +438,6 @@ func testTrackerSyncerRandom(t *testing.T, n int, backlog uint64) {
 }
 
 func TestTrackerSyncerRandom(t *testing.T) {
-	rand.Seed(time.Now().UTC().UnixNano())
-
 	for i := 0; i < 100; i++ {
 		t.Run("", func(t *testing.T) {
 			testTrackerSyncerRandom(t, 100, uint64(randomInt(2, 10)))
@@ -653,18 +660,18 @@ func TestTrackerReconcile(t *testing.T) {
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
-				tt.blockTracker.AddBlockLocked(b)
+				err = tt.blockTracker.AddBlockLocked(b)
+				require.NoError(t, err)
 			}
 			// add the history to the store
 			for _, b := range c.History {
-				tt.entry.StoreLogs(b.GetLogs())
+				err = tt.entry.StoreLogs(b.GetLogs())
+				require.NoError(t, err)
 			}
 
 			for _, b := range c.Reconcile {
 				aux, err := tt.blockTracker.HandleBlockEvent(b.block.Block())
-				if err != nil {
-					t.Fatal(err)
-				}
+				require.NoError(t, err)
 				if aux == nil {
 					continue
 				}
@@ -716,7 +723,7 @@ func TestTrackerReconcile(t *testing.T) {
 
 type mockClientWithLimit struct {
 	limit uint64
-	testutil.MockClient
+	*testutil.MockClient
 }
 
 func (m *mockClientWithLimit) GetLogs(filter *ethgo.LogFilter) ([]*ethgo.Log, error) {
@@ -757,7 +764,7 @@ func TestTooMuchDataRequested(t *testing.T) {
 
 	mm := &mockClientWithLimit{
 		limit:      3,
-		MockClient: *m,
+		MockClient: m,
 	}
 
 	config := DefaultConfig()

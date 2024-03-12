@@ -117,7 +117,9 @@ func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	query := "INSERT INTO " + e.table + " (indx, tx_index, tx_hash, block_num, block_hash, address, data, topics) VALUES (:indx, :tx_index, :tx_hash, :block_num, :block_hash, :address, :data, :topics)"
 

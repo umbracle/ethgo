@@ -22,7 +22,7 @@ type Address [20]byte
 // HexToAddress converts an hex string value to an address object
 func HexToAddress(str string) Address {
 	a := Address{}
-	a.UnmarshalText(completeHex(str, 20))
+	_ = a.UnmarshalText(completeHex(str, 20))
 	return a
 }
 
@@ -91,7 +91,7 @@ type Hash [32]byte
 // HexToHash converts an hex string value to a hash object
 func HexToHash(str string) Hash {
 	h := Hash{}
-	h.UnmarshalText(completeHex(str, 32))
+	_ = h.UnmarshalText(completeHex(str, 32))
 	return h
 }
 

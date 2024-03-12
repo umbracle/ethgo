@@ -3,7 +3,7 @@ package ethgo
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -82,7 +82,7 @@ func readTestsuite(t *testing.T, pattern string) (res []*testFile) {
 		t.Fatal("no test files found")
 	}
 	for _, f := range files {
-		data, err := ioutil.ReadFile(f)
+		data, err := os.ReadFile(f)
 		if err != nil {
 			t.Fatal(err)
 		}

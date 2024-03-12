@@ -99,7 +99,8 @@ func TestContract_Deploy(t *testing.T) {
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
-	s.Fund(key.Address())
+	_, err := s.Fund(key.Address())
+	require.NoError(t, err)
 
 	p, _ := jsonrpc.NewClient(s.HTTPAddr())
 
@@ -137,7 +138,8 @@ func TestContract_Transaction(t *testing.T) {
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
-	s.Fund(key.Address())
+	_, err := s.Fund(key.Address())
+	require.NoError(t, err)
 
 	cc := &testutil.Contract{}
 	cc.AddEvent(testutil.NewEvent("A").Add("uint256", true))
@@ -170,7 +172,8 @@ func TestContract_CallAtBlock(t *testing.T) {
 
 	// create an address and fund it
 	key, _ := wallet.GenerateKey()
-	s.Fund(key.Address())
+	_, err := s.Fund(key.Address())
+	require.NoError(t, err)
 
 	cc := &testutil.Contract{}
 	cc.AddCallback(func() string {
@@ -228,7 +231,8 @@ func TestContract_SendValueContractCall(t *testing.T) {
 	s := testutil.NewTestServer(t)
 
 	key, _ := wallet.GenerateKey()
-	s.Fund(key.Address())
+	_, err := s.Fund(key.Address())
+	assert.NoError(t, err)
 
 	cc := &testutil.Contract{}
 	cc.AddCallback(func() string {
@@ -267,7 +271,8 @@ func TestContract_EIP1559(t *testing.T) {
 	s := testutil.NewTestServer(t)
 
 	key, _ := wallet.GenerateKey()
-	s.Fund(key.Address())
+	_, err := s.Fund(key.Address())
+	assert.NoError(t, err)
 
 	cc := &testutil.Contract{}
 	cc.AddOutputCaller("example")

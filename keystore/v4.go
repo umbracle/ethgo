@@ -158,7 +158,7 @@ func normalizePassword(password string) string {
 		if i == 0x7F {
 			return true
 		}
-		if 0x00 <= i && i <= 0x1F {
+		if i <= 0x1F {
 			return true
 		}
 		if 0x80 <= i && i <= 0x9F {

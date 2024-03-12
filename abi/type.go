@@ -292,7 +292,9 @@ func NewTypeFromArgument(arg *ArgumentStr) (*Type, error) {
 	}
 
 	// fill-in the `internalType` field into the type elems
-	fillIn(typ, arg)
+	if err = fillIn(typ, arg); err != nil {
+		return nil, err
+	}
 
 	return typ, nil
 }
@@ -326,7 +328,9 @@ func fillIn(typ *Type, arg *ArgumentStr) error {
 	}
 
 	for indx, i := range arg.Components {
-		fillIn(typ.tuple[indx].Elem, i)
+		if err := fillIn(typ.tuple[indx].Elem, i); err != nil {
+			return err
+		}
 	}
 
 	return nil

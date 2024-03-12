@@ -19,7 +19,8 @@ func TestSendSignedTransaction(t *testing.T) {
 
 	// add value to the new key
 	value := big.NewInt(1000000000000000000)
-	s.Transfer(key.Address(), value)
+	_, err = s.Transfer(key.Address(), value)
+	assert.NoError(t, err)
 
 	c, _ := jsonrpc.NewClient(s.HTTPAddr())
 

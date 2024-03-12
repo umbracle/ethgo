@@ -38,7 +38,7 @@ func TestBuildMessage_Encode(t *testing.T) {
 	}
 	typedMsg := b.Build(msg)
 
-	_, ok := typedMsg.Message["msg1"].(interface{})
+	_, ok := typedMsg.Message["msg1"].(map[string]interface{})
 	require.True(t, ok)
 
 	_, ok = typedMsg.Message["msg2"].([]interface{})

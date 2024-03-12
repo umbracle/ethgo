@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/big"
 	"strconv"
@@ -182,7 +182,7 @@ func NewTracker(provider Provider, opts ...ConfigOption) (*Tracker, error) {
 		provider:     provider,
 		config:       config,
 		BlockCh:      make(chan *blocktracker.BlockEvent, 1),
-		logger:       log.New(ioutil.Discard, "", log.LstdFlags),
+		logger:       log.New(io.Discard, "", log.LstdFlags),
 		ReadyCh:      make(chan struct{}),
 		store:        config.Store,
 		blockTracker: config.BlockTracker,
@@ -290,8 +290,8 @@ func (t *Tracker) IsSynced() bool {
 }
 
 // Wait waits the filter to finish
-func (t *Tracker) Wait() {
-	t.WaitDuration(0)
+func (t *Tracker) Wait() error {
+	return t.WaitDuration(0)
 }
 
 // WaitDuration waits for the filter to finish up to duration
@@ -693,7 +693,7 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 			}
 			t.emitLogs(EventDel, logs)
 
-			last, err = t.getBlockByNumber(ancestor)
+			_, err = t.getBlockByNumber(ancestor)
 			if err != nil {
 				return err
 			}

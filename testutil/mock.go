@@ -91,9 +91,7 @@ func (d *MockClient) AddScenario(m MockList) {
 
 		// add logs
 		// remove any other logs for this block in case there are any
-		if _, ok := d.logs[block.Hash]; ok {
-			delete(d.logs, block.Hash)
-		}
+		delete(d.logs, block.Hash)
 
 		d.AddLogs(b.GetLogs())
 	}
@@ -217,9 +215,7 @@ type MockBlock struct {
 }
 
 func mustDecodeHash(str string) []byte {
-	if strings.HasPrefix(str, "0x") {
-		str = str[2:]
-	}
+	str = strings.TrimPrefix(str, "0x")
 	if len(str)%2 == 1 {
 		str = str + "0"
 	}
