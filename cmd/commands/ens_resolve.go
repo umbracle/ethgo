@@ -3,9 +3,9 @@ package commands
 import (
 	"os"
 
+	"github.com/Ethernal-Tech/ethgo/ens"
 	"github.com/mitchellh/cli"
 	flag "github.com/spf13/pflag"
-	"github.com/umbracle/ethgo/ens"
 )
 
 func defaultJsonRPCProvider() string {

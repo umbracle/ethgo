@@ -9,9 +9,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/umbracle/ethgo/abi"
-	"github.com/umbracle/ethgo/cmd/version"
-	"github.com/umbracle/ethgo/compiler"
+	"github.com/Ethernal-Tech/ethgo/abi"
+	"github.com/Ethernal-Tech/ethgo/cmd/version"
+	"github.com/Ethernal-Tech/ethgo/compiler"
 )
 
 type config struct {
@@ -182,9 +182,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/contract"
-	"github.com/umbracle/ethgo/jsonrpc"
+	"github.com/Ethernal-Tech/ethgo"
+	"github.com/Ethernal-Tech/ethgo/contract"
+	"github.com/Ethernal-Tech/ethgo/jsonrpc"
 )
 
 var (

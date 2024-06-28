@@ -6,9 +6,9 @@ import (
 	"crypto/rand"
 	"fmt"
 
+	"github.com/Ethernal-Tech/ethgo"
 	"github.com/btcsuite/btcd/btcec/v2"
 	btcecdsa "github.com/btcsuite/btcd/btcec/v2/ecdsa"
-	"github.com/umbracle/ethgo"
 )
 
 // S256 is the secp256k1 elliptic curve

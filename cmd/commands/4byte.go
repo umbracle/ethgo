@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/mitchellh/cli"
-	fourbyte "github.com/umbracle/ethgo/4byte"
+	fourbyte "github.com/Ethernal-Tech/ethgo/4byte"
 )
 
 // FourByteCommand is the command to resolve 4byte actions

@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Ethernal-Tech/ethgo/jsonrpc/codec"
 	"github.com/gorilla/websocket"
-	"github.com/umbracle/ethgo/jsonrpc/codec"
 )
 
 func newWebsocket(url string, headers map[string]string) (Transport, error) {

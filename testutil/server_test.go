@@ -3,8 +3,8 @@ package testutil
 import (
 	"testing"
 
+	"github.com/Ethernal-Tech/ethgo"
 	"github.com/stretchr/testify/require"
-	"github.com/umbracle/ethgo"
 )
 
 func TestDeployServer(t *testing.T) {

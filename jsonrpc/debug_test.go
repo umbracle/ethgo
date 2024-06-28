@@ -3,9 +3,9 @@ package jsonrpc
 import (
 	"testing"
 
+	"github.com/Ethernal-Tech/ethgo/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/umbracle/ethgo/testutil"
 )
 
 func TestDebug_TraceTransaction(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Ethernal-Tech/ethgo/cmd/commands"
 	"github.com/mitchellh/cli"
-	"github.com/umbracle/ethgo/cmd/commands"
 )
 
 func main() {

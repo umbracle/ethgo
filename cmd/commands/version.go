@@ -1,8 +1,8 @@
 package commands
 
 import (
+	"github.com/Ethernal-Tech/ethgo/cmd/version"
 	"github.com/mitchellh/cli"
-	"github.com/umbracle/ethgo/cmd/version"
 )
 
 // VersionCommand is the command to show the version of the agent

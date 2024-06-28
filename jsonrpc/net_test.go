@@ -3,8 +3,8 @@ package jsonrpc
 import (
 	"testing"
 
+	"github.com/Ethernal-Tech/ethgo/testutil"
 	"github.com/stretchr/testify/assert"
-	"github.com/umbracle/ethgo/testutil"
 )
 
 func TestNetVersion(t *testing.T) {

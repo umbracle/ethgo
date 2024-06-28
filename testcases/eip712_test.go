@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/Ethernal-Tech/ethgo/signing"
 	"github.com/stretchr/testify/require"
-	"github.com/umbracle/ethgo/signing"
 )
 
 type eip712Testcase struct {

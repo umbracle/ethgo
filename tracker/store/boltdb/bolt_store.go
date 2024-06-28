@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/tracker/store"
+	"github.com/Ethernal-Tech/ethgo"
+	"github.com/Ethernal-Tech/ethgo/tracker/store"
 	bolt "go.etcd.io/bbolt"
 )
 

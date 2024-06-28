@@ -1,11 +1,11 @@
-module github.com/umbracle/ethgo/cmd
+module github.com/Ethernal-Tech/ethgo/cmd
 
 go 1.21
 
 require (
+	github.com/Ethernal-Tech/ethgo v0.0.0-20240628121356-b8caba2bb7cc
 	github.com/mitchellh/cli v1.1.2
 	github.com/spf13/pflag v1.0.5
-	github.com/umbracle/ethgo v0.0.0-20220303093617-1621d9ff042b
 )
 
 require (
@@ -45,4 +45,4 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 )
 
-replace github.com/umbracle/ethgo => ../
+replace github.com/Ethernal-Tech/ethgo => ../

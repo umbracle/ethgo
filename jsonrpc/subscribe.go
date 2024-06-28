@@ -3,7 +3,7 @@ package jsonrpc
 import (
 	"fmt"
 
-	"github.com/umbracle/ethgo/jsonrpc/transport"
+	"github.com/Ethernal-Tech/ethgo/jsonrpc/transport"
 )
 
 // SubscriptionEnabled returns true if the subscription endpoints are enabled

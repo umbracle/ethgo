@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/umbracle/ethgo"
-	"github.com/umbracle/ethgo/abi"
+	"github.com/Ethernal-Tech/ethgo"
+	"github.com/Ethernal-Tech/ethgo/abi"
 )
 
 type EIP712MessageBuilder[T any] struct {

@@ -3,7 +3,7 @@ package wallet
 import (
 	"math/big"
 
-	"github.com/umbracle/ethgo"
+	"github.com/Ethernal-Tech/ethgo"
 	"github.com/umbracle/fastrlp"
 )
 

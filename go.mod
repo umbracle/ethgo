@@ -1,4 +1,4 @@
-module github.com/umbracle/ethgo
+module github.com/Ethernal-Tech/ethgo
 
 go 1.21
 

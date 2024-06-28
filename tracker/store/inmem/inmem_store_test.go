@@ -3,7 +3,7 @@ package inmem
 import (
 	"testing"
 
-	"github.com/umbracle/ethgo/tracker/store"
+	"github.com/Ethernal-Tech/ethgo/tracker/store"
 )
 
 func TestInMemoryStore(t *testing.T) {

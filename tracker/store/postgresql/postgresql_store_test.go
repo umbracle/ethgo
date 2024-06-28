@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/Ethernal-Tech/ethgo/tracker/store"
 	"github.com/ory/dockertest"
-	"github.com/umbracle/ethgo/tracker/store"
 )
 
 func setupDB(t *testing.T) (store.Store, func()) {
