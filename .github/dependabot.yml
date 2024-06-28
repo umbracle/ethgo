@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    target-branch: "main"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 20
+    pull-request-branch-name:
+      separator: "-"
+    reviewers:
+      - "Ethernal-Tech/blade-devs"
