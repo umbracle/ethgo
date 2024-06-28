@@ -14,7 +14,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v1
         with:
-          go-version: "1.18.1"
+          go-version: "1.21.6"
       - name: "Setup"
         run: ./scripts/setup-ci.sh
       - name: "Setup geth"
