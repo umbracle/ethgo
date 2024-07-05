@@ -1,18 +1,16 @@
 module github.com/umbracle/ethgo/cmd
 
-go 1.21
-
-toolchain go1.22.2
+go 1.22.2
 
 require (
-	github.com/mitchellh/cli v1.1.2
+	github.com/mitchellh/cli v1.1.5
 	github.com/umbracle/ethgo v0.0.0-20220303093617-1621d9ff042b
 )
 
 require github.com/spf13/pflag v1.0.5
 
 require (
-	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310 // indirect
