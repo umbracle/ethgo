@@ -36,10 +36,7 @@ func (k *Key) SignMsg(msg []byte) ([]byte, error) {
 }
 
 func (k *Key) Sign(hash []byte) ([]byte, error) {
-	sig, err := btcecdsa.SignCompact(k.priv, hash, false)
-	if err != nil {
-		return nil, err
-	}
+	sig := btcecdsa.SignCompact(k.priv, hash, false)
 	term := byte(0)
 	if sig[0] == 28 {
 		term = 1
