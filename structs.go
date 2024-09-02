@@ -328,12 +328,14 @@ func (l *Log) Copy() *Log {
 	return ll
 }
 
-type BlockNumber int
+type BlockNumber int64
 
 const (
-	Latest   BlockNumber = -1
-	Earliest BlockNumber = -2
-	Pending  BlockNumber = -3
+	Safe      = BlockNumber(-4)
+	Finalized = BlockNumber(-3)
+	Latest    = BlockNumber(-2)
+	Pending   = BlockNumber(-1)
+	Earliest  = BlockNumber(0)
 )
 
 func (b BlockNumber) Location() string {
@@ -342,15 +344,19 @@ func (b BlockNumber) Location() string {
 
 func (b BlockNumber) String() string {
 	switch b {
-	case Latest:
-		return "latest"
 	case Earliest:
 		return "earliest"
 	case Pending:
 		return "pending"
+	case Latest:
+		return "latest"
+	case Finalized:
+		return "finalized"
+	case Safe:
+		return "safe"
 	}
 	if b < 0 {
-		panic("internal. blocknumber is negative")
+		panic(fmt.Sprintf("BlockNumber is negative: %d", b))
 	}
 	return fmt.Sprintf("0x%x", uint64(b))
 }
