@@ -14,6 +14,14 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+// ABIEncoder declares functions that are encoding and decoding data to/from ABI format
+type ABIEncoder interface {
+	// EncodeAbi contains logic for encoding arbitrary data into ABI format
+	EncodeAbi() ([]byte, error)
+	// DecodeAbi contains logic for decoding given ABI data
+	DecodeAbi(b []byte) error
+}
+
 // ABI represents the ethereum abi format
 type ABI struct {
 	Constructor        *Method
@@ -24,13 +32,11 @@ type ABI struct {
 }
 
 func (a *ABI) GetMethod(name string) *Method {
-	m := a.Methods[name]
-	return m
+	return a.Methods[name]
 }
 
 func (a *ABI) GetMethodBySignature(methodSignature string) *Method {
-	m := a.MethodsBySignature[methodSignature]
-	return m
+	return a.MethodsBySignature[methodSignature]
 }
 
 func (a *ABI) addError(e *Error) {

@@ -317,7 +317,8 @@ func TestEncoding(t *testing.T) {
 	server := testutil.NewTestServer(t)
 
 	for _, c := range cases {
-		t.Run("", func(t *testing.T) {
+		c := c
+		t.Run(c.Type, func(t *testing.T) {
 			t.Parallel()
 
 			tt, err := NewType(c.Type)
@@ -582,7 +583,7 @@ func testEncodeDecode(t *testing.T, server *testutil.TestServer, tt *Type, input
 	return nil
 }
 
-func generateRandomArgs(n int) *Type {
+func generateRandomArgs() *Type {
 	inputs := []*TupleElem{}
 	for i := 0; i < randomInt(1, 10); i++ {
 		ttt, err := NewType(randomType())
@@ -615,7 +616,7 @@ func TestRandomEncoding(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			t.Parallel()
 
-			tt := generateRandomArgs(randomInt(1, 4))
+			tt := generateRandomArgs()
 			input := generateRandomType(tt)
 
 			if err := testEncodeDecode(t, server, tt, input); err != nil {
@@ -651,6 +652,8 @@ func testDecodePanic(tt *Type, input interface{}) error {
 }
 
 func testTypeWithContract(t *testing.T, server *testutil.TestServer, typ *Type) error {
+	t.Helper()
+
 	g := &generateContractImpl{}
 	source := g.run(typ)
 

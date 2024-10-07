@@ -11,6 +11,10 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+const (
+	storageSlotSize = 32
+)
+
 // Decode decodes the input with a given type
 func Decode(t *Type, input []byte) (interface{}, error) {
 	if len(input) == 0 {
@@ -18,6 +22,11 @@ func Decode(t *Type, input []byte) (interface{}, error) {
 	}
 	val, _, err := decode(t, input)
 	return val, err
+}
+
+// DecodeWithCustomEncoder decodes the raw byte array into ABIEncoder implementation
+func DecodeWithCustomEncoder(rawValues []byte, encoder ABIEncoder) error {
+	return encoder.DecodeAbi(rawValues)
 }
 
 // DecodeStruct decodes the input with a type to a struct
@@ -36,19 +45,18 @@ func DecodeStruct(t *Type, input []byte, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err = ms.Decode(val); err != nil {
-		return err
-	}
-	return nil
+	return ms.Decode(val)
 }
 
 func decode(t *Type, input []byte) (interface{}, []byte, error) {
-	var data []byte
-	var length int
-	var err error
+	var (
+		data   []byte
+		length int
+		err    error
+	)
 
 	// safe check, input should be at least 32 bytes
-	if len(input) < 32 {
+	if len(input) < storageSlotSize {
 		return nil, nil, fmt.Errorf("incorrect length")
 	}
 
@@ -58,7 +66,7 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 			return nil, nil, err
 		}
 	} else {
-		data = input[:32]
+		data = input[:storageSlotSize]
 	}
 
 	switch t.kind {
@@ -81,10 +89,10 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 		val = readInteger(t, data)
 
 	case KindString:
-		val = string(input[32 : 32+length])
+		val = string(input[storageSlotSize : storageSlotSize+length])
 
 	case KindBytes:
-		val = input[32 : 32+length]
+		val = input[storageSlotSize : storageSlotSize+length]
 
 	case KindAddress:
 		val, err = readAddr(data)
@@ -93,13 +101,13 @@ func decode(t *Type, input []byte) (interface{}, []byte, error) {
 		val, err = readFixedBytes(t, data)
 
 	case KindFunction:
-		val, err = readFunctionType(t, data)
+		val, err = readFunctionType(data)
 
 	default:
 		return nil, nil, fmt.Errorf("decoding not available for type '%s'", t.kind)
 	}
 
-	return val, input[32:], err
+	return val, input[storageSlotSize:], err
 }
 
 var (
@@ -113,7 +121,7 @@ var (
 
 func readAddr(b []byte) (ethgo.Address, error) {
 	res := ethgo.Address{}
-	if len(b) != 32 {
+	if len(b) != storageSlotSize {
 		return res, fmt.Errorf("len is not correct")
 	}
 	copy(res[:], b[12:])
@@ -161,7 +169,7 @@ func readInteger(t *Type, b []byte) interface{} {
 	}
 }
 
-func readFunctionType(t *Type, word []byte) ([24]byte, error) {
+func readFunctionType(word []byte) ([24]byte, error) {
 	res := [24]byte{}
 	if !allZeros(word[24:32]) {
 		return res, fmt.Errorf("function type expects the last 8 bytes to be empty but found: %b", word[24:32])
@@ -182,7 +190,7 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 	orig := data
 	origLen := len(orig)
 	for indx, arg := range t.tuple {
-		if len(data) < 32 {
+		if len(data) < storageSlotSize {
 			return nil, nil, fmt.Errorf("incorrect length")
 		}
 
@@ -203,7 +211,7 @@ func decodeTuple(t *Type, data []byte) (interface{}, []byte, error) {
 		if !arg.Elem.isDynamicType() {
 			data = tail
 		} else {
-			data = data[32:]
+			data = data[storageSlotSize:]
 		}
 
 		name := arg.Name
@@ -223,7 +231,7 @@ func decodeArraySlice(t *Type, data []byte, size int) (interface{}, []byte, erro
 	if size < 0 {
 		return nil, nil, fmt.Errorf("size is lower than zero")
 	}
-	if 32*size > len(data) {
+	if storageSlotSize*size > len(data) {
 		return nil, nil, fmt.Errorf("size is too big")
 	}
 
@@ -239,7 +247,7 @@ func decodeArraySlice(t *Type, data []byte, size int) (interface{}, []byte, erro
 	for indx := 0; indx < size; indx++ {
 		isDynamic := t.elem.isDynamicType()
 
-		if len(data) < 32 {
+		if len(data) < storageSlotSize {
 			return nil, nil, fmt.Errorf("incorrect length")
 		}
 
@@ -260,7 +268,7 @@ func decodeArraySlice(t *Type, data []byte, size int) (interface{}, []byte, erro
 		if !isDynamic {
 			data = tail
 		} else {
-			data = data[32:]
+			data = data[storageSlotSize:]
 		}
 		res.Index(indx).Set(reflect.ValueOf(val))
 	}
@@ -279,7 +287,7 @@ func decodeBool(data []byte) (interface{}, error) {
 }
 
 func readOffset(data []byte, len int) (int, error) {
-	offsetBig := big.NewInt(0).SetBytes(data[0:32])
+	offsetBig := big.NewInt(0).SetBytes(data[0:storageSlotSize])
 	if offsetBig.BitLen() > 63 {
 		return 0, fmt.Errorf("offset larger than int64: %v", offsetBig.Int64())
 	}
@@ -291,7 +299,7 @@ func readOffset(data []byte, len int) (int, error) {
 }
 
 func readLength(data []byte) (int, error) {
-	lengthBig := big.NewInt(0).SetBytes(data[0:32])
+	lengthBig := big.NewInt(0).SetBytes(data[0:storageSlotSize])
 	if lengthBig.BitLen() > 63 {
 		return 0, fmt.Errorf("length larger than int64: %v", lengthBig.Int64())
 	}
@@ -299,7 +307,7 @@ func readLength(data []byte) (int, error) {
 
 	// if we trim the length in the data there should be enough
 	// bytes to cover the length
-	if length > len(data)-32 {
+	if length > len(data)-storageSlotSize {
 		return 0, fmt.Errorf("length insufficient %v require %v", len(data), length)
 	}
 	return length, nil

@@ -109,7 +109,7 @@ func encodeTopic(t *Type, val reflect.Value) (ethgo.Hash, error) {
 		return encodeTopicBool(val)
 
 	case KindUInt, KindInt:
-		return encodeTopicNum(t, val)
+		return encodeTopicNum(val)
 
 	case KindAddress:
 		return encodeTopicAddress(val)
@@ -134,7 +134,7 @@ func encodeTopicAddress(val reflect.Value) (res ethgo.Hash, err error) {
 	return
 }
 
-func encodeTopicNum(t *Type, val reflect.Value) (res ethgo.Hash, err error) {
+func encodeTopicNum(val reflect.Value) (res ethgo.Hash, err error) {
 	var b []byte
 	b, err = encodeNum(val)
 	if err != nil {

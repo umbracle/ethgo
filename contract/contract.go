@@ -336,12 +336,23 @@ type CallOpts struct {
 	From  ethgo.Address
 }
 
-func (a *Contract) Call(method string, block ethgo.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
-	m := a.abi.GetMethod(method)
+// Call interacts with the smart contract function and decodes the raw value into the map[string]interface{}
+func (a *Contract) Call(methodName string, block ethgo.BlockNumber, args ...interface{}) (map[string]interface{}, error) {
+	m := a.abi.GetMethod(methodName)
 	if m == nil {
-		return nil, fmt.Errorf("method %s not found", method)
+		return nil, fmt.Errorf("method %s not found", methodName)
 	}
 
+	rawOutput, err := a.CallInternal(m, block, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return m.Decode(rawOutput)
+}
+
+// CallInternal interacts with the smart contract function and returns raw value (byte array) and error
+func (a *Contract) CallInternal(m *abi.Method, block ethgo.BlockNumber, args ...interface{}) ([]byte, error) {
 	data, err := m.Encode(args)
 	if err != nil {
 		return nil, err
@@ -350,17 +361,10 @@ func (a *Contract) Call(method string, block ethgo.BlockNumber, args ...interfac
 	opts := &CallOpts{
 		Block: block,
 	}
+
 	if a.key != nil {
 		opts.From = a.key.Address()
 	}
-	rawOutput, err := a.provider.Call(a.addr, data, opts)
-	if err != nil {
-		return nil, err
-	}
 
-	resp, err := m.Decode(rawOutput)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return a.provider.Call(a.addr, data, opts)
 }
