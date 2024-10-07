@@ -18,7 +18,7 @@ require (
 	github.com/valyala/fastjson v1.6.4
 	go.etcd.io/bbolt v1.3.10
 	golang.org/x/crypto v0.27.0
-	golang.org/x/text v0.18.0
+	golang.org/x/text v0.19.0
 	pgregory.net/rapid v1.1.0
 )
 
