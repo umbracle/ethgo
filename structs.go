@@ -148,6 +148,7 @@ type Block struct {
 	Transactions       []*Transaction
 	TransactionsHashes []Hash
 	Uncles             []Hash
+	BaseFee            *big.Int
 }
 
 func (b *Block) Copy() *Block {
@@ -164,7 +165,7 @@ func (b *Block) Copy() *Block {
 	return bb
 }
 
-type TransactionType int
+type TransactionType uint8
 
 const (
 	TransactionLegacy TransactionType = 0
@@ -392,3 +393,13 @@ func completeHex(str string, num int) []byte {
 	}
 	return []byte("0x" + str)
 }
+
+type OverrideAccount struct {
+	Nonce     *uint64
+	Code      *[]byte
+	Balance   *big.Int
+	State     *map[Hash]Hash
+	StateDiff *map[Hash]Hash
+}
+
+type StateOverride map[Address]OverrideAccount

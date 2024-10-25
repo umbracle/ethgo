@@ -31,9 +31,23 @@ var (
 )
 
 const (
-	defaultMaxBlockBacklog = 10
-	defaultBatchSize       = 100
+	defaultBatchSize = 100
 )
+
+// BlockTracking defines interface for block tracker implementations
+type BlockTracking interface {
+	BlocksBlocked() []*ethgo.Block
+	AddBlockLocked(block *ethgo.Block) error
+	MaxBlockBacklog() uint64
+	Init() error
+	Start() error
+	Close() error
+	Subscribe() chan *blocktracker.BlockEvent
+	AcquireLock() blocktracker.Lock
+	LastBlocked() *ethgo.Block
+	HandleBlockEvent(block *ethgo.Block) (*blocktracker.BlockEvent, error)
+	Len() int
+}
 
 // FilterConfig is a tracker filter configuration
 type FilterConfig struct {
@@ -83,7 +97,7 @@ func (f *FilterConfig) getFilterSearch() *ethgo.LogFilter {
 // Config is the configuration of the tracker
 type Config struct {
 	BatchSize       uint64
-	BlockTracker    *blocktracker.BlockTracker // move to interface
+	BlockTracker    BlockTracking
 	EtherscanAPIKey string
 	Filter          *FilterConfig
 	Store           store.Store
@@ -97,7 +111,7 @@ func WithBatchSize(b uint64) ConfigOption {
 	}
 }
 
-func WithBlockTracker(b *blocktracker.BlockTracker) ConfigOption {
+func WithBlockTracker(b BlockTracking) ConfigOption {
 	return func(c *Config) {
 		c.BlockTracker = b
 	}
@@ -148,7 +162,7 @@ type Tracker struct {
 	store        store.Store
 	entry        store.Entry
 	preSyncOnce  sync.Once
-	blockTracker *blocktracker.BlockTracker
+	blockTracker BlockTracking
 	synced       int32
 	BlockCh      chan *blocktracker.BlockEvent
 	ReadyCh      chan struct{}
@@ -314,10 +328,16 @@ func (t *Tracker) findAncestor(block, pivot *ethgo.Block) (uint64, error) {
 		block, err = t.provider.GetBlockByHash(block.ParentHash, false)
 		if err != nil {
 			return 0, err
+		} else if block == nil {
+			// if block does not exist (for example reorg happened) GetBlockByNumber will return nil, nil
+			return 0, fmt.Errorf("block with hash %s not found", block.ParentHash)
 		}
 		pivot, err = t.provider.GetBlockByHash(pivot.ParentHash, false)
 		if err != nil {
 			return 0, err
+		} else if pivot == nil {
+			// if block does not exist (for example reorg happened) GetBlockByNumber will return nil, nil
+			return 0, fmt.Errorf("block/pivot with hash %s not found", pivot.ParentHash)
 		}
 	}
 	return 0, fmt.Errorf("the reorg is bigger than maxBlockBacklog %d", t.blockTracker.MaxBlockBacklog())
@@ -383,7 +403,7 @@ START:
 	t.emitLogs(EventAdd, logs)
 
 	// update the last block entry
-	block, err := t.provider.GetBlockByNumber(ethgo.BlockNumber(dst), false)
+	block, err := t.getBlockByNumber(dst)
 	if err != nil {
 		return err
 	}
@@ -418,7 +438,7 @@ func (t *Tracker) preSyncCheck() error {
 }
 
 func (t *Tracker) preSyncCheckImpl() error {
-	rGenesis, err := t.provider.GetBlockByNumber(0, false)
+	rGenesis, err := t.getBlockByNumber(0)
 	if err != nil {
 		return err
 	}
@@ -456,7 +476,7 @@ func (t *Tracker) preSyncCheckImpl() error {
 func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*ethgo.Block, error) {
 	// Try to use first the user provided block if any
 	if filterConfig.Start != 0 {
-		bb, err := t.provider.GetBlockByNumber(ethgo.BlockNumber(filterConfig.Start), false)
+		bb, err := t.getBlockByNumber(filterConfig.Start)
 		if err != nil {
 			return nil, err
 		}
@@ -518,7 +538,7 @@ func (t *Tracker) fastTrack(filterConfig *FilterConfig) (*ethgo.Block, error) {
 			}
 		}
 
-		bb, err := t.provider.GetBlockByNumber(ethgo.BlockNumber(minBlock-1), false)
+		bb, err := t.getBlockByNumber(minBlock - 1)
 		if err != nil {
 			return nil, err
 		}
@@ -567,7 +587,8 @@ func (t *Tracker) BatchSync(ctx context.Context) error {
 	return nil
 }
 
-// Sync syncs a specific filter
+// Sync syncs a specific filter.
+// This can take a long time so should be run concurrently.
 func (t *Tracker) Sync(ctx context.Context) error {
 	if err := t.BatchSync(ctx); err != nil {
 		return err
@@ -575,18 +596,16 @@ func (t *Tracker) Sync(ctx context.Context) error {
 
 	// subscribe and sync
 	sub := t.blockTracker.Subscribe()
-	go func() {
-		for {
-			select {
-			case evnt := <-sub:
-				t.handleBlockEvnt(evnt)
-			case <-ctx.Done():
-				return
+	for {
+		select {
+		case evnt := <-sub:
+			if err := t.handleBlockEvnt(evnt); err != nil {
+				return err
 			}
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-	}()
-
-	return nil
+	}
 }
 
 func (t *Tracker) syncImpl(ctx context.Context) error {
@@ -650,7 +669,7 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 			return fmt.Errorf("store is more advanced than the chain")
 		}
 
-		pivot, err := t.provider.GetBlockByNumber(ethgo.BlockNumber(last.Number), false)
+		pivot, err := t.getBlockByNumber(last.Number)
 		if err != nil {
 			return err
 		}
@@ -674,7 +693,7 @@ func (t *Tracker) syncImpl(ctx context.Context) error {
 			}
 			t.emitLogs(EventDel, logs)
 
-			last, err = t.provider.GetBlockByNumber(ethgo.BlockNumber(ancestor), false)
+			last, err = t.getBlockByNumber(ancestor)
 			if err != nil {
 				return err
 			}
@@ -841,6 +860,18 @@ func (t *Tracker) doFilter(added []*ethgo.Block, removed []*ethgo.Block) (*Event
 		return nil, err
 	}
 	return evnt, nil
+}
+
+func (t *Tracker) getBlockByNumber(blockNumber uint64) (*ethgo.Block, error) {
+	block, err := t.provider.GetBlockByNumber(ethgo.BlockNumber(blockNumber), false)
+	if err != nil {
+		return nil, err
+	} else if block == nil {
+		// if block does not exist (for example reorg happened) GetBlockByNumber will return nil, nil
+		return nil, fmt.Errorf("block with number %d not found", blockNumber)
+	}
+
+	return block, nil
 }
 
 // EventType is the type of the event

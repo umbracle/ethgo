@@ -170,11 +170,17 @@ func (e *Eth) GasPrice() (uint64, error) {
 	return parseUint64orHex(out)
 }
 
-// Call executes a new message call immediately without creating a transaction on the block chain.
-func (e *Eth) Call(msg *ethgo.CallMsg, block ethgo.BlockNumber) (string, error) {
+// Call executes a new message call immediately without creating a transaction on the blockchain.
+func (e *Eth) Call(msg *ethgo.CallMsg, block ethgo.BlockNumber, override ...*ethgo.StateOverride) (string, error) {
 	var out string
-	if err := e.c.Call("eth_call", &out, msg, block.String()); err != nil {
-		return "", err
+	if len(override) == 1 && override[0] != nil {
+		if err := e.c.Call("eth_call", &out, msg, block.String(), override[0]); err != nil {
+			return "", err
+		}
+	} else {
+		if err := e.c.Call("eth_call", &out, msg, block.String()); err != nil {
+			return "", err
+		}
 	}
 	return out, nil
 }
@@ -260,10 +266,21 @@ func (f *FeeHistory) UnmarshalJSON(data []byte) error {
 }
 
 // FeeHistory returns base fee per gas and transaction effective priority fee
-func (e *Eth) FeeHistory(from, to ethgo.BlockNumber) (*FeeHistory, error) {
+func (e *Eth) FeeHistory(blockCount uint64, newestBlock ethgo.BlockNumber, rewardPercentiles []float64) (*FeeHistory, error) {
 	var out *FeeHistory
-	if err := e.c.Call("eth_feeHistory", &out, from.String(), to.String(), nil); err != nil {
+	if err := e.c.Call("eth_feeHistory", &out, blockCount, newestBlock.String(), rewardPercentiles); err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+// MaxPriorityFeePerGas returns a fee per gas that is an estimate of how much you can pay as a priority fee, or 'tip',
+// to get a transaction included in the current block (EIP-1559).
+func (e *Eth) MaxPriorityFeePerGas() (*big.Int, error) {
+	var out string
+	if err := e.c.Call("eth_maxPriorityFeePerGas", &out); err != nil {
+		return big.NewInt(0), err
+	}
+
+	return parseBigInt(out), nil
 }

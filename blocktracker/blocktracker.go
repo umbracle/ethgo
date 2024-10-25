@@ -3,8 +3,6 @@ package blocktracker
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -67,7 +65,7 @@ func NewBlockTracker(provider BlockProvider, opts ...ConfigOption) *BlockTracker
 	}
 	tracker := config.Tracker
 	if tracker == nil {
-		tracker = NewJSONBlockTracker(log.New(os.Stderr, "", log.LstdFlags), provider)
+		tracker = NewJSONBlockTracker(provider)
 	}
 	return &BlockTracker{
 		blocks:     []*ethgo.Block{},
@@ -89,7 +87,7 @@ func (b *BlockTracker) Subscribe() chan *BlockEvent {
 }
 
 func (b *BlockTracker) AcquireLock() Lock {
-	return Lock{lock: &b.blocksLock}
+	return NewLock(&b.blocksLock)
 }
 
 func (t *BlockTracker) Init() (err error) {
@@ -113,6 +111,11 @@ func (t *BlockTracker) Init() (err error) {
 			}
 			block, err = t.provider.GetBlockByHash(block.ParentHash, false)
 			if err != nil {
+				return
+			} else if block == nil {
+				// if block does not exist (for example reorg happened) GetBlockByHash will return nil, nil
+				err = fmt.Errorf("block with hash %s not found", block.ParentHash)
+
 				return
 			}
 		}
@@ -231,6 +234,9 @@ func (t *BlockTracker) handleReconcileImpl(block *ethgo.Block) ([]*ethgo.Block, 
 
 		parent, err := t.provider.GetBlockByHash(block.ParentHash, false)
 		if err != nil {
+			return nil, -1, fmt.Errorf("parent with hash retrieving error: %w", err)
+		} else if parent == nil {
+			// if block does not exist (for example reorg happened) GetBlockByHash will return nil, nil
 			return nil, -1, fmt.Errorf("parent with hash %s not found", block.ParentHash)
 		}
 
@@ -313,105 +319,114 @@ const (
 // JSONBlockTracker implements the BlockTracker interface using
 // the http jsonrpc endpoint
 type JSONBlockTracker struct {
-	logger       *log.Logger
 	PollInterval time.Duration
 	provider     BlockProvider
 }
 
 // NewJSONBlockTracker creates a new json block tracker
-func NewJSONBlockTracker(logger *log.Logger, provider BlockProvider) *JSONBlockTracker {
+func NewJSONBlockTracker(provider BlockProvider) *JSONBlockTracker {
 	return &JSONBlockTracker{
-		logger:       logger,
 		provider:     provider,
 		PollInterval: defaultPollInterval,
 	}
 }
 
-// Track implements the BlockTracker interface
+// Track implements the BlockTracker interface.
+// This can take a long time so should be run concurrently.
 func (k *JSONBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
-	go func() {
-		var lastBlock *ethgo.Block
+	var lastBlock *ethgo.Block
 
-		for {
-			select {
-			case <-ctx.Done():
-				return
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
 
-			case <-time.After(k.PollInterval):
-				block, err := k.provider.GetBlockByNumber(ethgo.Latest, false)
-				if err != nil {
-					k.logger.Printf("[ERR]: Tracker failed to get last block: %v", err)
-					continue
-				}
-
-				if lastBlock != nil && lastBlock.Hash == block.Hash {
-					continue
-				}
-
-				if err := handle(block); err != nil {
-					k.logger.Printf("[ERROR]: blocktracker: Failed to handle block: %v", err)
-				} else {
-					lastBlock = block
-				}
+		case <-time.After(k.PollInterval):
+			block, err := k.provider.GetBlockByNumber(ethgo.Latest, false)
+			if err != nil {
+				return err
 			}
-		}
-	}()
 
-	return nil
+			if lastBlock != nil && lastBlock.Hash == block.Hash {
+				continue
+			}
+
+			if err := handle(block); err != nil {
+				return err
+			}
+			lastBlock = block
+		}
+	}
 }
 
 // SubscriptionBlockTracker is an interface to track new blocks using
 // the newHeads subscription endpoint
 type SubscriptionBlockTracker struct {
-	logger *log.Logger
 	client *jsonrpc.Client
 }
 
 // NewSubscriptionBlockTracker creates a new block tracker using the subscription endpoint
-func NewSubscriptionBlockTracker(logger *log.Logger, client *jsonrpc.Client) (*SubscriptionBlockTracker, error) {
+func NewSubscriptionBlockTracker(client *jsonrpc.Client) (*SubscriptionBlockTracker, error) {
 	if !client.SubscriptionEnabled() {
 		return nil, fmt.Errorf("subscription is not enabled")
 	}
 	s := &SubscriptionBlockTracker{
-		logger: logger,
 		client: client,
 	}
 	return s, nil
 }
 
 // Track implements the BlockTracker interface
-func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) error {
+// This can take a long time so should be run concurrently.
+// Note that the error return variable must be named so that subscription cancellation errors can be returned in defer.
+func (s *SubscriptionBlockTracker) Track(ctx context.Context, handle func(block *ethgo.Block) error) (err error) {
 	data := make(chan []byte)
-	cancel, err := s.client.Subscribe("newHeads", func(b []byte) {
+	defer close(data)
+
+	// Subscribe with a callback. This callback must be unsubscribed
+	// before the data channel is closed, otherwise panic (write to closed channel)
+	callback := func(b []byte) {
 		data <- b
-	})
+	}
+	unsubscribe, err := s.client.Subscribe("newHeads", callback)
 	if err != nil {
 		return err
 	}
-
-	go func() {
-		for {
-			select {
-			case buf := <-data:
-				var block ethgo.Block
-				if err := block.UnmarshalJSON(buf); err != nil {
-					s.logger.Printf("[ERR]: Tracker failed to parse ethgo.Block: %v", err)
-				} else {
-					handle(&block)
-				}
-
-			case <-ctx.Done():
-				cancel()
+	defer func() {
+		if cerr := unsubscribe(); cerr != nil {
+			// Ensure subscription cancellation errors are returned via named return var
+			if err == nil {
+				err = cerr
+				return
 			}
+			err = fmt.Errorf("failed to cancel: %s, after error %w", cerr.Error(), err)
 		}
 	}()
 
-	return nil
+	for {
+		select {
+		case buf := <-data:
+			var block ethgo.Block
+			if err := block.UnmarshalJSON(buf); err != nil {
+				return err
+			}
+			if err := handle(&block); err != nil {
+				return err
+			}
+
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 type Lock struct {
 	Locked bool
 	lock   *sync.Mutex
+}
+
+func NewLock(lock *sync.Mutex) Lock {
+	return Lock{lock: lock}
 }
 
 func (l *Lock) Lock() {

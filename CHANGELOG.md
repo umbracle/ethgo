@@ -1,5 +1,7 @@
 # 0.1.4 (Unreleased)
 
+- feat: Add override to `eth_call` request [[GH-240](https://github.com/umbracle/ethgo/issues/240)]
+- fix: Recovery of typed transactions [[GH-238](https://github.com/umbracle/ethgo/issues/238)]
 - fix: Parse `nonce` and `mixHash` on `Block` [[GH-228](https://github.com/umbracle/ethgo/issues/228)]
 - feat: `abi` decodes function string in multilines [[GH-212](https://github.com/umbracle/ethgo/issues/212)]
 - feat: `abi` DecodeStruct uses the `abi` tag instead of the default `mapstructure` [[GH-211](https://github.com/umbracle/ethgo/issues/211)]

@@ -13,6 +13,7 @@ var defaultArena fastjson.ArenaPool
 // MarshalJSON implements the marshal interface
 func (l *Log) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	if l.Removed {
@@ -46,6 +47,7 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 	}
 
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	o.Set("number", a.NewString(fmt.Sprintf("0x%x", t.Number)))
@@ -63,6 +65,10 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 	o.Set("extraData", a.NewString("0x"+hex.EncodeToString(t.ExtraData)))
 	o.Set("mixHash", a.NewString("0x"+hex.EncodeToString(t.MixHash[:])))
 	o.Set("nonce", a.NewString("0x"+hex.EncodeToString(t.Nonce[:])))
+
+	if t.BaseFee != nil {
+		o.Set("baseFee", a.NewString(fmt.Sprintf("0x%x", t.BaseFee)))
+	}
 
 	// uncles
 	if len(t.Uncles) != 0 {
@@ -97,6 +103,8 @@ func (t *Block) MarshalJSON() ([]byte, error) {
 // MarshalJSON implements the Marshal interface.
 func (t *Transaction) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
+
 	v := t.marshalJSON(a)
 	res := v.MarshalTo(nil)
 	defaultArena.Put(a)
@@ -105,6 +113,7 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 
 func (t *Transaction) marshalJSON(a *fastjson.Arena) *fastjson.Value {
 	o := a.NewObject()
+	o.Set("type", a.NewString(fmt.Sprintf("0x%x", t.Type)))
 	o.Set("hash", a.NewString(t.Hash.String()))
 	o.Set("from", a.NewString(t.From.String()))
 	if len(t.Input) != 0 {
@@ -113,17 +122,19 @@ func (t *Transaction) marshalJSON(a *fastjson.Arena) *fastjson.Value {
 	if t.Value != nil {
 		o.Set("value", a.NewString(fmt.Sprintf("0x%x", t.Value)))
 	}
-	o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", t.GasPrice)))
-
+	if t.Type == TransactionDynamicFee {
+		if t.MaxPriorityFeePerGas != nil {
+			o.Set("maxPriorityFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxPriorityFeePerGas)))
+		}
+		if t.MaxFeePerGas != nil {
+			o.Set("maxFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxFeePerGas)))
+		}
+	} else {
+		o.Set("gasPrice", a.NewString(fmt.Sprintf("0x%x", t.GasPrice)))
+	}
 	// gas limit fields
 	if t.Gas != 0 {
 		o.Set("gas", a.NewString(fmt.Sprintf("0x%x", t.Gas)))
-	}
-	if t.MaxPriorityFeePerGas != nil {
-		o.Set("maxPriorityFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxPriorityFeePerGas)))
-	}
-	if t.MaxFeePerGas != nil {
-		o.Set("maxFeePerGas", a.NewString(fmt.Sprintf("0x%x", t.MaxFeePerGas)))
 	}
 
 	if t.Nonce != 0 {
@@ -179,6 +190,7 @@ func (t *AccessList) marshalJSON(a *fastjson.Arena) *fastjson.Value {
 // MarshalJSON implements the Marshal interface.
 func (c *CallMsg) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	o.Set("from", a.NewString(c.From.String()))
@@ -206,6 +218,7 @@ func (c *CallMsg) MarshalJSON() ([]byte, error) {
 // MarshalJSON implements the Marshal interface.
 func (l *LogFilter) MarshalJSON() ([]byte, error) {
 	a := defaultArena.Get()
+	defer a.Reset()
 
 	o := a.NewObject()
 	if len(l.Address) == 1 {
@@ -252,5 +265,44 @@ func (l *LogFilter) MarshalJSON() ([]byte, error) {
 
 	res := o.MarshalTo(nil)
 	defaultArena.Put(a)
+	return res, nil
+}
+
+func (s StateOverride) MarshalJSON() ([]byte, error) {
+	a := defaultArena.Get()
+	defer a.Reset()
+
+	o := a.NewObject()
+	for addr, obj := range s {
+		oo := a.NewObject()
+		if obj.Nonce != nil {
+			oo.Set("nonce", a.NewString(fmt.Sprintf("0x%x", *obj.Nonce)))
+		}
+		if obj.Balance != nil {
+			oo.Set("balance", a.NewString(fmt.Sprintf("0x%x", obj.Balance)))
+		}
+		if obj.Code != nil {
+			oo.Set("code", a.NewString("0x"+hex.EncodeToString(*obj.Code)))
+		}
+		if obj.State != nil {
+			ooo := a.NewObject()
+			for k, v := range *obj.State {
+				ooo.Set(k.String(), a.NewString(v.String()))
+			}
+			oo.Set("state", ooo)
+		}
+		if obj.StateDiff != nil {
+			ooo := a.NewObject()
+			for k, v := range *obj.StateDiff {
+				ooo.Set(k.String(), a.NewString(v.String()))
+			}
+			oo.Set("stateDiff", ooo)
+		}
+		o.Set(addr.String(), oo)
+	}
+
+	res := o.MarshalTo(nil)
+	defaultArena.Put(a)
+
 	return res, nil
 }

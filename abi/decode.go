@@ -296,7 +296,10 @@ func readLength(data []byte) (int, error) {
 		return 0, fmt.Errorf("length larger than int64: %v", lengthBig.Int64())
 	}
 	length := int(lengthBig.Uint64())
-	if length > len(data) {
+
+	// if we trim the length in the data there should be enough
+	// bytes to cover the length
+	if length > len(data)-32 {
 		return 0, fmt.Errorf("length insufficient %v require %v", len(data), length)
 	}
 	return length, nil

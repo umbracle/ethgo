@@ -1,11 +1,11 @@
 package abi
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAbi(t *testing.T) {
@@ -106,12 +106,51 @@ func TestAbi(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(abi, c.Output) {
-				fmt.Println(reflect.DeepEqual(abi.Methods["balanceOf"].Outputs, c.Output.Methods["balanceOf"].Outputs))
 				t.Fatal("bad")
 			}
-
 		})
 	}
+}
+
+func TestAbi_InternalType(t *testing.T) {
+	const abiStr = `[
+        {
+            "inputs": [
+				{
+					"components": [
+						{
+							"internalType": "address",
+							"type": "address"
+						},
+						{
+							"internalType": "uint256[4]",
+							"type": "uint256[4]"
+						}
+					],
+					"internalType": "struct X",
+					"name": "newSet",
+					"type": "tuple[]"
+				},
+                {
+                    "internalType": "custom_address",
+                    "name": "_to",
+                    "type": "address"
+                }
+			],
+			"outputs": [],
+			"name": "transfer",
+			"type": "function"
+		}
+	]`
+
+	abi, err := NewABI(abiStr)
+	require.NoError(t, err)
+
+	typ := abi.GetMethod("transfer").Inputs
+	require.Equal(t, typ.tuple[0].Elem.InternalType(), "struct X")
+	require.Equal(t, typ.tuple[0].Elem.elem.tuple[0].Elem.InternalType(), "address")
+	require.Equal(t, typ.tuple[0].Elem.elem.tuple[1].Elem.InternalType(), "uint256[4]")
+	require.Equal(t, typ.tuple[1].Elem.InternalType(), "custom_address")
 }
 
 func TestAbi_Polymorphism(t *testing.T) {
@@ -208,49 +247,49 @@ func TestAbi_HumanReadable(t *testing.T) {
 			Inputs: MustNewType("tuple(string symbol, string name)"),
 		},
 		Methods: map[string]*Method{
-			"transferFrom": &Method{
+			"transferFrom": {
 				Name:    "transferFrom",
 				Inputs:  MustNewType("tuple(address from, address to, uint256 value)"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"balanceOf": &Method{
+			"balanceOf": {
 				Name:    "balanceOf",
 				Inputs:  MustNewType("tuple(address owner)"),
 				Outputs: MustNewType("tuple(uint256 balance)"),
 			},
-			"balanceOf0": &Method{
+			"balanceOf0": {
 				Name:    "balanceOf",
 				Inputs:  MustNewType("tuple()"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"addPerson": &Method{
+			"addPerson": {
 				Name:    "addPerson",
 				Inputs:  MustNewType("tuple(tuple(string name, uint16 age) person)"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"addPeople": &Method{
+			"addPeople": {
 				Name:    "addPeople",
 				Inputs:  MustNewType("tuple(tuple(string name, uint16 age)[] person)"),
 				Outputs: MustNewType("tuple()"),
 			},
-			"getPerson": &Method{
+			"getPerson": {
 				Name:    "getPerson",
 				Inputs:  MustNewType("tuple(uint256 id)"),
 				Outputs: MustNewType("tuple(tuple(string name, uint16 age))"),
 			},
 		},
 		Events: map[string]*Event{
-			"Transfer": &Event{
+			"Transfer": {
 				Name:   "Transfer",
 				Inputs: MustNewType("tuple(address indexed from, address indexed to, address value)"),
 			},
-			"PersonAdded": &Event{
+			"PersonAdded": {
 				Name:   "PersonAdded",
 				Inputs: MustNewType("tuple(uint256 indexed id, tuple(string name, uint16 age) person)"),
 			},
 		},
 		Errors: map[string]*Error{
-			"InsufficientBalance": &Error{
+			"InsufficientBalance": {
 				Name:   "InsufficientBalance",
 				Inputs: MustNewType("tuple(address owner, uint256 balance)"),
 			},
