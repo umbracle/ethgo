@@ -43,6 +43,8 @@ func (h *HTTP) Call(method string, out interface{}, params ...interface{}) error
 			return err
 		}
 		request.Params = data
+	} else {
+		request.Params = []byte{'[', ']'}
 	}
 	raw, err := json.Marshal(request)
 	if err != nil {
