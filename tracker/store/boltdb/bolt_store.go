@@ -42,7 +42,9 @@ func (b *BoltStore) setupDB() error {
 	if err != nil {
 		return err
 	}
-	defer txn.Rollback()
+	defer func() {
+		_ = txn.Rollback()
+	}()
 
 	if _, err := txn.CreateBucketIfNotExists(dbConf); err != nil {
 		return err
@@ -61,7 +63,9 @@ func (b *BoltStore) Get(k string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer txn.Rollback()
+	defer func() {
+		_ = txn.Rollback()
+	}()
 
 	bucket := txn.Bucket(dbConf)
 	val := bucket.Get([]byte(k))
@@ -75,7 +79,9 @@ func (b *BoltStore) ListPrefix(prefix string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer txn.Rollback()
+	defer func() {
+		err = txn.Rollback()
+	}()
 
 	res := []string{}
 	c := txn.Bucket(dbConf).Cursor()
@@ -91,7 +97,9 @@ func (b *BoltStore) Set(k, v string) error {
 	if err != nil {
 		return err
 	}
-	defer txn.Rollback()
+	defer func() {
+		_ = txn.Rollback()
+	}()
 
 	bucket := txn.Bucket(dbConf)
 	if err := bucket.Put([]byte(k), []byte(v)); err != nil {
@@ -106,7 +114,9 @@ func (b *BoltStore) GetEntry(hash string) (store.Entry, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer txn.Rollback()
+	defer func() {
+		_ = txn.Rollback()
+	}()
 
 	bucketName := append(dbLogs, []byte(hash)...)
 	if _, err := txn.CreateBucketIfNotExists(bucketName); err != nil {
@@ -134,7 +144,9 @@ func (e *Entry) LastIndex() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	curs := tx.Bucket(e.bucket).Cursor()
 	if last, _ := curs.Last(); last != nil {
@@ -154,7 +166,9 @@ func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	indx, err := e.LastIndex()
 	if err != nil {
@@ -173,6 +187,7 @@ func (e *Entry) StoreLogs(logs []*ethgo.Log) error {
 			return err
 		}
 	}
+
 	return tx.Commit()
 }
 
@@ -184,7 +199,9 @@ func (e *Entry) RemoveLogs(indx uint64) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	curs := tx.Bucket(e.bucket).Cursor()
 	for k, _ := curs.Seek(indxKey); k != nil; k, _ = curs.Next() {
@@ -192,7 +209,6 @@ func (e *Entry) RemoveLogs(indx uint64) error {
 			return err
 		}
 	}
-
 	return tx.Commit()
 }
 
@@ -202,7 +218,9 @@ func (e *Entry) GetLog(indx uint64, log *ethgo.Log) error {
 	if err != nil {
 		return err
 	}
-	defer txn.Rollback()
+	defer func() {
+		_ = txn.Rollback()
+	}()
 
 	bucket := txn.Bucket(e.bucket)
 	val := bucket.Get(uint64ToBytes(indx))

@@ -43,10 +43,10 @@ func testListener(t *testing.T, server *testutil.TestServer, tracker BlockTracke
 		}
 	}
 
-	server.ProcessBlock()
+	assert.NoError(t, server.ProcessBlock())
 	recv()
 
-	server.ProcessBlock()
+	assert.NoError(t, server.ProcessBlock())
 	recv()
 }
 
@@ -91,7 +91,7 @@ func TestBlockTracker_Lifecycle(t *testing.T) {
 	// try to mine a block at least every 1 second
 	go func() {
 		for i := 0; i < 10; i++ {
-			s.ProcessBlock()
+			assert.NoError(t, s.ProcessBlock())
 			time.After(1 * time.Second)
 		}
 	}()
@@ -345,7 +345,7 @@ func TestBlockTracker_Events(t *testing.T) {
 
 			// build past block history
 			for _, b := range c.History.ToBlocks() {
-				tt.AddBlockLocked(b)
+				assert.NoError(t, tt.AddBlockLocked(b))
 			}
 
 			sub := tt.Subscribe()

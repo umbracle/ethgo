@@ -6,12 +6,15 @@ import (
 	"math/rand"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/umbracle/ethgo"
 )
 
+var randomGen = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 func randomInt(min, max int) int {
-	return min + rand.Intn(max-min)
+	return min + randomGen.Intn(max-min)
 }
 
 var randomTypes = []string{
@@ -161,8 +164,6 @@ func generateRandomType(t *Type) interface{} {
 		panic(fmt.Errorf("type not implemented: %s", t.kind.String()))
 	}
 }
-
-const hexLetters = "0123456789abcdef"
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 

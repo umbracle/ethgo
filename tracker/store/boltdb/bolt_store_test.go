@@ -1,7 +1,6 @@
 package trackerboltdb
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,7 +9,7 @@ import (
 )
 
 func setupDB(t *testing.T) (store.Store, func()) {
-	dir, err := ioutil.TempDir("/tmp", "boltdb-test")
+	dir, err := os.MkdirTemp("/tmp", "boltdb-test")
 	if err != nil {
 		t.Fatal(err)
 	}

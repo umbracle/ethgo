@@ -26,6 +26,7 @@ func (a *ArgBig) Big() *big.Int {
 	return &b
 }
 
+//nolint:unused
 func encodeUintToHex(i uint64) string {
 	return fmt.Sprintf("0x%x", i)
 }

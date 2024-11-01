@@ -3,7 +3,7 @@ package fourbyte
 import (
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -28,7 +28,7 @@ func get(path string) (string, error) {
 	}
 	defer req.Body.Close()
 
-	data, err := ioutil.ReadAll(req.Body)
+	data, err := io.ReadAll(req.Body)
 	if err != nil {
 		return "", err
 	}
