@@ -15,6 +15,8 @@ type Transport interface {
 
 	// Close closes the transport connection if necessary
 	Close() error
+
+	ErrCh() chan error
 }
 
 // PubSubTransport is a transport that allows subscriptions

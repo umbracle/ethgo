@@ -49,6 +49,7 @@ type stream struct {
 	subsLock sync.Mutex
 	subs     map[string]func(b []byte)
 
+	errCh   chan error
 	closeCh chan struct{}
 	timer   *time.Timer
 }
@@ -56,6 +57,7 @@ type stream struct {
 func newStream(codec Codec) (*stream, error) {
 	w := &stream{
 		codec:   codec,
+		errCh:   make(chan error, 1),
 		closeCh: make(chan struct{}),
 		handler: map[uint64]callback{},
 		subs:    map[string]func(b []byte){},
@@ -69,6 +71,11 @@ func newStream(codec Codec) (*stream, error) {
 func (s *stream) Close() error {
 	close(s.closeCh)
 	return s.codec.Close()
+}
+
+// ErrCh implements the transport interface
+func (s *stream) ErrCh() chan error {
+	return s.errCh
 }
 
 func (s *stream) incSeq() uint64 {
@@ -93,6 +100,10 @@ func (s *stream) listen() {
 		if err != nil {
 			if !s.isClosed() {
 				// log error
+			}
+			select {
+			case s.errCh <- err:
+			default:
 			}
 			return
 		}

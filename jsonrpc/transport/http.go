@@ -30,6 +30,11 @@ func (h *HTTP) Close() error {
 	return nil
 }
 
+// ErrCh implements the transport interface
+func (h *HTTP) ErrCh() chan error {
+	return nil
+}
+
 // Call implements the transport interface
 func (h *HTTP) Call(method string, out interface{}, params ...interface{}) error {
 	// Encode json-rpc request
